@@ -27,6 +27,11 @@ android {
             version "3.10.2"
         }
     }
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['/home/lynx/fuck_mount/opencv/build_dir/4_1_0_android/OpenCV-android-sdk/sdk/native/libs']
+        }
+    }
 }
 
 dependencies {

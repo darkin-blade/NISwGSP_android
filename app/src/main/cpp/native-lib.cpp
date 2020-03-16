@@ -2,6 +2,7 @@
 #include <Eigen/SVD>
 #include <Eigen/IterativeLinearSolvers>
 #include <jni.h>
+#include <opencv2/opencv.hpp>
 #include <string>
 
 using namespace std;

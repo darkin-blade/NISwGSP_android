@@ -10,6 +10,17 @@ cmake_minimum_required(VERSION 3.4.1)
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
+# 自定义变量
+set(opencv_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_android/OpenCV-android-sdk)
+set(opencv_lib libopencv_world.so)
+
+message(WARNING "fuck you!")
+
+include_directories(${opencv_dir}/sdk/native/jni/include)
+add_library(fuck SHARED IMPORTED)
+set_target_properties(fuck PROPERTIES IMPORTED_LOCATION
+    ${opencv_dir}/sdk/native/libs/${ANDROID_ABI}/${opencv_lib})
+
 add_library( # Sets the name of the library.
              native-lib
 
@@ -40,6 +51,8 @@ find_library( # Sets the name of the path variable.
 
 target_link_libraries( # Specifies the target library.
                        native-lib
+
+                       fuck
 
                        # Links the target library to the log library
                        # included in the NDK.
