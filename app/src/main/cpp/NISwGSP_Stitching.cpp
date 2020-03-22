@@ -156,6 +156,8 @@ Mat NISwGSP_Stitching::get_matching_pts() {
     multiImages->img_mesh.push_back(mesh);
   }
 
+  LOG("get mesh");
+
   // 计算匹配点
   // APAP_Stitching::apap_project(multiImages->key_points[0],
   //                              multiImages->key_points[1],
@@ -184,4 +186,8 @@ Mat NISwGSP_Stitching::get_matching_pts() {
     Scalar color(rand() % 256, rand() % 256, rand() % 256);
     circle(result_1, src_p, 3, color, -1);
   }
+
+  LOG("match finished");
+
+  return result_1;
 }
