@@ -16,8 +16,8 @@ public:
 
   MultiImages *multiImages;
   Mat draw_matches();
+  Mat get_matching_pts();
 
   void sift_1(Mat img1, Mat img2);
   void sift_2(Mat img1, Mat img2);
-  void get_matching_pts();
 };

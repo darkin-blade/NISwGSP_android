@@ -135,7 +135,7 @@ Mat NISwGSP_Stitching::draw_matches() {
   return result_1;
 }
 
-void NISwGSP_Stitching::get_matching_pts() {
+Mat NISwGSP_Stitching::get_matching_pts() {
   // 划分图像mesh
   for (int i = 0; i < multiImages->img_num; i ++) {
     int cols = multiImages->imgs[i].cols;
@@ -162,4 +162,26 @@ void NISwGSP_Stitching::get_matching_pts() {
   //                              multiImages->img_mesh[0],
   //                              multiImages->matching_points[0],
   //                              multiImages->homographies[0]);
+
+  // 描绘匹配点
+  Mat result_1;// 存储结果
+  Mat left_1, right_1;// 分割矩阵
+  Mat img1 = multiImages->imgs[0];
+  Mat img2 = multiImages->imgs[1];
+  result_1 = Mat::zeros(max(img1.rows, img2.rows), img1.cols + img2.cols, CV_8UC3);
+  left_1  = Mat(result_1, Rect(0, 0, img1.cols, img1.rows));
+  right_1 = Mat(result_1, Rect(img1.cols, 0, img2.cols, img2.rows));
+  // 复制图片
+  img1.copyTo(left_1);
+  img2.copyTo(right_1);
+
+  for (int i = 0; i < multiImages->img_mesh[0].size(); i ++) {
+    // 获取mesh
+    Point2f src_p, dest_p;// TODO
+    src_p = multiImages->img_mesh[0][i];
+
+    // 描绘
+    Scalar color(rand() % 256, rand() % 256, rand() % 256);
+    circle(result_1, src_p, 3, color, -1);
+  }
 }
