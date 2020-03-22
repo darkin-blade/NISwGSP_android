@@ -17,7 +17,7 @@ public:
   MultiImages *multiImages;
   Mat draw_matches();
 
-  void stitch_test(Mat img1, Mat img2);
-  void sift_test(Mat img1, Mat img2);
+  void sift_1(Mat img1, Mat img2);
+  void sift_2(Mat img1, Mat img2);
   void get_matching_pts();
 };

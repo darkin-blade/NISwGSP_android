@@ -4,7 +4,7 @@ NISwGSP_Stitching::NISwGSP_Stitching(MultiImages &multiImages) {
   this->multiImages = &multiImages;
 }
 
-void NISwGSP_Stitching::stitch_test(Mat img1, Mat img2) {
+void NISwGSP_Stitching::sift_1(Mat img1, Mat img2) {
   Ptr<SIFT> my_sift = SIFT::create();
   vector<KeyPoint> key_points_1, key_points_2;
 
@@ -54,7 +54,7 @@ void NISwGSP_Stitching::stitch_test(Mat img1, Mat img2) {
   LOG("get good mathces");
 }
 
-void NISwGSP_Stitching::sift_test(Mat img1, Mat img2) {
+void NISwGSP_Stitching::sift_2(Mat img1, Mat img2) {
   Ptr<SIFT> my_sift = SIFT::create();
   vector<ImageFeatures> features(2);
   computeImageFeatures(my_sift, img1, features[0]);
@@ -69,27 +69,34 @@ void NISwGSP_Stitching::sift_test(Mat img1, Mat img2) {
 
   LOG("match finish");
 
+  for (int i = 0; i < pairwise_matches.size(); i ++) {
+    LOG("pairwise[%d] size: %ld", i, pairwise_matches[i].matches.size());
+  }
+
   // 过滤bad特征匹配
   double max_dis = 0;// 最大的匹配距离
-  for (int i = 0; i < pairwise_matches[0].matches.size(); i ++) {
-    double tmp_dis = pairwise_matches[0].matches[i].distance;
+  for (int i = 0; i < pairwise_matches[1].matches.size(); i ++) {
+    double tmp_dis = pairwise_matches[1].matches[i].distance;
     if (tmp_dis > max_dis) {
       max_dis = tmp_dis;
     }
   }
-  for (int i = 0; i < pairwise_matches[0].matches.size(); i ++) {
-    double tmp_dis = pairwise_matches[0].matches[i].distance;
-    if (tmp_dis < max_dis * 1) {
-      multiImages->feature_matches.push_back(pairwise_matches[0].matches[i]);// 存储好的特征匹配
+
+  LOG("max distance %lf", max_dis);
+
+  for (int i = 0; i < pairwise_matches[1].matches.size(); i ++) {
+    double tmp_dis = pairwise_matches[1].matches[i].distance;
+    if (tmp_dis < max_dis * 0.5) {
+      multiImages->feature_matches.push_back(pairwise_matches[1].matches[i]);// 存储好的特征匹配
     }
   }
 
-  LOG("get good mathces");
+  LOG("get good mathces %ld", multiImages->feature_matches.size());
 }
 
 Mat NISwGSP_Stitching::draw_matches() {
   // 匹配特征点
-  sift_test(multiImages->imgs[0], multiImages->imgs[1]);// 特征点匹配
+    sift_2(multiImages->imgs[0], multiImages->imgs[1]);// 特征点匹配
 
   // 描绘特征点
   Mat result_1;// 存储结果
@@ -102,7 +109,6 @@ Mat NISwGSP_Stitching::draw_matches() {
   // 复制图片
   img1.copyTo(left_1);
   img2.copyTo(right_1);
-  LOG("features size %ld", multiImages->feature_matches.size());
 
   for (int i = 0; i < multiImages->feature_matches.size(); i ++) {
     // 获取特征点
