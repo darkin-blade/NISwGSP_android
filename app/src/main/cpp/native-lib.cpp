@@ -21,7 +21,6 @@ Java_com_example_niswgsp_11_MainActivity_stitchTest_11(
 
     Mat img1 = imread(img_path);
 
-    string hello = "Hello from C++";
     char msg_test[128];
     typedef Matrix<int, Dynamic, Dynamic> MyMatrix;
     MyMatrix test_mat = MyMatrix::Zero(2, 2);
