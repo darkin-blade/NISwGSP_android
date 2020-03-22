@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
@@ -46,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
         ImageView imageView = findViewById(R.id.result);
 
-        int result = stitchTest_1(
+        int result = main_test(
                 appPath,
                 matBGR.getNativeObjAddr()
         );
@@ -76,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    public native int stitchTest_1(String appPath, long matBGR);
+    public native int main_test(String appPath, long matBGR);
 
     static public void infoLog(String log) {
         Log.i("fuck", log);
