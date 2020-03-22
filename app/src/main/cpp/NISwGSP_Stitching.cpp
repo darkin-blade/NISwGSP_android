@@ -137,7 +137,7 @@ Mat NISwGSP_Stitching::draw_matches() {
 
 Mat NISwGSP_Stitching::get_matching_pts() {
   // 划分图像mesh
-  for (int i = 0; i < multiImages->img_num; i ++) {
+  for (int i = 0; i < 2; i ++) {
     int cols = multiImages->imgs[i].cols;
     int rows = multiImages->imgs[i].rows;
     // 计算间距
@@ -159,11 +159,11 @@ Mat NISwGSP_Stitching::get_matching_pts() {
   LOG("get mesh");
 
   // 计算匹配点
-  // APAP_Stitching::apap_project(multiImages->key_points[0],
-  //                              multiImages->key_points[1],
-  //                              multiImages->img_mesh[0],
-  //                              multiImages->matching_points[0],
-  //                              multiImages->homographies[0]);
+//   APAP_Stitching::apap_project(multiImages->key_points[0],
+//                                multiImages->key_points[1],
+//                                multiImages->img_mesh[0],
+//                                multiImages->matching_points[0],
+//                                multiImages->homographies[0]);
 
   // 描绘匹配点
   Mat result_1;// 存储结果

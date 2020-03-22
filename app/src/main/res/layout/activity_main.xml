@@ -6,11 +6,21 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <ImageView
-        android:id="@+id/result"
+    <HorizontalScrollView
         android:layout_width="match_parent"
-        android:layout_height="1000px"
-        app:layout_constraintTop_toTopOf="parent">
-    </ImageView>
+        android:layout_height="match_parent">
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/result"
+                android:layout_width="2000px"
+                android:layout_height="2000px"
+                app:layout_constraintTop_toTopOf="parent">
+            </ImageView>
+
+        </ScrollView>
+    </HorizontalScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
