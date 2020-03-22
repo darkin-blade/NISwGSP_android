@@ -12,7 +12,7 @@ cmake_minimum_required(VERSION 3.4.1)
 
 # 自定义变量
 set(opencv_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_android/OpenCV-android-sdk)
-set(opencv_lib libopencv_world.so)
+set(opencv_lib libopencv_java4.so)
 
 message(WARNING "fuck you!")
 

@@ -1,2 +1,2 @@
-include ':app'
+include ':app', ':openCVLibrary347'
 rootProject.name='NISwGSP_1'
