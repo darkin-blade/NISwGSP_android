@@ -1,4 +1,4 @@
-#if defined(COMMON_H)
+#if !defined(COMMON_H)
 #include "common.h"
 #endif
 

@@ -22,13 +22,17 @@ set_target_properties(fuck PROPERTIES IMPORTED_LOCATION
     ${opencv_dir}/sdk/native/libs/${ANDROID_ABI}/${opencv_lib})
 
 add_library( # Sets the name of the library.
-             native-lib
+        entry
 
-             # Sets the library as a shared library.
-             SHARED
+        # Sets the library as a shared library.
+        SHARED
 
-             # Provides a relative path to your source file(s).
-             native-lib.cpp )
+        # Provides a relative path to your source file(s).
+        common.h
+        MultiImages.hpp
+        SIFT_Features.hpp
+        SIFT_Features.cpp
+        entry.cpp )
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
@@ -50,7 +54,7 @@ find_library( # Sets the name of the path variable.
 # build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries( # Specifies the target library.
-                       native-lib
+                       entry
 
                        fuck
 
