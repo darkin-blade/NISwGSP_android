@@ -10,7 +10,7 @@ using namespace cv;
 using namespace cv::detail;
 using namespace cv::xfeatures2d;
 
-class GetFeatures {
+class SIFT_Features {
 public:
   MultiImages *multiImages;// TODO
   void stitch_test(Mat img1, Mat img2);
