@@ -1,10 +1,10 @@
-#include "apap_stitching.hpp"
+#include "APAP_Stitching.hpp"
 
 using namespace std;
 
 using namespace Eigen;
 
-void apap_project(const vector<Point2f> & _p_src,
+void APAP_Stitching::apap_project(const vector<Point2f> & _p_src,
     const vector<Point2f> & _p_dst,
     const vector<Point2f> & _src,
     vector<Point2f>       & _dst,
@@ -68,7 +68,7 @@ void apap_project(const vector<Point2f> & _p_src,
   }
 }
 
-void eigen_test() {// TODO 删掉
+void APAP_Stitching::eigen_test() {// TODO 删掉
   char msg_test[128];
   typedef Matrix<int, Dynamic, Dynamic> MyMatrix;
   MyMatrix test_mat = MyMatrix::Zero(2, 2);

@@ -1,4 +1,23 @@
-#include "entry.hpp"
+#if defined(COMMON_H)
+#include "common.h"
+#endif
+
+#include "SIFT_Features.hpp"
+
+using namespace std;
+
+using namespace cv;
+using namespace cv::detail;
+using namespace cv::xfeatures2d;
+
+Mat draw_matches();
+
+extern "C" JNIEXPORT int JNICALL
+Java_com_example_niswgsp_11_MainActivity_main_1test(
+    JNIEnv* env,
+    jobject thiz,
+    jstring appPath,
+    jlong matBGR);
 
 Mat draw_matches() {
   // 描绘特征点

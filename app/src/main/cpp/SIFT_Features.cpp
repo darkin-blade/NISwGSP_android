@@ -1,4 +1,4 @@
-#include "get_features.hpp"
+#include "SIFT_Features.hpp"
 
 void GetFeatures::stitch_test(Mat img1, Mat img2) {
   Ptr<SIFT> my_sift = SIFT::create();

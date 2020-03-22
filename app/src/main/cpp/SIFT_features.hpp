@@ -2,7 +2,7 @@
 #include "common.h"
 #endif
 
-#include "multi_images.hpp"
+#include "MultiImages.hpp"
 
 using namespace std;
 
