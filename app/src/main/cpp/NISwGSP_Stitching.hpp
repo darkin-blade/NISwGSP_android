@@ -10,9 +10,11 @@ using namespace cv;
 using namespace cv::detail;
 using namespace cv::xfeatures2d;
 
-class SIFT_Features {
+class NISwGSP_Stitching {
 public:
-  MultiImages *multiImages;// TODO
+  MultiImages *multiImages;
+  Mat draw_matches();
+
   void stitch_test(Mat img1, Mat img2);
   void sift_test(Mat img1, Mat img2);
 };

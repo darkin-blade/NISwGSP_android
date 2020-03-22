@@ -1,6 +1,6 @@
-#include "SIFT_Features.hpp"
+#include "NISwGSP_Stitching.hpp"
 
-void SIFT_Features::stitch_test(Mat img1, Mat img2) {
+void NISwGSP_Stitching::stitch_test(Mat img1, Mat img2) {
   Ptr<SIFT> my_sift = SIFT::create();
   vector<KeyPoint> key_points_1, key_points_2;
 
@@ -50,7 +50,7 @@ void SIFT_Features::stitch_test(Mat img1, Mat img2) {
   LOG("get good mathces");
 }
 
-void SIFT_Features::sift_test(Mat img1, Mat img2) {
+void NISwGSP_Stitching::sift_test(Mat img1, Mat img2) {
   Ptr<SIFT> my_sift = SIFT::create();
   vector<ImageFeatures> features(2);
   computeImageFeatures(my_sift, img1, features[0]);
@@ -81,4 +81,34 @@ void SIFT_Features::sift_test(Mat img1, Mat img2) {
   }
 
   LOG("get good mathces");
+}
+
+Mat draw_matches() {
+  // 匹配特征点
+  SIFT_Features::sift_test(multiImages->imgs[0], multiImages->imgs[1]);// 特征点匹配
+
+  // 描绘特征点
+  Mat result_1;// 存储结果
+  Mat left_1, right_1;// 分割矩阵
+  Mat img1 = multiImages->imgs[0];
+  Mat img2 = multiImages->imgs[1];
+  result_1 = Mat::zeros(max(img1.rows, img2.rows), img1.cols + img2.cols, CV_8UC3);
+  left_1  = Mat(result_1, Rect(0, 0, img1.cols, img1.rows));
+  right_1 = Mat(result_1, Rect(img1.cols, 0, img2.cols, img2.rows));
+  for (int i = 0; i < multiImages->feature_matches.size(); i ++) {
+    // 获取特征点
+    int src = multiImages->feature_matches[i].queryIdx;
+    int dest = multiImages->feature_matches[i].trainIdx;
+    Point2f src_p, dest_p;
+    src_p = multiImages->key_points[0][src].pt;
+    dest_p = multiImages->key_points[1][dest].pt;
+
+    // 描绘
+    Scalar color(rand() % 256, rand() % 256, rand() % 256);
+    circle(result_1, src_p, 3, color, -1);
+    line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 1, LINE_AA);
+    circle(result_1, dest_p + Point2f(img1.cols, 0), 3, color, -1);
+  }
+
+  return result_1;
 }
