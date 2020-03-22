@@ -40,35 +40,46 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void stitch_1() {
+        Thread run_test = new Thread(new Runnable() {
+            @Override
+            public void run() {
 
-        Mat matBGR = new Mat();
+                Mat matBGR = new Mat();
 
-        ImageView imageView = findViewById(R.id.result);
+                int result = main_test(
+                        appPath,
+                        matBGR.getNativeObjAddr()
+                );
 
-        int result = main_test(
-                appPath,
-                matBGR.getNativeObjAddr()
-        );
+                if (result != 0) {
+                    infoLog("failed");
+                    return;
+                } else {
+                    infoLog("mat size: " + matBGR.cols() + ", " + matBGR.rows());
+                    if (matBGR.cols() * matBGR.rows() == 0) {
+                        return;
+                    }
+                }
 
-        if (result != 0) {
-            infoLog("failed");
-            return;
-        } else {
-            infoLog("mat size: " + matBGR.cols() + ", " + matBGR.rows());
-            if (matBGR.cols() * matBGR.rows() == 0) {
-                return;
+                final Bitmap bitmap = Bitmap.createBitmap(matBGR.cols(), matBGR.rows(), Bitmap.Config.ARGB_8888);// TODO final
+
+                // BGR转RGB
+                Mat matRGB = new Mat();
+                Imgproc.cvtColor(matBGR, matRGB, Imgproc.COLOR_BGR2RGB);
+                Utils.matToBitmap(matRGB, bitmap);
+
+                // 显示图片
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ImageView imageView = findViewById(R.id.result);
+                        imageView.setImageBitmap(bitmap);
+                    }
+                });
             }
-        }
+        });
 
-        Bitmap bitmap = Bitmap.createBitmap(matBGR.cols(), matBGR.rows(), Bitmap.Config.ARGB_8888);
-
-        // BGR转RGB
-        Mat matRGB = new Mat();
-        Imgproc.cvtColor(matBGR, matRGB, Imgproc.COLOR_BGR2RGB);
-        Utils.matToBitmap(matRGB, bitmap);
-
-        // 显示图片
-        imageView.setImageBitmap(bitmap);
+        run_test.start();
     }
 
     /**
