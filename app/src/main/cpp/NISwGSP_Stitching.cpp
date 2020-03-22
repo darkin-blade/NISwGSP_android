@@ -79,7 +79,7 @@ void NISwGSP_Stitching::sift_test(Mat img1, Mat img2) {
   }
   for (int i = 0; i < pairwise_matches[0].matches.size(); i ++) {
     double tmp_dis = pairwise_matches[0].matches[i].distance;
-    if (tmp_dis < max_dis * 0.5) {
+    if (tmp_dis < max_dis * 1) {
       multiImages->feature_matches.push_back(pairwise_matches[0].matches[i]);// 存储好的特征匹配
     }
   }
@@ -102,6 +102,8 @@ Mat NISwGSP_Stitching::draw_matches() {
   // 复制图片
   img1.copyTo(left_1);
   img2.copyTo(right_1);
+  LOG("features size %ld", multiImages->feature_matches.size());
+
   for (int i = 0; i < multiImages->feature_matches.size(); i ++) {
     // 获取特征点
     int src = multiImages->feature_matches[i].queryIdx;
