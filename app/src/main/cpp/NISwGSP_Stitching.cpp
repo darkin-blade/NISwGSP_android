@@ -73,6 +73,11 @@ void NISwGSP_Stitching::sift_2(Mat img1, Mat img2) {
     LOG("pairwise[%d] size: %ld", i, pairwise_matches[i].matches.size());
   }
 
+  // 保存特征点
+  for (int i = 0; i < 2; i ++) {
+    multiImages->key_points.push_back(features[i].keypoints);
+  }
+
   // 过滤bad特征匹配
   double max_dis = 0;// 最大的匹配距离
   for (int i = 0; i < pairwise_matches[1].matches.size(); i ++) {
@@ -86,7 +91,7 @@ void NISwGSP_Stitching::sift_2(Mat img1, Mat img2) {
 
   for (int i = 0; i < pairwise_matches[1].matches.size(); i ++) {
     double tmp_dis = pairwise_matches[1].matches[i].distance;
-    if (tmp_dis < max_dis * 0.5) {
+    if (tmp_dis < max_dis * 0.2) {
       multiImages->feature_matches.push_back(pairwise_matches[1].matches[i]);// 存储好的特征匹配
     }
   }
@@ -96,7 +101,7 @@ void NISwGSP_Stitching::sift_2(Mat img1, Mat img2) {
 
 Mat NISwGSP_Stitching::draw_matches() {
   // 匹配特征点
-    sift_2(multiImages->imgs[0], multiImages->imgs[1]);// 特征点匹配
+  sift_2(multiImages->imgs[0], multiImages->imgs[1]);// 特征点匹配
 
   // 描绘特征点
   Mat result_1;// 存储结果
@@ -124,6 +129,8 @@ Mat NISwGSP_Stitching::draw_matches() {
     line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 1, LINE_AA);
     circle(result_1, dest_p + Point2f(img1.cols, 0), 3, color, -1);
   }
+
+  LOG("draw feature matching finished");
 
   return result_1;
 }
