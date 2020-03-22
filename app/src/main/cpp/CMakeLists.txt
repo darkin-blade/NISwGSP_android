@@ -54,6 +54,9 @@ target_link_libraries( # Specifies the target library.
 
                        fuck
 
+                       # TODO 解决 AndroidBitmap 报错, 使本机代码安全地访问Java对象的像素缓冲区的位图
+                       jnigraphics
+
                        # Links the target library to the log library
                        # included in the NDK.
                        ${log-lib} )

@@ -2,6 +2,9 @@
 #include <string>
 #include <vector>
 
+#include <android/log.h>
+#include <android/bitmap.h>
+
 #include <Eigen/Core>
 #include <Eigen/SVD>
 #include <Eigen/IterativeLinearSolvers>
@@ -10,6 +13,8 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/xfeatures2d/nonfree.hpp>
+
+#define LOG(format, ...) __android_log_print(ANDROID_LOG_INFO, "fuck", "[%s, %d] " format, __func__, __LINE__, ## __VA_ARGS__)
 
 using namespace std;
 
@@ -38,17 +43,27 @@ void stitch_test(Mat img1, Mat img2) {
   multiImages.key_points.push_back(key_points_1);
   multiImages.key_points.push_back(key_points_2);
 
+  LOG("sift finished");
+
   // TODO 匹配类型转换
+  Mat descrip_1, descrip_2;
+  my_sift->compute(img1, key_points_1, descrip_1);
+  my_sift->compute(img2, key_points_2, descrip_2);
+//  if (descrip_1.type() != CV_32F || descrip_2.type() != CV_32F) {
+//      descrip_1.convertTo(descrip_1, CV_32F);
+//      descrip_2.convertTo(descrip_2, CV_32F);
+//  }
+
+  LOG("compute finished");
 
   // 特征点匹配
-  Mat descrip_1, descrip_2;
-  my_sift->detectAndCompute(img1, Mat(), key_points_1, descrip_1);
-  my_sift->detectAndCompute(img2, Mat(), key_points_2, descrip_2);
+  Ptr<DescriptorMatcher> descriptor_matcher = DescriptorMatcher::create("BruteForce");
   vector<DMatch> feature_matches;// 存储配对信息
-  Ptr<DescriptorMatcher> descriptor_matcher = DescriptorMatcher::create("FlannBased");
   descriptor_matcher->match(descrip_1, descrip_2, feature_matches);// 进行匹配
   multiImages.descriptor.push_back(descrip_1);
   multiImages.descriptor.push_back(descrip_2);
+
+  LOG("match finished");
 
   // 过滤bad特征匹配
   double max_dis = 0;// 最大的匹配距离
@@ -64,6 +79,8 @@ void stitch_test(Mat img1, Mat img2) {
       multiImages.feature_matches.push_back(feature_matches[i]);// 存储好的特征匹配
     }
   }
+
+  LOG("get good mathces");
 }
 
 Mat draw_matches() {
@@ -112,12 +129,12 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
   multiImages.imgs.push_back(img_read);
 
   stitch_test(multiImages.imgs[0], multiImages.imgs[1]);// 特征点匹配
-  *(Mat *)matBGR = (draw_matches()).clone();
+//  *(Mat *)matBGR = (draw_matches()).clone();
 
   //    sprintf(img_path, "%s/3.jpg", app_path);
   //    imwrite(img_path, *(Mat *)matBGR);
 
-  return 0;
+  return -1;
 }
 
 void eigen_test() {
