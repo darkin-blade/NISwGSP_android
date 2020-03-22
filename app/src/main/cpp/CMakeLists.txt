@@ -11,8 +11,13 @@ cmake_minimum_required(VERSION 3.4.1)
 # Gradle automatically packages shared libraries with your APK.
 
 # 自定义变量
-set(opencv_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_android/OpenCV-android-sdk)
-set(opencv_lib libopencv_java4.so)
+if (false)
+    set(opencv_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_android/OpenCV-android-sdk)
+    set(opencv_lib libopencv_java4.so)
+elseif (true)
+    set(opencv_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_shared/OpenCV-android-sdk)
+    set(opencv_lib libopencv_world.so)
+endif()
 
 message(WARNING "fuck you!")
 
@@ -29,9 +34,9 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         common.h
-        MultiImages.hpp
-        SIFT_Features.hpp
-        SIFT_Features.cpp
+        MultiImages.h
+        NISwGSP_Stitching.h
+        NISwGSP_Stitching.cpp
         entry.cpp )
 
 # Searches for a specified prebuilt library and stores the path as a

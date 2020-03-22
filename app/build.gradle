@@ -14,7 +14,7 @@ android {
                 // exceptions support / runtime type information support
 //                cppFlags "-frtti -fexceptions"
 //                // TODO 解决opencv 4.x 版本`libc++_shared.so`找不到的问题
-//                arguments "-DANDROID_STL=c++_shared",
+//                arguments "-DANDROID_STL=c++_shared"
 //                          "-DANDROID_TOOLCHAIN=clang"
                 // TODO 限定abi 运行时不要用!
 //                abiFilters "armeabi-v7a"
@@ -36,7 +36,7 @@ android {
     sourceSets {
         main {
             jniLibs.srcDirs = ['/home/lynx/fuck_mount/opencv/install_dir/3_3_1_android/OpenCV-android-sdk/sdk/native/libs',
-                               '/home/lynx/fuck_mount/opencv/build_dir/4_1_0_android/OpenCV-android-sdk/sdk/native/libs']
+                               '/home/lynx/fuck_mount/opencv/build_dir/4_1_0_shared/OpenCV-android-sdk/sdk/native/libs']
         }
     }
 }

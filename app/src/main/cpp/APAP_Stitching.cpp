@@ -1,4 +1,4 @@
-#include "APAP_Stitching.hpp"
+#include "APAP_Stitching.h"
 
 using namespace std;
 

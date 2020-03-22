@@ -2,7 +2,8 @@
 #include "common.h"
 #endif
 
-#include "SIFT_Features.hpp"
+#include "NISwGSP_Stitching.h"
+#include "../../../../../../opencv/build_dir/4_1_0_android/OpenCV-android-sdk/sdk/native/jni/include/opencv2/core/mat.hpp"
 
 using namespace std;
 
@@ -28,21 +29,22 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
   char img_path[128];// 图片路径
 
   // 读取图片
-  MultiImages *multiImages = new MultiImages();
-  MultiImages *multiImages = SIFT_Features::multiImages;
-  multiImages = new MultiImages();
+  MultiImages multiImages;
   Mat img_read;
   sprintf(img_path, "%s/1.jpg", app_path);
   img_read = imread(img_path);
-  multiImages->imgs.push_back(img_read);
+  multiImages.imgs.push_back(img_read);
   sprintf(img_path, "%s/2.jpg", app_path);
   img_read = imread(img_path);
-  multiImages->imgs.push_back(img_read);
+  multiImages.imgs.push_back(img_read);
+
+  NISwGSP_Stitching niswgsp(multiImages);
+  *(Mat *)matBGR = niswgsp.draw_matches().clone();
 
 //  *(Mat *)matBGR = (draw_matches()).clone();// TODO 描绘特征点
 
   //    sprintf(img_path, "%s/3.jpg", app_path);
   //    imwrite(img_path, *(Mat *)matBGR);
 
-  return -1;
+  return 0;
 }

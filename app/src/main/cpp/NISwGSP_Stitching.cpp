@@ -1,4 +1,8 @@
-#include "NISwGSP_Stitching.hpp"
+#include "NISwGSP_Stitching.h"
+
+NISwGSP_Stitching::NISwGSP_Stitching(MultiImages &multiImages) {
+  this->multiImages = &multiImages;
+}
 
 void NISwGSP_Stitching::stitch_test(Mat img1, Mat img2) {
   Ptr<SIFT> my_sift = SIFT::create();
@@ -67,25 +71,25 @@ void NISwGSP_Stitching::sift_test(Mat img1, Mat img2) {
 
   // 过滤bad特征匹配
   double max_dis = 0;// 最大的匹配距离
-  for (int i = 0; i < pairwise_matches.matches.size(); i ++) {
-    double tmp_dis = pairwise_matches.matches[i].distance;
+  for (int i = 0; i < pairwise_matches[0].matches.size(); i ++) {
+    double tmp_dis = pairwise_matches[0].matches[i].distance;
     if (tmp_dis > max_dis) {
       max_dis = tmp_dis;
     }
   }
-  for (int i = 0; i < pairwise_matches.matches.size(); i ++) {
-    double tmp_dis = pairwise_matches.matches[i].distance;
+  for (int i = 0; i < pairwise_matches[0].matches.size(); i ++) {
+    double tmp_dis = pairwise_matches[0].matches[i].distance;
     if (tmp_dis < max_dis * 0.5) {
-      multiImages->feature_matches.push_back(pairwise_matches.matches[i]);// 存储好的特征匹配
+      multiImages->feature_matches.push_back(pairwise_matches[0].matches[i]);// 存储好的特征匹配
     }
   }
 
   LOG("get good mathces");
 }
 
-Mat draw_matches() {
+Mat NISwGSP_Stitching::draw_matches() {
   // 匹配特征点
-  SIFT_Features::sift_test(multiImages->imgs[0], multiImages->imgs[1]);// 特征点匹配
+  sift_test(multiImages->imgs[0], multiImages->imgs[1]);// 特征点匹配
 
   // 描绘特征点
   Mat result_1;// 存储结果
@@ -95,6 +99,9 @@ Mat draw_matches() {
   result_1 = Mat::zeros(max(img1.rows, img2.rows), img1.cols + img2.cols, CV_8UC3);
   left_1  = Mat(result_1, Rect(0, 0, img1.cols, img1.rows));
   right_1 = Mat(result_1, Rect(img1.cols, 0, img2.cols, img2.rows));
+  // 复制图片
+  img1.copyTo(left_1);
+  img2.copyTo(right_1);
   for (int i = 0; i < multiImages->feature_matches.size(); i ++) {
     // 获取特征点
     int src = multiImages->feature_matches[i].queryIdx;
@@ -111,4 +118,33 @@ Mat draw_matches() {
   }
 
   return result_1;
+}
+
+void NISwGSP_Stitching::get_matching_pts() {
+  // 划分图像mesh
+  for (int i = 0; i < multiImages->img_num; i ++) {
+    int cols = multiImages->imgs[i].cols;
+    int rows = multiImages->imgs[i].rows;
+    // 计算间距
+    double ratio = ((double) cols) / rows;
+    int row_num = 20;
+    int col_num = (int) (ratio * 20);
+    double col_step = ((double) cols) / col_num;
+    double row_step = ((double) rows) / row_num;
+    // 添加mesh
+    vector<Point2f> mesh;
+    for (int j = 0; j <= col_num; j ++) {
+      for (int k = 0; k <= row_num; k ++) {
+        mesh.push_back(Point2f(j * col_step, k * row_step));
+      }
+    }
+    multiImages->img_mesh.push_back(mesh);
+  }
+
+  // 计算匹配点
+  // APAP_Stitching::apap_project(multiImages->key_points[0],
+  //                              multiImages->key_points[1],
+  //                              multiImages->img_mesh[0],
+  //                              multiImages->matching_points[0],
+  //                              multiImages->homographies[0]);
 }
