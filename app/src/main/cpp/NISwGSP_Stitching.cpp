@@ -56,7 +56,7 @@ void NISwGSP_Stitching::sift_1(Mat img1, Mat img2) {
 }
 
 void NISwGSP_Stitching::sift_2(Mat img1, Mat img2) {
-  Ptr<SURF> my_sift = SURF::create();
+  Ptr<SIFT> my_sift = SIFT::create();
   vector<ImageFeatures> features(2);
   computeImageFeatures(my_sift, img1, features[0]);
   computeImageFeatures(my_sift, img2, features[1]);
@@ -121,7 +121,7 @@ Mat NISwGSP_Stitching::draw_matches() {
   img1.copyTo(left_1);
   img2.copyTo(right_1);
 
-  if (false) {
+  if (true) {
     // 匹配所有特征点
     for (int i = 0; i < multiImages->feature_points[0].size(); i++) {
       // 获取特征点
