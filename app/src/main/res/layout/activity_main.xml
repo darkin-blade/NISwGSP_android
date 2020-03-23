@@ -8,7 +8,8 @@
 
     <HorizontalScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_marginBottom="150px">
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent">
@@ -22,5 +23,13 @@
 
         </ScrollView>
     </HorizontalScrollView>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="150px"
+        android:text="save"
+        android:id="@+id/save_button"
+        app:layout_constraintBottom_toBottomOf="parent">
+    </Button>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
