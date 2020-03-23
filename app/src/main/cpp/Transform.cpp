@@ -1,6 +1,6 @@
 #include "Transform.h"
 
-Mat getConditionerFromPts(const vector<Point2> & pts) {
+Mat getConditionerFromPts(const vector<Point2f> & pts) {
   Mat pts_ref(pts);
   Scalar mean_pts, std_pts;
   meanStdDev(pts_ref, mean_pts, std_pts);
@@ -27,7 +27,7 @@ Mat getConditionerFromPts(const vector<Point2> & pts) {
   return result;
 }
 
-Mat getNormalize2DPts(const vector<Point2> & pts, vector<Point2> & newpts) {
+Mat getNormalize2DPts(const vector<Point2f> & pts, vector<Point2f> & newpts) {
   Mat pts_ref(pts), npts;
   Scalar mean_p = mean(pts_ref);
   npts = pts_ref - mean_p;

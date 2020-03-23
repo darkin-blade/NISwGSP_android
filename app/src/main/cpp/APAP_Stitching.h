@@ -12,4 +12,4 @@ public:
         vector<Point2f>       & _dst,
         vector<Mat>          & _homographies);
     void eigen_test();// TODO 删掉    
-}
+};

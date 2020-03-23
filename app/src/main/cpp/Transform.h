@@ -1,9 +1,16 @@
-#include "../Configure.h"
+#if !defined(COMMON_H)
+#include "common.h"
+#endif
 
-Mat getConditionerFromPts(const vector<Point2> & pts);
+#define TRANSFORM_H
 
-Mat getNormalize2DPts(const vector<Point2> & pts,
-                      vector<Point2> & newpts);
+using namespace cv;
+using namespace std;
+
+Mat getConditionerFromPts(const vector<Point2f> & pts);
+
+Mat getNormalize2DPts(const vector<Point2f> & pts,
+                      vector<Point2f> & newpts);
 
 template <typename T>
 T normalizeAngle(T x);
