@@ -14,17 +14,14 @@ void APAP_Stitching::apap_project(const vector<Point2f> & _p_src,
   // 归一化
   N1 = getNormalize2DPts(_p_src, nf1);
   N2 = getNormalize2DPts(_p_dst, nf2);
-
-  LOG("normalized");
-
   // 均值为0,标准偏差为sqrt(2)
   C1 = getConditionerFromPts(nf1);
   C2 = getConditionerFromPts(nf2);
-
-  LOG("condition");
-
   cf1.reserve(nf1.size());
   cf2.reserve(nf2.size());
+
+  LOG("normalize and condition");
+
   for(int i = 0; i < nf1.size(); ++i) {
     cf1.emplace_back(nf1[i].x * C1.at<double>(0, 0) + C1.at<double>(0, 2),
         nf1[i].y * C1.at<double>(1, 1) + C1.at<double>(1, 2));
@@ -33,11 +30,16 @@ void APAP_Stitching::apap_project(const vector<Point2f> & _p_src,
         nf2[i].y * C2.at<double>(1, 1) + C2.at<double>(1, 2));
   }
   double sigma_inv_2 = 1. / (APAP_SIGMA * APAP_SIGMA), gamma = APAP_GAMMA;
-  MatrixXd A = MatrixXd::Zero(cf1.size() * DIMENSION_2D,
-      HOMOGRAPHY_VARIABLES_COUNT);
+  MatrixXd A = MatrixXd::Zero(cf1.size() * DIMENSION_2D, HOMOGRAPHY_VARIABLES_COUNT);
+
+  LOG("src size %ld", (long) _src.size());
+  assert(_src.size() > 0);
 
   _dst.reserve(_src.size());
   _homographies.reserve(_src.size());
+
+  LOG("computing A");
+
   for(int i = 0; i < _src.size(); ++i) {
     for(int j = 0; j < _p_src.size(); ++j) {
       Point2f d = _src[i] - _p_src[j];

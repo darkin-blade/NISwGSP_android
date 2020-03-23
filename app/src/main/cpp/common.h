@@ -1,6 +1,8 @@
 #define COMMON_H
 
+#include <assert.h>
 #include <jni.h>
+
 #include <string>
 #include <vector>
 
