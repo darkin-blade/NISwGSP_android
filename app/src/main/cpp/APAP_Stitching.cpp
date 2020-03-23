@@ -56,8 +56,6 @@ void APAP_Stitching::apap_project(const vector<Point2f> & _p_src,
       A(2*j+1, 8) = www * -cf2[j].y;
     }
 
-    LOG("get matrix A");
-
     JacobiSVD<MatrixXd, HouseholderQRPreconditioner> jacobi_svd(A, ComputeThinV);
     MatrixXd V = jacobi_svd.matrixV();
     Mat H(3, 3, CV_64FC1);
@@ -73,14 +71,7 @@ void APAP_Stitching::apap_project(const vector<Point2f> & _p_src,
 
     _dst.emplace_back(applyTransform3x3(_src[i].x, _src[i].y, H));// 对应 apap 的 apply_mdlt_transform
     _homographies.emplace_back(H);
-  }
-}
 
-void APAP_Stitching::eigen_test() {// TODO 删掉
-  char msg_test[128];
-  typedef Matrix<int, Dynamic, Dynamic> MyMatrix;
-  MyMatrix test_mat = MyMatrix::Zero(2, 2);
-  test_mat(0, 0) = 1;
-  test_mat(0, 1) = 2;
-  sprintf(msg_test, "[%d %d][%d %d]", test_mat(0, 0), test_mat(0, 1), test_mat(1, 0), test_mat(1, 1));
+    LOG("process: [%d/%d]", i, (int) _p_src.size());
+  }
 }

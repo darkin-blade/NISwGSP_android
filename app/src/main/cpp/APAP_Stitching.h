@@ -11,5 +11,4 @@ public:
         const vector<Point2f> & _src,
         vector<Point2f>       & _dst,
         vector<Mat>          & _homographies);
-    void eigen_test();// TODO 删掉    
 };

@@ -193,7 +193,7 @@ Mat NISwGSP_Stitching::get_matching_pts() {
   img1.copyTo(left_1);
   img2.copyTo(right_1);
 
-  // 匹配点配对,剔除出界点
+  // 剔除出界点
   multiImages->matching_pairs.resize(2);
   vector<pair<int, int> > &matching_pairs = multiImages->matching_pairs[0];// 配对信息
   const vector<Point2f> *tmp_p = &multiImages->matching_points[0];// 匹配点位置
@@ -204,18 +204,34 @@ Mat NISwGSP_Stitching::get_matching_pts() {
   }
 
   // 描绘匹配点
-  for (int i = 0; i < multiImages->matching_pairs[0].size(); i ++) {
-    // 获取mesh
-    int index = multiImages->matching_pairs[0][i].first;
-    Point2f src_p, dest_p;// TODO
-    src_p = multiImages->img_mesh[0][index];
-    dest_p = multiImages->matching_points[0][index];
+  if (1 == 2) {
+    // 匹配点配对
+    for (int i = 0; i < multiImages->matching_pairs[0].size(); i ++) {
+      // 获取mesh
+      int index = multiImages->matching_pairs[0][i].first;
+      Point2f src_p, dest_p;// TODO
+      src_p = multiImages->img_mesh[0][index];
+      dest_p = multiImages->matching_points[0][index];
 
-    // 描绘
-    Scalar color(rand() % 256, rand() % 256, rand() % 256);
-    circle(result_1, src_p, 3, color, -1);
-    line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 1, LINE_AA);
-    circle(result_1, dest_p + Point2f(img1.cols, 0), 3, color, -1);
+      // 描绘
+      Scalar color(rand() % 256, rand() % 256, rand() % 256);
+      circle(result_1, src_p, 3, color, -1);
+      line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 1, LINE_AA);
+      circle(result_1, dest_p + Point2f(img1.cols, 0), 3, color, -1);
+    }
+  } else {
+    // 描绘所有匹配点
+    for (int i = 0; i < multiImages->img_mesh[0].size(); i ++) {
+      // 获取mesh
+      Point2f src_p, dest_p;// TODO
+      src_p = multiImages->img_mesh[0][i];
+      dest_p = multiImages->matching_points[0][i];
+
+      // 描绘
+      Scalar color(rand() % 256, rand() % 256, rand() % 256);
+      circle(result_1, src_p, 3, color, -1);
+      circle(result_1, dest_p + Point2f(img1.cols, 0), 3, color, -1);
+    }
   }
 
   LOG("match finished");

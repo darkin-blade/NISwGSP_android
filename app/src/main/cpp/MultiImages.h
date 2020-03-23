@@ -8,7 +8,7 @@ using namespace cv;
 using namespace cv::detail;
 using namespace cv::xfeatures2d;
 
-class MultiImages {
+class MultiImages {// 注意reserve与resize的区别
 public:
   int img_num;
   vector<Mat> imgs;
