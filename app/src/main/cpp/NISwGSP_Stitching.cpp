@@ -90,10 +90,15 @@ void NISwGSP_Stitching::sift_2(Mat img1, Mat img2) {
 
   LOG("max distance %lf", max_dis);
 
+  multiImages->feature_points.resize(2);
   for (int i = 0; i < pairwise_matches[1].matches.size(); i ++) {
     double tmp_dis = pairwise_matches[1].matches[i].distance;
-    if (tmp_dis < max_dis * 0.3) {
+    if (tmp_dis < max_dis * 0.2) {
       multiImages->feature_matches.push_back(pairwise_matches[1].matches[i]);// 存储好的特征匹配
+      int src  = pairwise_matches[1].matches[i].queryIdx;
+      int dest = pairwise_matches[1].matches[i].trainIdx;
+      multiImages->feature_points[0].push_back(features[0].keypoints[src].pt);
+      multiImages->feature_points[1].push_back(features[1].keypoints[dest].pt);
     }
   }
 
@@ -126,9 +131,9 @@ Mat NISwGSP_Stitching::draw_matches() {
 
     // 描绘
     Scalar color(rand() % 256, rand() % 256, rand() % 256);
-    circle(result_1, src_p, 3, color, -1);
-    line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 1, LINE_AA);
-    circle(result_1, dest_p + Point2f(img1.cols, 0), 3, color, -1);
+    circle(result_1, src_p, 10, color, -1);
+    line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 3, LINE_AA);
+    circle(result_1, dest_p + Point2f(img1.cols, 0), 10, color, -1);
   }
 
   LOG("draw feature matching finished");
@@ -139,6 +144,7 @@ Mat NISwGSP_Stitching::draw_matches() {
 Mat NISwGSP_Stitching::get_matching_pts() {
   int img_num = 2;
   // 划分图像mesh
+  multiImages->img_mesh.resize(2);
   for (int i = 0; i < img_num; i ++) {
     int cols = multiImages->imgs[i].cols;
     int rows = multiImages->imgs[i].rows;
@@ -149,25 +155,16 @@ Mat NISwGSP_Stitching::get_matching_pts() {
     double col_step = ((double) cols) / col_num;
     double row_step = ((double) rows) / row_num;
     // 添加mesh
-    vector<Point2f> mesh;
     for (int j = 0; j <= col_num; j ++) {
       for (int k = 0; k <= row_num; k ++) {
-        mesh.push_back(Point2f(j * col_step, k * row_step));
+        multiImages->img_mesh[i].push_back(Point2f(j * col_step, k * row_step));
       }
     }
-    multiImages->img_mesh.push_back(mesh);
   }
 
   LOG("get mesh");
 
   // 计算单应矩阵
-  multiImages->feature_points.resize(img_num);
-  for (int i = 0; i < img_num; i ++) {
-    for (int j = 0; j < multiImages->key_points[i].size(); j ++) {
-      multiImages->feature_points[i].push_back(multiImages->key_points[i][j].pt);
-    }
-  }
-  LOG("debug");
   multiImages->matching_points.resize(img_num);
   multiImages->homographies.resize(img_num);
 
@@ -215,9 +212,9 @@ Mat NISwGSP_Stitching::get_matching_pts() {
 
       // 描绘
       Scalar color(rand() % 256, rand() % 256, rand() % 256);
-      circle(result_1, src_p, 3, color, -1);
-      line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 1, LINE_AA);
-      circle(result_1, dest_p + Point2f(img1.cols, 0), 3, color, -1);
+      circle(result_1, src_p, 10, color, -1);
+      line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 3, LINE_AA);
+      circle(result_1, dest_p + Point2f(img1.cols, 0), 10, color, -1);
     }
   } else {
     // 描绘所有匹配点
@@ -228,9 +225,10 @@ Mat NISwGSP_Stitching::get_matching_pts() {
       dest_p = multiImages->matching_points[0][i];
 
       // 描绘
-      Scalar color(rand() % 256, rand() % 256, rand() % 256);
-      circle(result_1, src_p, 3, color, -1);
-      circle(result_1, dest_p + Point2f(img1.cols, 0), 3, color, -1);
+      Scalar color1(255, 0, 0);
+      circle(result_1, src_p, 10, color1, -1);
+      Scalar color2(0, 0, 255);
+      circle(result_1, dest_p + Point2f(img1.cols, 0), 10, color2, -1);
     }
   }
 
