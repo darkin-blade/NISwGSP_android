@@ -34,9 +34,10 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         common.h
-        Transform.cpp
         Transform.h
+        Transform.cpp
         MultiImages.h
+        MultiImages.cpp
         APAP_Stitching.h
         APAP_Stitching.cpp
         NISwGSP_Stitching.h

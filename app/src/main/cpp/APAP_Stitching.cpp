@@ -14,9 +14,15 @@ void APAP_Stitching::apap_project(const vector<Point2f> & _p_src,
   // 归一化
   N1 = getNormalize2DPts(_p_src, nf1);
   N2 = getNormalize2DPts(_p_dst, nf2);
+
+  LOG("normalized");
+
   // 均值为0,标准偏差为sqrt(2)
   C1 = getConditionerFromPts(nf1);
   C2 = getConditionerFromPts(nf2);
+
+  LOG("condition");
+
   cf1.reserve(nf1.size());
   cf2.reserve(nf2.size());
   for(int i = 0; i < nf1.size(); ++i) {
@@ -50,6 +56,9 @@ void APAP_Stitching::apap_project(const vector<Point2f> & _p_src,
       A(2*j+1, 7) = www * -cf2[j].y * cf1[j].y;
       A(2*j+1, 8) = www * -cf2[j].y;
     }
+
+    LOG("get matrix A");
+
     JacobiSVD<MatrixXd, HouseholderQRPreconditioner> jacobi_svd(A, ComputeThinV);
     MatrixXd V = jacobi_svd.matrixV();
     Mat H(3, 3, CV_64FC1);
