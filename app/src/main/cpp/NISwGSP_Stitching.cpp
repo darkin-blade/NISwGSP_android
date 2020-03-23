@@ -56,7 +56,7 @@ void NISwGSP_Stitching::sift_1(Mat img1, Mat img2) {
 }
 
 void NISwGSP_Stitching::sift_2(Mat img1, Mat img2) {
-  Ptr<SIFT> my_sift = SIFT::create();
+  Ptr<SURF> my_sift = SURF::create();
   vector<ImageFeatures> features(2);
   computeImageFeatures(my_sift, img1, features[0]);
   computeImageFeatures(my_sift, img2, features[1]);
@@ -93,7 +93,7 @@ void NISwGSP_Stitching::sift_2(Mat img1, Mat img2) {
   multiImages->feature_points.resize(2);
   for (int i = 0; i < pairwise_matches[1].matches.size(); i ++) {
     double tmp_dis = pairwise_matches[1].matches[i].distance;
-    if (tmp_dis < max_dis * 0.2) {
+    if (tmp_dis < max_dis * 0.25) {
       multiImages->feature_matches.push_back(pairwise_matches[1].matches[i]);// 存储好的特征匹配
       int src  = pairwise_matches[1].matches[i].queryIdx;
       int dest = pairwise_matches[1].matches[i].trainIdx;
@@ -121,18 +121,16 @@ Mat NISwGSP_Stitching::draw_matches() {
   img1.copyTo(left_1);
   img2.copyTo(right_1);
 
-  for (int i = 0; i < multiImages->feature_matches.size(); i ++) {
+  for (int i = 0; i < multiImages->feature_points[0].size(); i ++) {
     // 获取特征点
-    int src = multiImages->feature_matches[i].queryIdx;
-    int dest = multiImages->feature_matches[i].trainIdx;
     Point2f src_p, dest_p;
-    src_p = multiImages->key_points[0][src].pt;
-    dest_p = multiImages->key_points[1][dest].pt;
+    src_p = multiImages->feature_points[0][i];
+    dest_p = multiImages->feature_points[1][i];
 
     // 描绘
     Scalar color(rand() % 256, rand() % 256, rand() % 256);
     circle(result_1, src_p, 10, color, -1);
-    line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 3, LINE_AA);
+    line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 2, LINE_AA);
     circle(result_1, dest_p + Point2f(img1.cols, 0), 10, color, -1);
   }
 
