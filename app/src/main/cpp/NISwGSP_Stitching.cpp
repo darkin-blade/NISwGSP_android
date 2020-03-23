@@ -161,14 +161,18 @@ Mat NISwGSP_Stitching::get_matching_pts() {
   LOG("get mesh");
 
   // 计算单应矩阵
-  multiImages->feature_points.reserve(img_num);
+  multiImages->feature_points.resize(img_num);
   for (int i = 0; i < img_num; i ++) {
     for (int j = 0; j < multiImages->key_points[i].size(); j ++) {
       multiImages->feature_points[i].push_back(multiImages->key_points[i][j].pt);
     }
   }
-  multiImages->matching_points.reserve(img_num);
-  multiImages->homographies.reserve(img_num);
+  LOG("debug");
+  multiImages->matching_points.resize(img_num);
+  multiImages->homographies.resize(img_num);
+
+  LOG("starting apap");
+
   APAP_Stitching::apap_project(multiImages->feature_points[0],
                                multiImages->feature_points[1],
                                multiImages->img_mesh[0],
@@ -190,7 +194,7 @@ Mat NISwGSP_Stitching::get_matching_pts() {
   img2.copyTo(right_1);
 
   // 匹配点配对,剔除出界点
-  multiImages->matching_pairs.reserve(2);
+  multiImages->matching_pairs.resize(2);
   vector<pair<int, int> > &matching_pairs = multiImages->matching_pairs[0];// 配对信息
   const vector<Point2f> *tmp_p = &multiImages->matching_points[0];// 匹配点位置
   for (int i = 0; i < tmp_p->size(); i ++) {
