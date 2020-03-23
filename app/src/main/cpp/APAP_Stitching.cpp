@@ -20,7 +20,7 @@ void APAP_Stitching::apap_project(const vector<Point2f> & _p_src,
   cf1.reserve(nf1.size());
   cf2.reserve(nf2.size());
 
-  LOG("normalize and condition");
+  LOG("normalize and condition finished");
 
   for(int i = 0; i < nf1.size(); ++i) {
     cf1.emplace_back(nf1[i].x * C1.at<double>(0, 0) + C1.at<double>(0, 2),
@@ -31,10 +31,7 @@ void APAP_Stitching::apap_project(const vector<Point2f> & _p_src,
   }
   double sigma_inv_2 = 1. / (APAP_SIGMA * APAP_SIGMA), gamma = APAP_GAMMA;
   MatrixXd A = MatrixXd::Zero(cf1.size() * DIMENSION_2D, HOMOGRAPHY_VARIABLES_COUNT);
-
-  LOG("src size %ld", (long) _src.size());
   assert(_src.size() > 0);
-
   _dst.reserve(_src.size());
   _homographies.reserve(_src.size());
 
