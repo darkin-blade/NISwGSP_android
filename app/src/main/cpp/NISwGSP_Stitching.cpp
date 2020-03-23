@@ -121,7 +121,7 @@ Mat NISwGSP_Stitching::draw_matches() {
   img1.copyTo(left_1);
   img2.copyTo(right_1);
 
-  if (true) {
+  if (false) {
     // 匹配所有特征点
     for (int i = 0; i < multiImages->feature_points[0].size(); i++) {
       // 获取特征点

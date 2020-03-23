@@ -39,9 +39,9 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
   multiImages.imgs.push_back(img_read);
 
   NISwGSP_Stitching niswgsp(multiImages);
-  *(Mat *)matBGR = niswgsp.draw_matches().clone();// 匹配点
-//  niswgsp.draw_matches();// 特征点
-//  *(Mat *)matBGR = niswgsp.get_matching_pts().clone();// 匹配点
+//  *(Mat *)matBGR = niswgsp.draw_matches().clone();// 匹配点
+  niswgsp.draw_matches();// 特征点
+  *(Mat *)matBGR = niswgsp.get_matching_pts().clone();// 匹配点
 
   //    sprintf(img_path, "%s/3.jpg", app_path);
   //    imwrite(img_path, *(Mat *)matBGR);
