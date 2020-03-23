@@ -121,17 +121,32 @@ Mat NISwGSP_Stitching::draw_matches() {
   img1.copyTo(left_1);
   img2.copyTo(right_1);
 
-  for (int i = 0; i < multiImages->feature_points[0].size(); i ++) {
-    // 获取特征点
-    Point2f src_p, dest_p;
-    src_p = multiImages->feature_points[0][i];
-    dest_p = multiImages->feature_points[1][i];
+  if (false) {
+    // 匹配所有特征点
+    for (int i = 0; i < multiImages->feature_points[0].size(); i++) {
+      // 获取特征点
+      Point2f src_p, dest_p;
+      src_p = multiImages->feature_points[0][i];
+      dest_p = multiImages->feature_points[1][i];
 
-    // 描绘
-    Scalar color(rand() % 256, rand() % 256, rand() % 256);
-    circle(result_1, src_p, 10, color, -1);
-    line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 2, LINE_AA);
-    circle(result_1, dest_p + Point2f(img1.cols, 0), 10, color, -1);
+      // 描绘
+      Scalar color(rand() % 256, rand() % 256, rand() % 256);
+      circle(result_1, src_p, 10, color, -1);
+      line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 2, LINE_AA);
+      circle(result_1, dest_p + Point2f(img1.cols, 0), 10, color, -1);
+    }
+  } else {
+    // 描绘所有关键点
+    for (int i = 0; i < multiImages->key_points[0].size(); i ++) {
+      Point2f src_p = multiImages->key_points[0][i].pt;
+      Scalar color(255, 0, 0);
+      circle(result_1, src_p, 10, color, -1);
+    }
+    for (int i = 0; i < multiImages->key_points[1].size(); i ++) {
+      Point2f src_p = multiImages->key_points[1][i].pt;
+      Scalar color(255, 0, 0);
+      circle(result_1, src_p + Point2f(img1.cols, 0), 10, color, -1);
+    }
   }
 
   LOG("draw feature matching finished");
