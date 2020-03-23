@@ -1,4 +1,5 @@
 #include "NISwGSP_Stitching.h"
+#include "APAP_Stitching.h"
 
 NISwGSP_Stitching::NISwGSP_Stitching(MultiImages &multiImages) {
   this->multiImages = &multiImages;
@@ -70,7 +71,7 @@ void NISwGSP_Stitching::sift_2(Mat img1, Mat img2) {
   LOG("match finish");
 
   for (int i = 0; i < pairwise_matches.size(); i ++) {
-    LOG("pairwise[%d] size: %ld", i, pairwise_matches[i].matches.size());
+    LOG("pairwise[%d] size: %ld", i, (long) pairwise_matches[i].matches.size());
   }
 
   // 保存特征点
@@ -91,12 +92,12 @@ void NISwGSP_Stitching::sift_2(Mat img1, Mat img2) {
 
   for (int i = 0; i < pairwise_matches[1].matches.size(); i ++) {
     double tmp_dis = pairwise_matches[1].matches[i].distance;
-    if (tmp_dis < max_dis * 0.2) {
+    if (tmp_dis < max_dis * 0.3) {
       multiImages->feature_matches.push_back(pairwise_matches[1].matches[i]);// 存储好的特征匹配
     }
   }
 
-  LOG("get good mathces %ld", multiImages->feature_matches.size());
+  LOG("get good mathces %ld", (long) multiImages->feature_matches.size());
 }
 
 Mat NISwGSP_Stitching::draw_matches() {
@@ -158,12 +159,21 @@ Mat NISwGSP_Stitching::get_matching_pts() {
 
   LOG("get mesh");
 
+  for (int i = 0; i < 2; i ++) {
+    vector<Point2f> feature_points;
+    for (int j = 0; j < multiImages->key_points[i].size(); j ++) {
+      feature_points.push_back(multiImages->key_points[i][j].pt);
+    }
+    multiImages->feature_points.push_back(feature_points);
+  }
   // 计算匹配点
-//   APAP_Stitching::apap_project(multiImages->key_points[0],
-//                                multiImages->key_points[1],
-//                                multiImages->img_mesh[0],
-//                                multiImages->matching_points[0],
-//                                multiImages->homographies[0]);
+  APAP_Stitching::apap_project(multiImages->feature_points[0],
+                               multiImages->feature_points[1],
+                               multiImages->img_mesh[0],
+                               multiImages->matching_points[0],
+                               multiImages->homographies[0]);
+
+  LOG("apap finished");
 
   // 描绘匹配点
   Mat result_1;// 存储结果

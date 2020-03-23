@@ -5,10 +5,10 @@ using namespace std;
 using namespace Eigen;
 
 void APAP_Stitching::apap_project(const vector<Point2f> & _p_src,
-    const vector<Point2f> & _p_dst,
-    const vector<Point2f> & _src,
-    vector<Point2f>       & _dst,
-    vector<Mat>          & _homographies) {
+                                  const vector<Point2f> & _p_dst,
+                                  const vector<Point2f> & _src,
+                                  vector<Point2f>       & _dst,
+                                  vector<Mat>          & _homographies) {
   vector<Point2f> nf1, nf2, cf1, cf2;
   Mat N1, N2, C1, C2;
   // 归一化
