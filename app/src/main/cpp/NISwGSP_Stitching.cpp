@@ -160,14 +160,13 @@ Mat NISwGSP_Stitching::get_matching_pts() {
 
   LOG("get mesh");
 
+  // 计算匹配点
   multiImages->feature_points.reserve(img_num);
   for (int i = 0; i < img_num; i ++) {
     for (int j = 0; j < multiImages->key_points[i].size(); j ++) {
       multiImages->feature_points[i].push_back(multiImages->key_points[i][j].pt);
     }
   }
-
-  // 计算匹配点
   multiImages->matching_points.reserve(img_num);
   multiImages->homographies.reserve(img_num);
   APAP_Stitching::apap_project(multiImages->feature_points[0],
