@@ -14,9 +14,7 @@ cmake_minimum_required(VERSION 3.4.1)
 include_directories(/home/lynx/fuck_mount/Android_Proj/NISwGSP_1/app/src/main/cpp/eigen_323c052e1731)
 
 # opencv
-set(sdk_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_android)
-#set(OpenCV_DIR ${sdk_dir}/o4a)
-#set(OpenCV_DIR ${sdk_dir}/o4a/unix-install/)
+set(sdk_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_shared)
 set(OpenCV_DIR ${sdk_dir}/OpenCV-android-sdk/sdk/native/jni)
 find_package(OpenCV REQUIRED)
 include_directories(${sdk_dir}/OpenCV-android-sdk/sdk/native/jni/include)
@@ -41,22 +39,12 @@ add_library( # Sets the name of the library.
         NISwGSP_Stitching.cpp
         entry.cpp )
 
-# Searches for a specified prebuilt library and stores the path as a
-# variable. Because CMake includes system libraries in the search path by
-# default, you only need to specify the name of the public NDK library
-# you want to add. CMake verifies that the library exists before
-# completing its build.
-
 find_library( # Sets the name of the path variable.
               log-lib
 
               # Specifies the name of the NDK library that
               # you want CMake to locate.
               log )
-
-# Specifies libraries CMake should link to your target library. You
-# can link multiple libraries, such as libraries you define in this
-# build script, prebuilt third-party libraries, or system libraries.
 
 target_link_libraries( # Specifies the target library.
                        entry
