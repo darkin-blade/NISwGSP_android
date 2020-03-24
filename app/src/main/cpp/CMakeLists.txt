@@ -10,21 +10,18 @@ cmake_minimum_required(VERSION 3.4.1)
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
-# 自定义变量
-if (false)
-    set(opencv_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_android/OpenCV-android-sdk)
-    set(opencv_lib libopencv_java4.so)
-elseif (true)
-    set(opencv_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_shared/OpenCV-android-sdk)
-    set(opencv_lib libopencv_world.so)
-endif()
+# eigen
+include_directories(/home/lynx/fuck_mount/Android_Proj/NISwGSP_1/app/src/main/cpp/eigen_323c052e1731)
 
-message(WARNING "fuck you!")
+# opencv
+set(sdk_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_android)
+#set(OpenCV_DIR ${sdk_dir}/o4a)
+#set(OpenCV_DIR ${sdk_dir}/o4a/unix-install/)
+set(OpenCV_DIR ${sdk_dir}/OpenCV-android-sdk/sdk/native/jni)
+find_package(OpenCV REQUIRED)
+include_directories(${sdk_dir}/OpenCV-android-sdk/sdk/native/jni/include)
 
-include_directories(${opencv_dir}/sdk/native/jni/include)
-add_library(fuck SHARED IMPORTED)
-set_target_properties(fuck PROPERTIES IMPORTED_LOCATION
-    ${opencv_dir}/sdk/native/libs/${ANDROID_ABI}/${opencv_lib})
+# vlfeat
 
 add_library( # Sets the name of the library.
         entry
@@ -50,8 +47,6 @@ add_library( # Sets the name of the library.
 # you want to add. CMake verifies that the library exists before
 # completing its build.
 
-INCLUDE_DIRECTORIES(/home/lynx/fuck_mount/Android_Proj/NISwGSP_1/app/src/main/cpp/eigen_323c052e1731)
-
 find_library( # Sets the name of the path variable.
               log-lib
 
@@ -66,7 +61,7 @@ find_library( # Sets the name of the path variable.
 target_link_libraries( # Specifies the target library.
                        entry
 
-                       fuck
+                       ${OpenCV_LIBS}
 
                        # TODO 解决 AndroidBitmap 报错, 使本机代码安全地访问Java对象的像素缓冲区的位图
                        jnigraphics
