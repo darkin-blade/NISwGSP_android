@@ -20,6 +20,22 @@ find_package(OpenCV REQUIRED)
 include_directories(${sdk_dir}/OpenCV-android-sdk/sdk/native/jni/include)
 
 # vlfeat
+set(vlfeat_dir /home/lynx/fuck_mount/vlfeat/vlfeat_android)
+include_directories(${vlfeat_dir})
+#include_directories(${CMAKE_CURRENT_SOURCCE_DIR})
+# set(vlfeat_lib "${vlfeat_dir}/build/libvl.so")
+
+aux_source_directory(/home/lynx/fuck_mount/vlfeat/vlfeat_android/src vl_src)
+aux_source_directory(/home/lynx/fuck_mount/vlfeat/vlfeat_android/vl vl_head)
+
+add_library(
+  vlfeat_lib
+
+  SHARED
+
+  ${vl_src}
+  ${vl_head}
+)
 
 add_library( # Sets the name of the library.
         entry
@@ -29,31 +45,24 @@ add_library( # Sets the name of the library.
 
         # Provides a relative path to your source file(s).
         common.h
-        Transform.h
         Transform.cpp
-        MultiImages.h
+        FeatureController.cpp
         MultiImages.cpp
-        APAP_Stitching.h
         APAP_Stitching.cpp
-        NISwGSP_Stitching.h
         NISwGSP_Stitching.cpp
         entry.cpp )
 
 find_library( # Sets the name of the path variable.
               log-lib
-
-              # Specifies the name of the NDK library that
-              # you want CMake to locate.
               log )
 
 target_link_libraries( # Specifies the target library.
-                       entry
+        entry
 
-                       ${OpenCV_LIBS}
+        ${OpenCV_LIBS}
+        # ${vlfeat_lib}
+        vlfeat_lib
 
-                       # TODO 解决 AndroidBitmap 报错, 使本机代码安全地访问Java对象的像素缓冲区的位图
-                       jnigraphics
-
-                       # Links the target library to the log library
-                       # included in the NDK.
-                       ${log-lib} )
+        # TODO 解决 AndroidBitmap 报错, 使本机代码安全地访问Java对象的像素缓冲区的位图
+        jnigraphics
+        ${log-lib} )

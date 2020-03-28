@@ -7,23 +7,60 @@ NISwGSP_Stitching::NISwGSP_Stitching(MultiImages &multiImages) {
 
 void NISwGSP_Stitching::sift_1(Mat img1, Mat img2) {
   Ptr<SIFT> my_sift = SIFT::create();
-  vector<KeyPoint> key_points_1, key_points_2;
+  vector<vector<KeyPoint> > key_points(2);
 
   // 检测特征点
-  my_sift->detect(img1, key_points_1);
-  my_sift->detect(img2, key_points_2);
-  multiImages->key_points.push_back(key_points_1);
-  multiImages->key_points.push_back(key_points_2);
+  vl_sift_pix *sift_img1 = new vl_sift_pix[img1.cols * img1.rows];
+  for (int i = 0, k = 0; i < img1.rows; i ++) {
+    uint8_t *p = img1.ptr<uint8_t>(i);
+    for (int j = 0; j < img1.cols; j ++) {
+      sift_img1[k + j] = p[j];
+    }
+    k += img1.cols;
+  }
+
+  if (true) {
+    for (int i = 0; i < 2; i ++) {
+      VlSiftFilt *SiftFilt = NULL;
+      SiftFilt = vl_sift_new(img1.cols, img1.rows,
+          4,// noctaves
+          2,// nlevels
+          0);// o_min
+      if (vl_sift_process_first_octave(SiftFilt, sift_img1) != VL_ERR_EOF) {
+        do {
+          vl_sift_detect(SiftFilt);
+          LOG("cur key points %d", SiftFilt->nkeys);
+
+          // 描绘特征点
+          VlSiftKeypoint *point_p = SiftFilt->keys;
+          for (int j = 0; j < SiftFilt->nkeys; j ++) {
+            VlSiftKeypoint cur_point = *point_p;
+            point_p ++;
+            key_points[i].push_back(KeyPoint(cur_point.x, cur_point.y, cur_point.s,
+                  -1, 0, cur_point.o, -1));
+          }
+        } while (vl_sift_process_next_octave(SiftFilt) != VL_ERR_EOF);
+      }
+      vl_sift_delete(SiftFilt);
+    }
+  } else {
+    my_sift->detect(img1, key_points[0]);
+    my_sift->detect(img2, key_points[1]);
+  }
+  multiImages->key_points.push_back(key_points[0]);
+  multiImages->key_points.push_back(key_points[1]);
 
   LOG("sift finished");
 
   // TODO 匹配类型转换
-  Mat descrip_1, descrip_2;
-  my_sift->compute(img1, key_points_1, descrip_1);
-  my_sift->compute(img2, key_points_2, descrip_2);
-  if (descrip_1.type() != CV_32F || descrip_2.type() != CV_32F) {
-      descrip_1.convertTo(descrip_1, CV_32F);
-      descrip_2.convertTo(descrip_2, CV_32F);
+  vector<Mat> descrip(2);
+  my_sift->compute(img1, key_points[0], descrip[0]);
+  my_sift->compute(img2, key_points[1], descrip[1]);
+  if (false) {
+    if (descrip[0].type() != CV_32F || descrip[1].type() != CV_32F) {
+      descrip[0].convertTo(descrip[0], CV_32F);
+      descrip[1].convertTo(descrip[1], CV_32F);
+    }
   }
 
   LOG("compute finished");
@@ -31,28 +68,36 @@ void NISwGSP_Stitching::sift_1(Mat img1, Mat img2) {
   // 特征点匹配
   Ptr<DescriptorMatcher> descriptor_matcher = DescriptorMatcher::create("BruteForce");
   vector<DMatch> feature_matches;// 存储配对信息
-  descriptor_matcher->match(descrip_1, descrip_2, feature_matches);// 进行匹配
-  multiImages->descriptor.push_back(descrip_1);
-  multiImages->descriptor.push_back(descrip_2);
+  descriptor_matcher->match(descrip[0], descrip[1], feature_matches);// 进行匹配
+  multiImages->descriptor.push_back(descrip[0]);
+  multiImages->descriptor.push_back(descrip[1]);
 
   LOG("match finished");
 
   // 过滤bad特征匹配
   double max_dis = 0;// 最大的匹配距离
-  for (int i = 0; i < descrip_1.rows; i ++) {
+  for (int i = 0; i < descrip[0].rows; i ++) {
     double tmp_dis = feature_matches[i].distance;
     if (tmp_dis > max_dis) {
       max_dis = tmp_dis;
     }
   }
-  for (int i = 0; i < descrip_1.rows; i ++) {
+
+  LOG("max dis: %lf", max_dis);
+
+  multiImages->feature_points.resize(2);
+  for (int i = 0; i < feature_matches.size(); i ++) {
     double tmp_dis = feature_matches[i].distance;
-    if (tmp_dis < max_dis * 0.5) {
+    if (tmp_dis < max_dis * 0.1) {
       multiImages->feature_matches.push_back(feature_matches[i]);// 存储好的特征匹配
+      int src  = feature_matches[i].queryIdx;
+      int dest = feature_matches[i].trainIdx;
+      multiImages->feature_points[0].push_back(key_points[0][src].pt);
+      multiImages->feature_points[1].push_back(key_points[1][dest].pt);
     }
   }
 
-  LOG("get good mathces");
+  LOG("get good mathces %ld", multiImages->feature_points[0].size());
 }
 
 void NISwGSP_Stitching::sift_2(Mat img1, Mat img2) {
@@ -107,7 +152,7 @@ void NISwGSP_Stitching::sift_2(Mat img1, Mat img2) {
 
 Mat NISwGSP_Stitching::draw_matches() {
   // 匹配特征点
-  sift_2(multiImages->imgs[0], multiImages->imgs[1]);// 特征点匹配
+  sift_1(multiImages->imgs[0], multiImages->imgs[1]);// 特征点匹配
 
   // 描绘特征点
   Mat result_1;// 存储结果
@@ -121,7 +166,7 @@ Mat NISwGSP_Stitching::draw_matches() {
   img1.copyTo(left_1);
   img2.copyTo(right_1);
 
-  if (false) {
+  if (1) {
     // 匹配所有特征点
     for (int i = 0; i < multiImages->feature_points[0].size(); i++) {
       // 获取特征点
@@ -131,21 +176,21 @@ Mat NISwGSP_Stitching::draw_matches() {
 
       // 描绘
       Scalar color(rand() % 256, rand() % 256, rand() % 256);
-      circle(result_1, src_p, 10, color, -1);
-      line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 2, LINE_AA);
-      circle(result_1, dest_p + Point2f(img1.cols, 0), 10, color, -1);
+      circle(result_1, src_p, CIRCLE_SIZE, color, -1);
+      line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, LINE_SIZE, LINE_AA);
+      circle(result_1, dest_p + Point2f(img1.cols, 0), CIRCLE_SIZE, color, -1);
     }
   } else {
     // 描绘所有关键点
     for (int i = 0; i < multiImages->key_points[0].size(); i ++) {
       Point2f src_p = multiImages->key_points[0][i].pt;
       Scalar color(255, 0, 0);
-      circle(result_1, src_p, 10, color, -1);
+      circle(result_1, src_p, CIRCLE_SIZE, color, -1);
     }
     for (int i = 0; i < multiImages->key_points[1].size(); i ++) {
       Point2f src_p = multiImages->key_points[1][i].pt;
       Scalar color(255, 0, 0);
-      circle(result_1, src_p + Point2f(img1.cols, 0), 10, color, -1);
+      circle(result_1, src_p + Point2f(img1.cols, 0), CIRCLE_SIZE, color, -1);
     }
   }
 
@@ -225,9 +270,9 @@ Mat NISwGSP_Stitching::get_matching_pts() {
 
       // 描绘
       Scalar color(rand() % 256, rand() % 256, rand() % 256);
-      circle(result_1, src_p, 10, color, -1);
-      line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, 3, LINE_AA);
-      circle(result_1, dest_p + Point2f(img1.cols, 0), 10, color, -1);
+      circle(result_1, src_p, CIRCLE_SIZE, color, -1);
+      line(result_1, src_p, dest_p + Point2f(img1.cols, 0), color, LINE_SIZE, LINE_AA);
+      circle(result_1, dest_p + Point2f(img1.cols, 0), CIRCLE_SIZE, color, -1);
     }
   } else {
     // 描绘所有匹配点
@@ -239,9 +284,9 @@ Mat NISwGSP_Stitching::get_matching_pts() {
 
       // 描绘
       Scalar color1(255, 0, 0);
-      circle(result_1, src_p, 10, color1, -1);
+      circle(result_1, src_p, CIRCLE_SIZE, color1, -1);
       Scalar color2(0, 0, 255);
-      circle(result_1, dest_p + Point2f(img1.cols, 0), 10, color2, -1);
+      circle(result_1, dest_p + Point2f(img1.cols, 0), CIRCLE_SIZE, color2, -1);
     }
   }
 
@@ -249,3 +294,14 @@ Mat NISwGSP_Stitching::get_matching_pts() {
 
   return result_1;
 }
+
+void NISwGSP_Stitching::show_img(const char *window_name, Mat img) {
+#if defined(UBUNTU)
+  namedWindow(window_name, WINDOW_AUTOSIZE);
+  imshow(window_name, img);
+  waitKey(0);
+#endif
+}
+
+// vector<pair<int, int> > NISwGSP_Stitching::getFeaturePairs(const pair<int, int> &_match_pair) {
+// }
