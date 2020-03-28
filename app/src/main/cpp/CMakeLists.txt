@@ -1,33 +1,29 @@
-# For more information about using CMake with Android Studio, read the
-# documentation: https://d.android.com/studio/projects/add-native-code.html
-
-# Sets the minimum version of CMake required to build the native library.
-
 cmake_minimum_required(VERSION 3.4.1)
 
-# Creates and names a library, sets it as either STATIC
-# or SHARED, and provides the relative paths to its source code.
-# You can define multiple libraries, and CMake builds them for you.
-# Gradle automatically packages shared libraries with your APK.
+set(ubuntu false)
 
 # eigen
-include_directories(/home/lynx/fuck_mount/Android_Proj/NISwGSP_1/app/src/main/cpp/eigen_323c052e1731)
+include_directories(/home/lynx/fuck_mount/eigen/eigen_323c052e1731)
 
 # opencv
-set(sdk_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_shared)
-set(OpenCV_DIR ${sdk_dir}/OpenCV-android-sdk/sdk/native/jni)
-find_package(OpenCV REQUIRED)
-include_directories(${sdk_dir}/OpenCV-android-sdk/sdk/native/jni/include)
+if(ubuntu)
+  set(OpenCV_DIR /home/lynx/fuck_mount/opencv/install_dir/4_1_0/lib/cmake/opencv4)
+  include_directories(/home/lynx/fuck_mount/opencv/build_dir/4_1_0_android/OpenCV-android-sdk/sdk/native/jni/include)
+  find_package(OpenCV REQUIRED)
+else()
+  set(sdk_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_shared)
+  set(OpenCV_DIR ${sdk_dir}/OpenCV-android-sdk/sdk/native/jni)
+  include_directories(${sdk_dir}/OpenCV-android-sdk/sdk/native/jni/include)
+  find_package(OpenCV REQUIRED)
+endif()
 
 # vlfeat
 set(vlfeat_dir /home/lynx/fuck_mount/vlfeat/vlfeat_android)
 include_directories(${vlfeat_dir})
-#include_directories(${CMAKE_CURRENT_SOURCCE_DIR})
+# include_directories(${CMAKE_CURRENT_SOURCCE_DIR})
 # set(vlfeat_lib "${vlfeat_dir}/build/libvl.so")
-
 aux_source_directory(/home/lynx/fuck_mount/vlfeat/vlfeat_android/src vl_src)
 aux_source_directory(/home/lynx/fuck_mount/vlfeat/vlfeat_android/vl vl_head)
-
 add_library(
   vlfeat_lib
 
@@ -37,32 +33,59 @@ add_library(
   ${vl_head}
 )
 
-add_library( # Sets the name of the library.
-        entry
+if(ubuntu)
+  set(CMAKE_CXX_COMPILER /usr/bin/g++)
+endif()
 
-        # Sets the library as a shared library.
-        SHARED
+# 添加目标文件/目标库
+if(ubuntu)
+  add_executable(
+    entry
 
-        # Provides a relative path to your source file(s).
-        common.h
-        Transform.cpp
-        FeatureController.cpp
-        MultiImages.cpp
-        APAP_Stitching.cpp
-        NISwGSP_Stitching.cpp
-        entry.cpp )
+    common.h
+    Transform.cpp
+    FeatureController.cpp
+    MultiImages.cpp
+    APAP_Stitching.cpp
+    NISwGSP_Stitching.cpp
+    entry.cpp )
+else()
+  add_library(
+          entry
 
-find_library( # Sets the name of the path variable.
-              log-lib
-              log )
+          SHARED
 
-target_link_libraries( # Specifies the target library.
-        entry
+          common.h
+          Transform.cpp
+          FeatureController.cpp
+          MultiImages.cpp
+          APAP_Stitching.cpp
+          NISwGSP_Stitching.cpp
+          entry.cpp )
+endif()
 
-        ${OpenCV_LIBS}
-        # ${vlfeat_lib}
-        vlfeat_lib
+# 连接库文件
+if(ubuntu)
+  target_link_libraries(
+    entry
 
-        # TODO 解决 AndroidBitmap 报错, 使本机代码安全地访问Java对象的像素缓冲区的位图
-        jnigraphics
-        ${log-lib} )
+    ${OpenCV_LIBS}
+    # ${vlfeat_lib}
+    vlfeat_lib
+  )
+else()
+  find_library( # Sets the name of the path variable.
+                log-lib
+                log )
+
+  target_link_libraries( # Specifies the target library.
+          entry
+
+          ${OpenCV_LIBS}
+          # ${vlfeat_lib}
+          vlfeat_lib
+
+          # TODO 解决 AndroidBitmap 报错, 使本机代码安全地访问Java对象的像素缓冲区的位图
+          jnigraphics
+          ${log-lib} )
+endif()
