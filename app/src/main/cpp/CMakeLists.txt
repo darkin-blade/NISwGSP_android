@@ -2,6 +2,17 @@ cmake_minimum_required(VERSION 3.4.1)
 
 set(ubuntu false)
 
+# source files
+aux_source_directory(./Features features_src)
+aux_source_directory(./Utils utils_src)
+aux_source_directory(./Stitch stitch_src)
+set(niswgsp_source
+    ${features_src}
+    ${utils_src}
+    ${stitch_src}
+    common.h
+    entry.cpp )
+
 # eigen
 include_directories(/home/lynx/fuck_mount/eigen/eigen_323c052e1731)
 
@@ -42,26 +53,14 @@ if(ubuntu)
   add_executable(
     entry
 
-    common.h
-    Transform.cpp
-    FeatureController.cpp
-    MultiImages.cpp
-    APAP_Stitching.cpp
-    NISwGSP_Stitching.cpp
-    entry.cpp )
+    ${niswgsp_source})
 else()
   add_library(
           entry
 
           SHARED
 
-          common.h
-          Transform.cpp
-          FeatureController.cpp
-          MultiImages.cpp
-          APAP_Stitching.cpp
-          NISwGSP_Stitching.cpp
-          entry.cpp )
+          ${niswgsp_source} )
 endif()
 
 # 连接库文件

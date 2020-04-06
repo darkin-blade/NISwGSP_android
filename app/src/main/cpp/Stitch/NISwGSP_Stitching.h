@@ -1,15 +1,7 @@
-#if !defined(COMMON_H)
-#include "common.h"
-#endif
+#include "../common.h"
 
-#include "FeatureController.h"
-#include "MultiImages.h"
-
-using namespace std;
-
-using namespace cv;
-using namespace cv::detail;
-using namespace cv::xfeatures2d;
+#include "../Features/FeatureController.h"
+#include "../Features/MultiImages.h"
 
 class NISwGSP_Stitching {
 public:
@@ -18,6 +10,7 @@ public:
   MultiImages *multiImages;
   Mat feature_match();
   Mat matching_match();
+  Mat texture_mapping();
 
   void show_img(const char *window_name, Mat img);
 };

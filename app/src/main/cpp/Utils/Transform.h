@@ -1,11 +1,7 @@
-#if !defined(COMMON_H)
-#include "common.h"
-#endif
+#if !defined(Transform_H)
+#define Transform_H
 
-#define TRANSFORM_H
-
-using namespace cv;
-using namespace std;
+#include "../common.h"
 
 Mat getConditionerFromPts(const vector<Point2f> & pts);
 
@@ -45,3 +41,5 @@ bool isEdgeIntersection(const Point_<T> & src_1, const Point_<T> & dst_1,
                         double * scale_1 = NULL, double * scale_2 = NULL);
 template <typename T>
 bool isRotationInTheRange(const T rotation, const T min_rotation, const T max_rotation);
+
+#endif

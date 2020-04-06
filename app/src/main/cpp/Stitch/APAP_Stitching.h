@@ -1,8 +1,6 @@
-#if !defined(COMMON_H)
-#include "common.h"
-#endif
+#include "../common.h"
 
-#include "Transform.h"
+#include "../Utils/Transform.h"
 
 class APAP_Stitching {
 public:
