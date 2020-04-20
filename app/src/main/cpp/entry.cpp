@@ -4,26 +4,27 @@
 
 #if defined(UBUNTU)
 
-int main() {
+int main(int argc, char *argv[]) {
   char app_path[64] = "../..";
   char img_path[128];// 图片路径
 
   // 读取图片
-  MultiImages multiImages;
+  MultiImages multi_images;
   Mat img_read;
   sprintf(img_path, "%s/1.jpg", app_path);
-  multiImages.read_img(img_path);
+  multi_images.read_img(img_path);
   sprintf(img_path, "%s/2.jpg", app_path);
-  multiImages.read_img(img_path);
+  multi_images.read_img(img_path);
 
-  NISwGSP_Stitching niswgsp(multiImages);
+  NISwGSP_Stitching niswgsp(multi_images);
+
   Mat result_1 = niswgsp.feature_match().clone();// 特征点
   Mat result_2 = niswgsp.matching_match().clone();// 匹配点
-  Mat result_3 = niswgsp.texture_mapping().clone();// 图像拼接
+  // niswgsp.show_img("1", result_1);
+  // niswgsp.show_img("2", result_2);
+  niswgsp.get_solution();
 
-  // 显示图片
-  niswgsp.show_img("1", result_1);
-  niswgsp.show_img("2", result_2);
+  Mat result_3 = niswgsp.texture_mapping().clone();// 图像拼接
   niswgsp.show_img("3", result_3);
 }
 
@@ -39,18 +40,19 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
   char img_path[128];// 图片路径
 
   // 读取图片
-  MultiImages multiImages;
+  MultiImages multi_images;
   Mat img_read;
   sprintf(img_path, "%s/1.jpg", app_path);
-  multiImages.read_img(img_path);
+  multi_images.read_img(img_path);
   sprintf(img_path, "%s/2.jpg", app_path);
-  multiImages.read_img(img_path);
+  multi_images.read_img(img_path);
 
-  NISwGSP_Stitching niswgsp(multiImages);
-  niswgsp.feature_match();// 特征点
+  NISwGSP_Stitching niswgsp(multi_images);
   // *(Mat *)matBGR = niswgsp.feature_match().clone();// 特征点
-  niswgsp.matching_match();// 匹配点
   // *(Mat *)matBGR = niswgsp.matching_match().clone();// 匹配点
+  niswgsp.feature_match();// 特征点
+  niswgsp.matching_match();// 匹配点
+  niswgsp.get_solution();// 获取最优解
   *(Mat *)matBGR = niswgsp.texture_mapping().clone();// 图像拼接
 
   //    sprintf(img_path, "%s/3.jpg", app_path);
