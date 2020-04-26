@@ -90,7 +90,7 @@ void MeshOptimization::prepareAlignmentTerm(vector<Triplet<double> > & _triplets
 
     int eq_count = 0;
 
-    int m1 = 0, m2 = 1;
+    int m1 = 0, m2 = 1;// TODO
     const vector<vector<int> > polygons_indices_1 = multi_images->imgs[m1]->getPolygonsIndices();
     const vector<vector<int> > polygons_indices_2 = multi_images->imgs[m2]->getPolygonsIndices();
 
@@ -182,10 +182,6 @@ void MeshOptimization::prepareSimilarityTerm(vector<Triplet<double> > & _triplet
         double _global_similarity_weight = global_similarity_weight_beta;
         if (global_similarity_weight_gamma) {// TODO debug
           double sum_weight = 0;
-          for (int p = 0; p < e_neighbors[j].size(); p ++) {
-            sum_weight += images_grid_space_matching_pts_weight[i][e_neighbors[j][p]];
-            cout << e_neighbors[j][p] << endl;
-          }
           _global_similarity_weight = _global_similarity_weight + global_similarity_weight_gamma * (sum_weight / e_neighbors[j].size());
         }
 

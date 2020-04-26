@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-//#define UBUNTU
+// #define UBUNTU
 #if !defined(UBUNTU)
 
 #include <jni.h>

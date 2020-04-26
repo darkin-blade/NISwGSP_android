@@ -18,6 +18,27 @@ Mat NISwGSP_Stitching::feature_match() {
   // 特征点匹配
   multi_images->getFeaturePairs();
 
+  LOG("get feature pairs");
+
+  // 筛选成功匹配的特征点
+  multi_images->feature_points.resize(img_num);
+  for (int i = 0; i < img_num; i ++) {
+    multi_images->feature_points[i].resize(img_num);
+  }
+  for (int i = 0; i < img_num; i ++) {
+    for (int j = i + 1; j < img_num; j ++) {
+      assert(j > i);
+      int m1 = i, m2 = j;
+      const vector<Point2f> & m1_fpts = multi_images->imgs[m1]->feature_points;
+      const vector<Point2f> & m2_fpts = multi_images->imgs[m2]->feature_points;
+      for (int k = 0; k < multi_images->feature_pairs[m1][m2].size(); k ++) {
+        const pair<int, int> it = multi_images->feature_pairs[m1][m2][k];
+        multi_images->feature_points[m1][m2].emplace_back(m1_fpts[it.first ]);
+        multi_images->feature_points[m2][m1].emplace_back(m2_fpts[it.second]);
+      }
+    }
+  }
+
   // 描绘特征点
   Mat result_1;// 存储结果
   Mat left_1, right_1;// 分割矩阵
@@ -85,21 +106,12 @@ Mat NISwGSP_Stitching::matching_match() {
       int m1 = i;
       int m2 = j;
 
-      // 筛选成功匹配的特征点
-      const vector<Point2f> & m1_fpts = multi_images->imgs[m1]->feature_points;
-      const vector<Point2f> & m2_fpts = multi_images->imgs[m2]->feature_points;
-      vector<Point2f> X, Y;
-      for (int k = 0; k < multi_images->feature_pairs[m1][m2].size(); k ++) {
-        const pair<int, int> it = multi_images->feature_pairs[m1][m2][k];
-        X.emplace_back(m1_fpts[it.first ]);
-        Y.emplace_back(m2_fpts[it.second]);
-      }
-
-      APAP_Stitching::apap_project(X,
-                                   Y,
+      APAP_Stitching::apap_project(multi_images->feature_points[m1][m2],
+                                   multi_images->feature_points[m2][m1],
                                    multi_images->imgs[m1]->getMeshPoints(),
                                    multi_images->imgs[m1]->matching_points[m2],
                                    multi_images->imgs[m1]->homographies[m2]);
+
       LOG("apap [%d, %d] finish", m1, m2);
     }
   }
@@ -127,23 +139,26 @@ Mat NISwGSP_Stitching::matching_match() {
       Mat another_img;
       vector<int> & matching_indices = multi_images->matching_indices[m1][m2];// 配对信息
       
-      vector<vector<Point2f> > tmp_points = multi_images->imgs[m1]->matching_points;
+      vector<Point2f> tmp_points = multi_images->imgs[m1]->matching_points[m2];// m1 在 m2 上的匹配点
       another_img = multi_images->imgs[m2]->data;
-      for (int k = 0; k < tmp_points[m2].size(); k ++) {// TODO m1 在 m2 上的匹配点
-        if (tmp_points[m2][k].x >= 0
-         && tmp_points[m2][k].y >= 0
-         && tmp_points[m2][k].x <= another_img.cols
-         && tmp_points[m2][k].y <= another_img.rows) {// x对应cols, y对应rows
+      // LOG("%d %d", another_img.cols, another_img.rows);
+      for (int k = 0; k < tmp_points.size(); k ++) {
+        if (tmp_points[k].x >= 0
+         && tmp_points[k].y >= 0
+         && tmp_points[k].x <= another_img.cols
+         && tmp_points[k].y <= another_img.rows) {// x对应cols, y对应rows
           // 如果对应的匹配点没有出界
           matching_indices.emplace_back(k);// 记录可行的匹配点
           
-          if (m1 < m2) {
+          if (m1 < m2) {// 正
             multi_images->keypoints_pairs[m1][m2].emplace_back(make_pair(k, multi_images->keypoints[m2].size()));
-          } else {
+            // cout << k << " " << multi_images->keypoints[m2].size() << endl; 
+          } else {// 反
             multi_images->keypoints_pairs[m1][m2].emplace_back(make_pair(multi_images->keypoints[m2].size(), k));
+            // cout << multi_images->keypoints[m2].size() << " " << k << endl;
           }
           multi_images->keypoints_mask[m1][k] = true;// TODO 标记可行
-          multi_images->keypoints[m2].emplace_back(tmp_points[j][k]);
+          multi_images->keypoints[m2].emplace_back(tmp_points[k]);
         }
       }
     }
@@ -194,10 +209,10 @@ Mat NISwGSP_Stitching::matching_match() {
 }
 
 void NISwGSP_Stitching::get_solution() {
-  alignment_weight               =    1;
+  alignment_weight               = 1;
   local_similarity_weight        = 0.56;
-  global_similarity_weight_beta  =    6;
-  global_similarity_weight_gamma =   20;
+  global_similarity_weight_beta  = 6;
+  global_similarity_weight_gamma = 20;
 
   vector<Triplet<double> > triplets;
   vector<pair<int, double> > b_vector;
@@ -210,11 +225,11 @@ void NISwGSP_Stitching::get_solution() {
   b_vector.emplace_back(1,    STRONG_CONSTRAINT);
 
   prepareAlignmentTerm(triplets);
-  prepareSimilarityTerm(triplets, b_vector);
   // int tmp_size = triplets.size() - 1;
   // for (int i = 0; i < 100; i ++) {
   //   LOG("%lf", triplets[tmp_size - i].value());
   // }
+  prepareSimilarityTerm(triplets, b_vector);
   getImageMeshPoints(triplets, b_vector);
 }
 
