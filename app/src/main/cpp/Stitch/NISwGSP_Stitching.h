@@ -3,11 +3,13 @@
 #include "../Feature/FeatureController.h"
 #include "../Feature/MultiImages.h"
 #include "../Mesh/MeshOptimization.h"
-#include "../Stitch/APAP_Stitching.h"
 
 class NISwGSP_Stitching : public MeshOptimization {
 public:
   NISwGSP_Stitching(MultiImages & _multi_images);
+
+  void prepare();
+  Mat change_image(Mat img, double angle, double scale);
 
   Mat feature_match();
   Mat matching_match();

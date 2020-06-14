@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-// #define UBUNTU
+//#define UBUNTU
 #if !defined(UBUNTU)
 
 #include <jni.h>
@@ -30,8 +30,12 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgproc/types_c.h>
+#include <opencv2/stitching/detail/autocalib.hpp>
+#include <opencv2/stitching/detail/camera.hpp>
 #include <opencv2/stitching/detail/matchers.hpp>
+#include <opencv2/stitching/detail/motion_estimators.hpp>
 #include <opencv2/xfeatures2d/nonfree.hpp>
+#include <opencv2/ximgproc/fast_line_detector.hpp>
 
 #if defined(UBUNTU)
 
@@ -107,6 +111,28 @@ const int LOCAL_MAX_ITERATION = 1000;// 16000+
 
 /*** sparse linear system ***/
 const double STRONG_CONSTRAINT = 1e4;
+
+/*** bundle adjustment ***/
+const int CRITERIA_MAX_COUNT = 1000;
+const double CRITERIA_EPSILON = DBL_EPSILON;
+
+/*** 2D Method ***/
+const double TOLERANT_ANGLE = 1.5;
+
+/*** 3D Method ***/
+const double LAMBDA_GAMMA = 10;
+
+/************************/
+/************************/
+/************************/
+
+/* AutoStitch */
+enum  AUTO_STITCH_WAVE_CORRECTS { WAVE_X = 0, WAVE_H, WAVE_V };
+const AUTO_STITCH_WAVE_CORRECTS   WAVE_CORRECT = WAVE_H;
+
+/************************/
+/************************/
+/************************/
 
 /* draw image */
 #if defined(UBUNTU)
