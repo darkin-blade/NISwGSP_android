@@ -265,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
                     photo_border.setBackgroundResource(R.color.greyC);
                 } else {
                     photo_selected.set(index, 0);
-                    photo_border.setBackgroundResource(R.color.greyE);
+                    photo_border.setBackgroundResource(R.color.white);
                 }
             }
         });
@@ -294,11 +294,15 @@ public class MainActivity extends AppCompatActivity {
         Thread run_test = new Thread(new Runnable() {
             @Override
             public void run() {
-
+                int photo_num = photo_list.size();
+                String[] imgPaths = new String[photo_num];
+                for (int i = 0; i < photo_num; i ++) {
+                    imgPaths[i] = photo_name.get(i);
+                }
                 Mat matBGR = new Mat();
 
                 int result = main_test(
-                        appPath,
+                        imgPaths,
                         matBGR.getNativeObjAddr()
                 );
 
@@ -340,7 +344,7 @@ public class MainActivity extends AppCompatActivity {
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    public native int main_test(String appPath, long matBGR);
+    public native int main_test(String[] imgPaths, long matBGR);
 
     static public void infoLog(String log) {
         Log.i("fuck", log);

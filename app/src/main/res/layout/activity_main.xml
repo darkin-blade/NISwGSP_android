@@ -37,19 +37,14 @@
             </LinearLayout>
         </HorizontalScrollView>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:background="@color/grey9">
-        </View>
-
     </LinearLayout>
 
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="300px"
-        android:layout_marginBottom="300px">
+        android:layout_marginBottom="300px"
+        android:background="@color/greyE">
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent">
@@ -69,12 +64,6 @@
         android:layout_height="300px"
         app:layout_constraintBottom_toBottomOf="parent"
         android:orientation="vertical">
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:background="@color/grey9">
-        </View>
 
         <ScrollView
             android:layout_width="match_parent"

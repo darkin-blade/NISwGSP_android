@@ -41,24 +41,23 @@ extern "C" JNIEXPORT int JNICALL
 Java_com_example_niswgsp_11_MainActivity_main_1test(
     JNIEnv* env,
     jobject thiz,
-    jstring appPath,
+    jobjectArray imgPaths,
     jlong matBGR) {
-  const char *app_path = env->GetStringUTFChars(appPath, 0);// app/files
-  char img_path[128];// 图片路径
+  // 获取String数组长度
+  jsize str_len = env->GetArrayLength(imgPaths);
 
   // 读取图片
   MultiImages multi_images;
   Mat img_read;
-  for (int i = 1; i <= 5; i ++) {
-    sprintf(img_path, "%s/%d.jpg", app_path, i);
+  for (int i = 0; i < str_len; i ++) {
+    jstring tmp = (jstring) env->GetObjectArrayElement(imgPaths, i);
+    const char *img_path = env->GetStringUTFChars(tmp, 0);
     multi_images.read_img(img_path);
+    if (i != 0) {
+      // 自定义图片配对关系
+      multi_images.img_pairs.emplace_back(make_pair(i - 1, i));
+    }
   }
-
-  // 自定义图片配对关系
-  multi_images.img_pairs.emplace_back(make_pair(0, 1));
-  multi_images.img_pairs.emplace_back(make_pair(1, 2));
-  multi_images.img_pairs.emplace_back(make_pair(2, 3));
-  multi_images.img_pairs.emplace_back(make_pair(3, 4));
   multi_images.center_index = 0;// 参照图片的索引
 
   NISwGSP_Stitching niswgsp(multi_images);
