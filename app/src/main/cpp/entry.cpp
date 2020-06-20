@@ -8,6 +8,8 @@ int main(int argc, char *argv[]) {
   char app_path[64] = "../..";
   char img_path[128];// 图片路径
 
+  LOG("fuck %s", "you");
+
   // 读取图片
   MultiImages multi_images;
   Mat img_read;
@@ -37,12 +39,30 @@ int main(int argc, char *argv[]) {
 
 #else
 
+JNIEnv * total_env;
+
 extern "C" JNIEXPORT int JNICALL
 Java_com_example_niswgsp_11_MainActivity_main_1test(
     JNIEnv* env,
     jobject thiz,
     jobjectArray imgPaths,
     jlong matBGR) {
+  total_env = env;
+//  if (total_env != NULL) {
+//    jclass clazz = total_env->FindClass("com.example.niswgsp_1/MainActivity");
+//    if (clazz != NULL) {
+//        jmethodID id = total_env->GetStaticMethodID(clazz, "infoLog", "(Ljava/lang/String;)V");
+//        if (id != NULL) {
+//            jstring msg = total_env->NewStringUTF("fuck your mother");
+//            total_env->CallStaticVoidMethod(clazz, id, msg);
+//        } else {
+//            assert(0);
+//        }
+//    } else {
+//        assert(0);
+//    }
+//  }
+
   // 获取String数组长度
   jsize str_len = env->GetArrayLength(imgPaths);
 
@@ -74,6 +94,10 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
   //    imwrite(img_path, *(Mat *)matBGR);
 
   return 0;
+}
+
+void print_message(const char *msg) {
+  __android_log_print(ANDROID_LOG_INFO, "fuck", msg);
 }
 
 #endif

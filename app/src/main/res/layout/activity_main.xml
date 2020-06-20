@@ -74,6 +74,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:padding="10px"
+                android:textSize="14px"
                 android:textColor="@color/black"
                 android:id="@+id/stitch_log"
                 android:fontFamily="monospace">

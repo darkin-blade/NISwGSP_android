@@ -15,6 +15,9 @@ import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
@@ -53,6 +56,9 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<Integer> photo_selected = new ArrayList<>();
     ArrayList<String> photo_name = new ArrayList<>();
     Bitmap bmp_result = null;
+
+    // 从jni更新UI
+    static MainHandler mainHandler;
 
     // 初始化opencv java
     static {
@@ -121,6 +127,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void initApp() {
+        mainHandler = new MainHandler();
+
         int hasCameraPermission = ContextCompat.checkSelfPermission(getApplication(), Manifest.permission.CAMERA);
         if (hasCameraPermission == PackageManager.PERMISSION_GRANTED) {
             // 有调用相机权限
@@ -338,6 +346,31 @@ public class MainActivity extends AppCompatActivity {
         });
 
         run_test.start();
+    }
+
+    class MainHandler extends Handler {
+        public MainHandler(){}
+        public MainHandler(Looper L) {
+            super(L);
+        }
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+
+            Bundle bundle = msg.getData();
+            String log = bundle.getString("log");
+            addToLog(log);
+
+            infoLog("get " + log);
+       }
+    }
+
+    public static void callback(String log) {
+        Message message = new Message();
+        Bundle bundle = new Bundle();
+        bundle.putString("log", log);
+        mainHandler.sendMessage(message);
+
+        infoLog("put " + log);
     }
 
     /**
