@@ -415,7 +415,7 @@ struct TensorEvaluator<const TensorReductionOp<Op, Dims, ArgType, MakePointer_>,
     EIGEN_STATIC_ASSERT((!ReducingInnerMostDims | !PreservingInnerMostDims | (NumReducedDims == NumInputDims)),
                         YOU_MADE_A_PROGRAMMING_MISTAKE);
 
-    // Build the bitmap indicating if an input dimension is reduced or not.
+    // Build the bmp_result indicating if an input dimension is reduced or not.
     for (int i = 0; i < NumInputDims; ++i) {
       m_reduced[i] = false;
     }

@@ -56,8 +56,8 @@
 
             <ImageView
                 android:id="@+id/photo_result"
-                android:layout_width="1000px"
-                android:layout_height="1000px"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
                 app:layout_constraintTop_toTopOf="parent">
             </ImageView>
 
@@ -101,15 +101,6 @@
                 android:layout_width="match_parent"
                 android:layout_weight="1"
                 android:layout_height="100px"
-                android:text="save"
-                android:id="@+id/save_button"
-                app:layout_constraintBottom_toBottomOf="parent">
-            </Button>
-
-            <Button
-                android:layout_width="match_parent"
-                android:layout_weight="1"
-                android:layout_height="100px"
                 android:text="camera"
                 android:id="@+id/camera_button"
                 app:layout_constraintBottom_toBottomOf="parent">
@@ -121,6 +112,24 @@
                 android:layout_height="100px"
                 android:text="delete"
                 android:id="@+id/delete_button"
+                app:layout_constraintBottom_toBottomOf="parent">
+            </Button>
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:layout_height="100px"
+                android:text="stitch"
+                android:id="@+id/stitch_button"
+                app:layout_constraintBottom_toBottomOf="parent">
+            </Button>
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:layout_height="100px"
+                android:text="save"
+                android:id="@+id/save_button"
                 app:layout_constraintBottom_toBottomOf="parent">
             </Button>
 

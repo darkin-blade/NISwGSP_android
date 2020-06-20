@@ -42,14 +42,17 @@ public class MainActivity extends AppCompatActivity {
 
     public ImageView photo_result;
     public LinearLayout photos;
-    public Bitmap bitmap = null;
-    public Button save_button, camera_button;
+    public Button button_save, button_camera, button_delete, button_stitch;
     public TextView stitch_log;
 
     public static final int PERMISSION_CAMERA_REQUEST_CODE = 0x00000012;// 相机权限的 request code
     Uri photoUri = null;
+    String photoPath = null;
 
     ArrayList<Bitmap> photo_list = new ArrayList<>();
+    ArrayList<Integer> photo_selected = new ArrayList<>();
+    ArrayList<String> photo_name = new ArrayList<>();
+    Bitmap bmp_result = null;
 
     // 初始化opencv java
     static {
@@ -81,21 +84,38 @@ public class MainActivity extends AppCompatActivity {
         photo_result = findViewById(R.id.photo_result);
         photos = findViewById(R.id.photos);
         stitch_log = findViewById(R.id.stitch_log);
-        save_button = findViewById(R.id.save_button);
-        camera_button = findViewById(R.id.camera_button);
+        button_save = findViewById(R.id.save_button);
+        button_camera = findViewById(R.id.camera_button);
+        button_delete = findViewById(R.id.delete_button);
+        button_stitch = findViewById(R.id.stitch_button);
 
         photos.removeAllViews();// 移除所有子元素
 
-        save_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                saveBmp();
-            }
-        });
-        camera_button.setOnClickListener(new View.OnClickListener() {
+        button_camera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 openCamera();
+            }
+        });
+
+        button_delete.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                deletePhoto();
+            }
+        });
+
+        button_stitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stitch_1();
+            }
+        });
+
+        button_save.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                savePhoto();
             }
         });
     }
@@ -124,11 +144,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    void saveBmp() {
+    void savePhoto() {
         Thread save_bmp = new Thread(new Runnable() {
             @Override
             public void run() {
-               if (bitmap != null) {
+               if (bmp_result != null) {
                    File file;
                    for (int i = 0; i < 1000; i ++) {
                        file = new File(appPath + "/result_" + i + ".jpg");
@@ -136,7 +156,7 @@ public class MainActivity extends AppCompatActivity {
                            try {
                                file.createNewFile();
                                FileOutputStream stream = new FileOutputStream(file);
-                               bitmap.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                               bmp_result.compress(Bitmap.CompressFormat.JPEG, 100, stream);
                                stream.flush();
                                infoLog("save succeed");
                                return;
@@ -158,7 +178,6 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (intent.resolveActivity(getPackageManager()) != null) {
             File photoFile = null;
-            String photoPath = null;
             if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                 // Android 10 以上
                 addToLog("android 10");
@@ -204,15 +223,17 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
+            } else {
+                addToLog("canceled");
             }
         }
     }
 
     void addPhoto(Bitmap bitmap) {
-        LinearLayout photo_border = new LinearLayout(this);
+        final LinearLayout photo_border = new LinearLayout(this);
         ImageView photo_item = new ImageView(this);
 
-        LinearLayout.LayoutParams param_border = new LinearLayout.LayoutParams(300, 300);
+        final LinearLayout.LayoutParams param_border = new LinearLayout.LayoutParams(300, 300);
         LinearLayout.LayoutParams param_item = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
         param_item.setMargins(20, 20, 20, 20);
 
@@ -224,16 +245,44 @@ public class MainActivity extends AppCompatActivity {
 
         // 添加至列表
         photo_list.add(bitmap);
+        photo_selected.add(0);
+        photo_name.add(photoPath);// TODO 添加图片路径
+
 
         // 压缩图片并显示
         Matrix matrix = new Matrix();
         matrix.setScale(0.1f, 0.1f);
         Bitmap tmp = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
         photo_item.setImageBitmap(tmp);
+
+        // 添加选定功能
+        photo_border.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int index = photos.indexOfChild(photo_border);
+                if (photo_selected.get(index) == 0) {
+                    photo_selected.set(index, 1);
+                    photo_border.setBackgroundResource(R.color.greyC);
+                } else {
+                    photo_selected.set(index, 0);
+                    photo_border.setBackgroundResource(R.color.greyE);
+                }
+            }
+        });
     }
 
     void deletePhoto() {
-        ;
+        for (int i = 0; i < photo_selected.size(); i ++) {
+            int tmp = photo_selected.get(i);
+            if (tmp == 1) {
+                // 被选中
+                photo_list.remove(i);
+                photo_selected.remove(i);
+                photo_name.remove(i);
+                photos.removeViewAt(i);// TODO
+                i --;
+            }
+        }
     }
 
     void addToLog(String log) {
@@ -263,18 +312,22 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-                bitmap = Bitmap.createBitmap(matBGR.cols(), matBGR.rows(), Bitmap.Config.ARGB_8888);// TODO final
+                bmp_result = Bitmap.createBitmap(matBGR.cols(), matBGR.rows(), Bitmap.Config.ARGB_8888);// TODO final
 
                 // BGR转RGB
                 Mat matRGB = new Mat();
                 Imgproc.cvtColor(matBGR, matRGB, Imgproc.COLOR_BGR2RGB);
-                Utils.matToBitmap(matRGB, bitmap);
+                Utils.matToBitmap(matRGB, bmp_result);
 
                 // 显示图片
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        photo_result.setImageBitmap(bitmap);
+                        // 压缩图片并显示
+                        Matrix matrix = new Matrix();
+                        matrix.setScale(0.2f, 0.2f);
+                        Bitmap tmp = Bitmap.createBitmap(bmp_result, 0, 0, bmp_result.getWidth(), bmp_result.getHeight(), matrix, true);
+                        photo_result.setImageBitmap(bmp_result);
                     }
                 });
             }
