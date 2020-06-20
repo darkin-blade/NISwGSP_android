@@ -29,11 +29,29 @@ void print_message(const char *fmt, ...) {
   if (total_env != NULL) {
     jclass clazz = total_env->FindClass("com.example.niswgsp_1/MainActivity");
     if (clazz != NULL) {
-        jmethodID id = total_env->GetStaticMethodID(clazz, "callback", "(Ljava/lang/String;)V");
+        jmethodID id = total_env->GetStaticMethodID(clazz, "jniLog", "(Ljava/lang/String;)V");
         if (id != NULL) {
-//            __android_log_print(ANDROID_LOG_INFO, "fuck", "debug");
             jstring msg = total_env->NewStringUTF(sprint_buf);
             total_env->CallStaticVoidMethod(clazz, id, msg);
+        } else {
+            assert(0);
+        }
+    } else {
+        assert(0);
+    }
+  }
+#endif
+}
+
+void set_progress(const int progress) {
+#if !defined(UBUNTU)
+  // 修改进度条
+  if (total_env != NULL) {
+    jclass clazz = total_env->FindClass("com.example.niswgsp_1/MainActivity");
+    if (clazz != NULL) {
+        jmethodID id = total_env->GetStaticMethodID(clazz, "jniProgress", "(I)V");
+        if (id != NULL) {
+            total_env->CallStaticVoidMethod(clazz, id, (jint)progress);
         } else {
             assert(0);
         }

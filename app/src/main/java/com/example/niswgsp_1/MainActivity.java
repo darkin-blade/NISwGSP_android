@@ -24,6 +24,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import org.opencv.android.OpenCVLoader;
@@ -45,8 +46,9 @@ public class MainActivity extends AppCompatActivity {
 
     public ImageView photo_result;
     public LinearLayout photos;
-    public Button button_save, button_camera, button_delete, button_stitch;
+    public Button button_save, button_camera, button_delete, button_stitch, button_clear;
     public TextView stitch_log;
+    public ProgressBar stitch_progress;
 
     public static final int PERMISSION_CAMERA_REQUEST_CODE = 0x00000012;// 相机权限的 request code
     Uri photoUri = null;
@@ -94,8 +96,17 @@ public class MainActivity extends AppCompatActivity {
         button_camera = findViewById(R.id.camera_button);
         button_delete = findViewById(R.id.delete_button);
         button_stitch = findViewById(R.id.stitch_button);
+        button_clear = findViewById(R.id.clear_button);
+        stitch_progress = findViewById(R.id.stitch_progress);
 
         photos.removeAllViews();// 移除所有子元素
+
+        button_clear.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                clearLog();
+            }
+        });
 
         button_camera.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -219,7 +230,7 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PERMISSION_CAMERA_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
-                addToLog("get photo");
+                addToLog("get photo [" + photoPath + "]");
                 if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                     // Android 10 以上F
                 } else {
@@ -298,7 +309,17 @@ public class MainActivity extends AppCompatActivity {
         stitch_log.setText(old_log + log + "\n");
     }
 
+    void clearLog() {
+        stitch_log.setText("");
+    }
+
     void stitch_1() {
+        if (photo_list.size() < 2) {
+            addToLog("need at least 2 photos");
+            return;// 图片数目不够
+        }
+        jniProgress(1);
+
         Thread run_test = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -357,20 +378,35 @@ public class MainActivity extends AppCompatActivity {
             super.handleMessage(msg);
 
             Bundle bundle = msg.getData();
-            String log = bundle.getString("log");
-            addToLog(log);
 
-            infoLog("get " + log);
+            // 打印log
+            String log = bundle.getString("log");
+            if (log != null) {
+                addToLog(log);
+            }
+
+            // TODO 修改进度
+            int progress = bundle.getInt("progress");
+            if (progress != 0) {
+                stitch_progress.setProgress(progress);
+            }
        }
     }
 
-    public static void callback(String log) {
+    public static void jniLog(String log) {
         Message message = new Message();
         Bundle bundle = new Bundle();
         bundle.putString("log", log);
+        message.setData(bundle);
         mainHandler.sendMessage(message);
+    }
 
-        infoLog("put " + log);
+    public static void jniProgress(int progress) {
+        Message message = new Message();
+        Bundle bundle = new Bundle();
+        bundle.putInt("progress", progress);
+        message.setData(bundle);
+        mainHandler.sendMessage(message);
     }
 
     /**

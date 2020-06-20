@@ -107,7 +107,7 @@ class IterationController
 
     double residual() const { return m_res; }
 
-    /* change the user-definable callback, called after each iteration */
+    /* change the user-definable jniLog, called after each iteration */
     void setCallback(void (*t)(const IterationController&))
     {
       m_callback = t;

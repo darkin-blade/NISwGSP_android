@@ -43,7 +43,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="300px"
-        android:layout_marginBottom="300px"
+        android:layout_marginBottom="305px"
         android:background="@color/greyE">
         <ScrollView
             android:layout_width="match_parent"
@@ -61,9 +61,16 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="300px"
+        android:layout_height="305px"
         app:layout_constraintBottom_toBottomOf="parent"
         android:orientation="vertical">
+
+        <ProgressBar
+            android:layout_width="match_parent"
+            android:layout_height="5px"
+            style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+            android:id="@+id/stitch_progress">
+        </ProgressBar>
 
         <ScrollView
             android:layout_width="match_parent"
@@ -74,7 +81,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:padding="10px"
-                android:textSize="14px"
+                android:textSize="8dp"
                 android:textColor="@color/black"
                 android:id="@+id/stitch_log"
                 android:fontFamily="monospace">
@@ -91,9 +98,18 @@
                 android:layout_width="match_parent"
                 android:layout_weight="1"
                 android:layout_height="100px"
+                android:text="clear"
+                android:textSize="10dp"
+                android:id="@+id/clear_button">
+            </Button>
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:layout_height="100px"
                 android:text="camera"
-                android:id="@+id/camera_button"
-                app:layout_constraintBottom_toBottomOf="parent">
+                android:textSize="10dp"
+                android:id="@+id/camera_button">
             </Button>
 
             <Button
@@ -101,8 +117,8 @@
                 android:layout_weight="1"
                 android:layout_height="100px"
                 android:text="delete"
-                android:id="@+id/delete_button"
-                app:layout_constraintBottom_toBottomOf="parent">
+                android:textSize="10dp"
+                android:id="@+id/delete_button">
             </Button>
 
             <Button
@@ -110,8 +126,8 @@
                 android:layout_weight="1"
                 android:layout_height="100px"
                 android:text="stitch"
-                android:id="@+id/stitch_button"
-                app:layout_constraintBottom_toBottomOf="parent">
+                android:textSize="10dp"
+                android:id="@+id/stitch_button">
             </Button>
 
             <Button
@@ -119,8 +135,8 @@
                 android:layout_weight="1"
                 android:layout_height="100px"
                 android:text="save"
-                android:id="@+id/save_button"
-                app:layout_constraintBottom_toBottomOf="parent">
+                android:textSize="10dp"
+                android:id="@+id/save_button">
             </Button>
 
         </LinearLayout>
