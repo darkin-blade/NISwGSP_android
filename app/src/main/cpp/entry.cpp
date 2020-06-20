@@ -49,7 +49,7 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
   // 读取图片
   MultiImages multi_images;
   Mat img_read;
-  for (int i = 1; i <= 4; i ++) {
+  for (int i = 1; i <= 5; i ++) {
     sprintf(img_path, "%s/%d.jpg", app_path, i);
     multi_images.read_img(img_path);
   }
