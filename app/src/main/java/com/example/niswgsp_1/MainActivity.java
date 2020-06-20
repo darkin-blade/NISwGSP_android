@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -19,6 +20,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import org.opencv.android.OpenCVLoader;
@@ -31,19 +33,23 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     static String appPath;
 
-    public ImageView imageView;
+    public ImageView photo_result;
+    public LinearLayout photos;
     public Bitmap bitmap = null;
     public Button save_button, camera_button;
     public TextView stitch_log;
 
     public static final int PERMISSION_CAMERA_REQUEST_CODE = 0x00000012;// 相机权限的 request code
     Uri photoUri = null;
+
+    ArrayList<Bitmap> photo_list = new ArrayList<>();
 
     // 初始化opencv java
     static {
@@ -72,9 +78,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void initUI() {
+        photo_result = findViewById(R.id.photo_result);
+        photos = findViewById(R.id.photos);
         stitch_log = findViewById(R.id.stitch_log);
         save_button = findViewById(R.id.save_button);
         camera_button = findViewById(R.id.camera_button);
+
+        photos.removeAllViews();// 移除所有子元素
 
         save_button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -181,7 +191,7 @@ public class MainActivity extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PERMISSION_CAMERA_REQUEST_CODE) {
-            if (requestCode == RESULT_OK) {
+            if (resultCode == RESULT_OK) {
                 addToLog("get photo");
                 if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                     // Android 10 以上F
@@ -189,13 +199,41 @@ public class MainActivity extends AppCompatActivity {
                     // Android 10 以下
                     try {
                         Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(photoUri));
-                        imageView.setImageBitmap(bitmap);
+                        addPhoto(bitmap);
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
                 }
             }
         }
+    }
+
+    void addPhoto(Bitmap bitmap) {
+        LinearLayout photo_border = new LinearLayout(this);
+        ImageView photo_item = new ImageView(this);
+
+        LinearLayout.LayoutParams param_border = new LinearLayout.LayoutParams(300, 300);
+        LinearLayout.LayoutParams param_item = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+        param_item.setMargins(20, 20, 20, 20);
+
+        photo_border.setLayoutParams(param_border);
+        photo_item.setLayoutParams(param_item);
+
+        photo_border.addView(photo_item);
+        photos.addView(photo_border);
+
+        // 添加至列表
+        photo_list.add(bitmap);
+
+        // 压缩图片并显示
+        Matrix matrix = new Matrix();
+        matrix.setScale(0.1f, 0.1f);
+        Bitmap tmp = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        photo_item.setImageBitmap(tmp);
+    }
+
+    void deletePhoto() {
+        ;
     }
 
     void addToLog(String log) {
@@ -236,8 +274,7 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        imageView = findViewById(R.id.result);
-                        imageView.setImageBitmap(bitmap);
+                        photo_result.setImageBitmap(bitmap);
                     }
                 });
             }

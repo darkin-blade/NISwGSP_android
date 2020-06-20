@@ -1,23 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="301px"
+        app:layout_constraintTop_toTopOf="parent"
+        android:orientation="vertical">
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="300px">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:id="@+id/photos">
+                
+                <LinearLayout
+                    android:layout_width="300px"
+                    android:layout_height="300px"
+                    android:background="@color/greyE">
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:layout_margin="20px"
+                        android:background="@color/black">
+                    </ImageView>
+                </LinearLayout>
+                
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1px"
+            android:background="@color/grey9">
+        </View>
+
+    </LinearLayout>
+
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_marginTop="300px"
         android:layout_marginBottom="300px">
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent">
 
             <ImageView
-                android:id="@+id/result"
-                android:layout_width="2000px"
-                android:layout_height="1500px"
+                android:id="@+id/photo_result"
+                android:layout_width="1000px"
+                android:layout_height="1000px"
                 app:layout_constraintTop_toTopOf="parent">
             </ImageView>
 
@@ -33,7 +73,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1px"
-            android:background="@color/grey">
+            android:background="@color/grey9">
         </View>
 
         <ScrollView
@@ -72,6 +112,15 @@
                 android:layout_height="100px"
                 android:text="camera"
                 android:id="@+id/camera_button"
+                app:layout_constraintBottom_toBottomOf="parent">
+            </Button>
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_weight="1"
+                android:layout_height="100px"
+                android:text="delete"
+                android:id="@+id/delete_button"
                 app:layout_constraintBottom_toBottomOf="parent">
             </Button>
 
