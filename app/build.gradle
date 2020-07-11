@@ -35,8 +35,8 @@ android {
     }
     sourceSets {
         main {
-            jniLibs.srcDirs = ['/home/lynx/fuck_mount/opencv/source_code/opencv_3_4_7_android/sdk/native/libs',
-                               '/home/lynx/fuck_mount/opencv/build_dir/4_1_0_shared/OpenCV-android-sdk/sdk/native/libs']
+            jniLibs.srcDirs = ['/home/lynx/fuck_mount/opencv/source_code/3_4_7/opencv_android/sdk/native/libs',
+                               '/home/lynx/fuck_mount/opencv/build_dir/4_1_0_android/OpenCV-android-sdk/sdk/native/libs']
         }
     }
 }
