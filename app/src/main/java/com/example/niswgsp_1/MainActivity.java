@@ -62,6 +62,10 @@ public class MainActivity extends AppCompatActivity {
     // 从jni更新UI
     static MainHandler mainHandler;
 
+    // 相机部件
+    CustomCamera customCamera = new CustomCamera();
+    Button take_photos, back;
+
     // 初始化opencv java
     static {
         if (!OpenCVLoader.initDebug()) {
@@ -111,7 +115,7 @@ public class MainActivity extends AppCompatActivity {
         button_camera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                openCamera();
+                openCustomCamera();
             }
         });
 
@@ -191,9 +195,16 @@ public class MainActivity extends AppCompatActivity {
         save_bmp.start();
     }
 
-    void openCamera() {
-        // 拍照
-        addToLog("open camera");
+    void openCustomCamera() {
+        // 自定义相机
+        addToLog("open system camera");
+        customCamera.show(getSupportFragmentManager(), "custom camera");
+//        setContentView(R.layout.custom_camera);
+    }
+
+    void openSystemCamera() {
+        // 系统相机
+        addToLog("open system camera");
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (intent.resolveActivity(getPackageManager()) != null) {
             File photoFile = null;
