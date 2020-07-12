@@ -25,7 +25,7 @@ include_directories(/home/lynx/fuck_mount/eigen)
 # opencv
 if(ubuntu)
   set(OpenCV_DIR /home/lynx/fuck_mount/opencv/install_dir/4_1_0/lib/cmake/opencv4)
-  include_directories(/home/lynx/fuck_mount/opencv/build_dir/4_1_0_android/OpenCV-android-sdk/sdk/native/jni/include)
+  # include_directories(/home/lynx/fuck_mount/opencv/build_dir/4_1_0_android/OpenCV-android-sdk/sdk/native/jni/include)
   find_package(OpenCV REQUIRED)
 else()
   set(sdk_dir /home/lynx/fuck_mount/opencv/build_dir/4_1_0_android)
@@ -35,12 +35,12 @@ else()
 endif()
 
 # vlfeat
-set(vlfeat_dir /home/lynx/fuck_mount/vlfeat_android)
+set(vlfeat_dir /home/lynx/fuck_mount/vlfeat/vlfeat_android)
 include_directories(${vlfeat_dir})
 # include_directories(${CMAKE_CURRENT_SOURCCE_DIR})
 # set(vlfeat_lib "${vlfeat_dir}/build/libvl.so")
-aux_source_directory(/home/lynx/fuck_mount/vlfeat_android/src vl_src)
-aux_source_directory(/home/lynx/fuck_mount/vlfeat_android/vl vl_head)
+aux_source_directory(${vlfeat_dir}/src vl_src)
+aux_source_directory(${vlfeat_dir}/vl vl_head)
 add_library(
   vlfeat_lib
 
