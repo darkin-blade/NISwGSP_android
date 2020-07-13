@@ -144,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
     void initApp() {
         mainHandler = new MainHandler();
 
+        // TODO 只适用 SDK > 23
         int hasCameraPermission = ContextCompat.checkSelfPermission(getApplication(), Manifest.permission.CAMERA);
         if (hasCameraPermission == PackageManager.PERMISSION_GRANTED) {
             // 有调用相机权限
