@@ -63,7 +63,8 @@ public class MainActivity extends AppCompatActivity {
     static MainHandler mainHandler;
 
     // 相机部件
-    CustomCamera customCamera = new CustomCamera();
+    CustomCamera1 customCamera1 = new CustomCamera1();
+    CustomCamera2 customCamera2 = new CustomCamera2();
     Button take_photos, back;
 
     // 初始化opencv java
@@ -199,8 +200,8 @@ public class MainActivity extends AppCompatActivity {
     void openCustomCamera() {
         // 自定义相机
         addToLog("open system camera");
-        customCamera.show(getSupportFragmentManager(), "custom camera");
-//        setContentView(R.layout.custom_camera);
+//        customCamera1.show(getSupportFragmentManager(), "custom camera");
+        customCamera2.show(getSupportFragmentManager(), "custom camera");
     }
 
     void openSystemCamera() {

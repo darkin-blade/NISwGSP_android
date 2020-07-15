@@ -2,7 +2,6 @@ package com.example.niswgsp_1;
 
 import android.Manifest;
 import android.content.Context;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
@@ -17,7 +16,6 @@ import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -35,7 +33,6 @@ import android.widget.Button;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.content.PermissionChecker;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 
@@ -48,7 +45,7 @@ import java.util.List;
 import static com.example.niswgsp_1.MainActivity.PERMISSION_CAMERA_REQUEST_CODE;
 import static java.lang.Math.min;
 
-public class CustomCamera extends DialogFragment {
+public class CustomCamera1 extends DialogFragment {
     Button mButton;
     TextureView mTextureView;
 
@@ -69,6 +66,43 @@ public class CustomCamera extends DialogFragment {
     Rect picRect;
     int maxRealRadio;
     Integer mSensorOrientation;
+
+    @Override
+    public void show(FragmentManager fragmentManager, String tag) {
+        super.show(fragmentManager, tag);
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setStyle(STYLE_NO_FRAME, android.R.style.Theme);// 关闭背景(点击外部不能取消)
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.custom_camera, container);
+        getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(0x00000000));// 背景透明
+
+        initUI(view);// 初始化按钮
+
+        return view;
+    }
+
+    void initUI(View view) {
+        mButton = view.findViewById(R.id.take_photos);
+        mTextureView = view.findViewById(R.id.camera_preview);
+
+        mButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // TODO 拍照
+            }
+        });
+    }
+
+    static public void infoLog(String log) {
+        Log.i("fuck", log);
+    }
 
     // TODO 相机会话的监听器,通过它得到mCameraSession对象
     CameraCaptureSession.StateCallback mSessionStateCallBack = new CameraCaptureSession.StateCallback() {
@@ -295,42 +329,4 @@ public class CustomCamera extends DialogFragment {
             return false;
         }
     }
-
-    @Override
-    public void show(FragmentManager fragmentManager, String tag) {
-        super.show(fragmentManager, tag);
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setStyle(STYLE_NO_FRAME, android.R.style.Theme);// 关闭背景(点击外部不能取消)
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.custom_camera, container);
-        getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(0x00000000));// 背景透明
-
-        initUI(view);// 初始化按钮
-
-        return view;
-    }
-
-    void initUI(View view) {
-        mButton = view.findViewById(R.id.take_photos);
-        mTextureView = view.findViewById(R.id.camera_len);
-
-        mButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // TODO 拍照
-            }
-        });
-    }
-
-    static public void infoLog(String log) {
-        Log.i("fuck", log);
-    }
-
 }

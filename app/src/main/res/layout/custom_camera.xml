@@ -16,7 +16,7 @@
         <TextureView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:id="@+id/camera_len">
+            android:id="@+id/camera_preview">
         </TextureView>
 
         <LinearLayout
