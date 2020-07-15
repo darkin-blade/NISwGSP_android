@@ -150,8 +150,12 @@ public class CustomCamera2 extends DialogFragment {
             String camera_id = cameraManager.getCameraIdList()[CameraCharacteristics.LENS_FACING_FRONT];// 后置摄像头
             CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(camera_id);
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);// 管理camera的输出格式和尺寸
-            previewSize = map.getOutputSizes(SurfaceTexture.class)[0];
-            captureSize = new Size(640, 480);
+//            previewSize = map.getOutputSizes(SurfaceTexture.class)[0];
+            captureSize = new Size(textureView.getHeight(), textureView.getWidth());
+            previewSize = new Size(textureView.getHeight() * 2, textureView.getWidth() * 2);
+            infoLog("preview: " + previewSize.getWidth() + ", " + previewSize.getHeight());
+            infoLog("capture: " + captureSize.getWidth() + ", " + captureSize.getHeight());
+
             Size[] imgFormatSizes = map.getOutputSizes(ImageFormat.JPEG);
             // 如果jpegSize通过map.getOutputSizes已被赋值,则captureSize按照赋值结果,否则按照自定义
             if (imgFormatSizes != null && imgFormatSizes.length > 0) {
