@@ -89,7 +89,7 @@ public class CustomCamera1 extends DialogFragment {
     }
 
     void initUI(View view) {
-        mButton = view.findViewById(R.id.take_photos);
+        mButton = view.findViewById(R.id.capture);
         mTextureView = view.findViewById(R.id.camera_preview);
 
         mButton.setOnClickListener(new View.OnClickListener() {

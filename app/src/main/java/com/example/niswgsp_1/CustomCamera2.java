@@ -11,7 +11,9 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
@@ -20,7 +22,9 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -34,6 +38,9 @@ import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -45,20 +52,31 @@ import static com.example.niswgsp_1.MainActivity.appPath;
 
 public class CustomCamera2 extends DialogFragment {
     Button btnCapture;
-    TextureView textureView;
+    Button btnBack;
+    TextureView cameraPreview;
 
-    CameraDevice cameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
-    CameraCaptureSession cameraCaptureSession;// 相机捕获会话,用于处理拍照和预览的工作
+    CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
+    CameraCaptureSession mCameraCaptureSession;// 相机捕获会话,用于处理拍照和预览的工作
     CaptureRequest.Builder captureRequestBuilder;// 捕获请求,定义输出缓冲区及显示界面(TextureView或SurfaceView)
 
-    Size previewSize;
-    Size captureSize;
+    Size previewSize;// 在textureView预览的尺寸
+    Size captureSize;// 拍摄的尺寸
 
     File file;
-    ImageReader imageReader;
+    ImageReader mImageReader;
     static final int REQUEST_CAMERA_PERMISSION = 200;
     Handler backgroundHandler;
-    HandlerThread backgroundThread;
+    HandlerThread backgroundThread;// TODO
+
+    static final SparseArray<Integer> ORIENTATIONS = new SparseArray<>();
+    static {
+        ORIENTATIONS.append(Surface.ROTATION_0, 90);
+        ORIENTATIONS.append(Surface.ROTATION_90, 0);
+        ORIENTATIONS.append(Surface.ROTATION_180, 270);
+        ORIENTATIONS.append(Surface.ROTATION_270, 180);
+    }
+
+    int capture_times;// 按钮按下的时间
 
     @Override
     public void show(FragmentManager fragmentManager, String tag) {
@@ -94,9 +112,26 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void initUI(View view) {
-        // TODO
-        textureView = view.findViewById(R.id.camera_preview);
-        textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
+        btnCapture = view.findViewById(R.id.capture);
+        btnCapture.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                capture_times ++;
+                takePictures();
+                return false;
+            }
+        });
+        btnCapture.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                capture_times = 0;
+            }
+        });
+
+        btnBack = view.findViewById(R.id.back);
+
+        cameraPreview = view.findViewById(R.id.camera_preview);
+        cameraPreview.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             @Override
             public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
                 openCamera();
@@ -127,7 +162,7 @@ public class CustomCamera2 extends DialogFragment {
         // 打开相机后调用
         @Override
         public void onOpened(@NonNull CameraDevice camera) {
-            cameraDevice = camera;// 获取camera对象
+            mCameraDevice = camera;// 获取camera对象
             createCameraPreview();
         }
 
@@ -139,7 +174,7 @@ public class CustomCamera2 extends DialogFragment {
         @Override
         public void onError(@NonNull CameraDevice camera, int i) {
             camera.close();
-            cameraDevice = null;
+            mCameraDevice = null;
         }
     };
 
@@ -151,8 +186,8 @@ public class CustomCamera2 extends DialogFragment {
             CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(camera_id);
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);// 管理camera的输出格式和尺寸
 //            previewSize = map.getOutputSizes(SurfaceTexture.class)[0];
-            captureSize = new Size(textureView.getHeight(), textureView.getWidth());
-            previewSize = new Size(textureView.getHeight() * 2, textureView.getWidth() * 2);
+            captureSize = new Size(cameraPreview.getHeight(), cameraPreview.getWidth());
+            previewSize = new Size(cameraPreview.getHeight() * 2, cameraPreview.getWidth() * 2);
             infoLog("preview: " + previewSize.getWidth() + ", " + previewSize.getHeight());
             infoLog("capture: " + captureSize.getWidth() + ", " + captureSize.getHeight());
 
@@ -179,8 +214,9 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void setupImageReader() {
-        imageReader = ImageReader.newInstance(captureSize.getWidth(), captureSize.getHeight(), ImageFormat.JPEG, 2);
-        imageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+        mImageReader = ImageReader.newInstance(captureSize.getWidth(), captureSize.getHeight(), ImageFormat.JPEG, 2);
+        // 对内容进行监听
+        mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
             @Override
             public void onImageAvailable(ImageReader reader) {
                 Image image = reader.acquireLatestImage();
@@ -193,6 +229,12 @@ public class CustomCamera2 extends DialogFragment {
                     buffer.get(bytes);
 
                     // TODO 新建线程保存图片
+                    if (backgroundThread == null) {
+                        backgroundThread = new HandlerThread("camera background");
+                        backgroundThread.start();
+                        backgroundHandler = new Handler(backgroundThread.getLooper());
+                    }
+                    backgroundHandler.post(new ImageSaver(bytes));
                 } finally {
                     if (image != null) {
                         image.close();// TODO 画面会卡住
@@ -204,19 +246,19 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void createCameraPreview() {
-        SurfaceTexture surfaceTexture = textureView.getSurfaceTexture();
+        SurfaceTexture surfaceTexture = cameraPreview.getSurfaceTexture();
         surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
         Surface previewSurface = new Surface(surfaceTexture);
 
         try {
-            captureRequestBuilder = cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            captureRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             captureRequestBuilder.addTarget(previewSurface);
-            cameraDevice.createCaptureSession(Arrays.asList(previewSurface, imageReader.getSurface()), new CameraCaptureSession.StateCallback() {
+            mCameraDevice.createCaptureSession(Arrays.asList(previewSurface, mImageReader.getSurface()), new CameraCaptureSession.StateCallback() {
                 @Override
                 public void onConfigured(@NonNull CameraCaptureSession session) {
                     try {
-                        cameraCaptureSession = session;
-                        cameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                        mCameraCaptureSession = session;
+                        mCameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
                     }
@@ -233,6 +275,47 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void takePictures() {
-        // TODO
+        infoLog(capture_times + "");
+        if (capture_times % 15 != 1) return;
+        // TODO 进行拍摄
+        try {
+            final CaptureRequest.Builder builder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            builder.addTarget(mImageReader.getSurface());// 将captureRequest输出到imageReader
+            int rotation = getActivity().getWindowManager().getDefaultDisplay().getRotation();
+            builder.set(CaptureRequest.JPEG_ORIENTATION, ORIENTATIONS.get(rotation));
+
+            mCameraCaptureSession.stopRepeating();
+            mCameraCaptureSession.capture(builder.build(), new CameraCaptureSession.CaptureCallback() {
+                @Override
+                public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+                    try {
+                        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);// TODO
+                        mCameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
+                    } catch (CameraAccessException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }, null);
+        } catch (CameraAccessException e) {
+            e.printStackTrace();
+        }
+    }
+
+    class ImageSaver implements Runnable {
+        byte[] bytes;
+        public ImageSaver(byte[] b) {
+            bytes = b;
+        }
+
+        @Override
+        public void run() {
+            try {
+                OutputStream outputStream = new FileOutputStream(file);
+                outputStream.write(bytes);
+                infoLog("save photo " + file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

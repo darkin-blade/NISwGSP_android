@@ -54,10 +54,10 @@ public class MainActivity extends AppCompatActivity {
     Uri photoUri = null;
     String photoPath = null;
 
-    ArrayList<Bitmap> photo_list = new ArrayList<>();
+    ArrayList<Bitmap> photo_list = new ArrayList<>();// 图片list
+    ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
     ArrayList<Integer> photo_selected = new ArrayList<>();
-    ArrayList<String> photo_name = new ArrayList<>();
-    Bitmap bmp_result = null;
+    Bitmap bmp_result = null;// 拼接结果
 
     // 从jni更新UI
     static MainHandler mainHandler;
