@@ -3,7 +3,10 @@ package com.example.niswgsp_1;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
+import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.camera2.CameraAccessException;
@@ -30,6 +33,8 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -129,6 +134,12 @@ public class CustomCamera2 extends DialogFragment {
         });
 
         btnBack = view.findViewById(R.id.back);
+        btnBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                dismiss();
+            }
+        });
 
         cameraPreview = view.findViewById(R.id.camera_preview);
         cameraPreview.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
@@ -156,6 +167,48 @@ public class CustomCamera2 extends DialogFragment {
 
     static public void infoLog(String log) {
         Log.i("fuck", log);
+    }
+
+    void addPhoto(Bitmap bitmap, String path) {
+        final LinearLayout photo_border = new LinearLayout(getContext());
+        ImageView photo_item = new ImageView(getContext());
+
+        final LinearLayout.LayoutParams param_border = new LinearLayout.LayoutParams(300, 300);
+        LinearLayout.LayoutParams param_item = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+        param_item.setMargins(20, 20, 20, 20);
+
+        photo_border.setLayoutParams(param_border);
+        photo_item.setLayoutParams(param_item);
+
+        photo_border.addView(photo_item);
+        MainActivity.photos.addView(photo_border);
+
+        // 添加至列表
+        MainActivity.photo_list.add(bitmap);
+        MainActivity.photo_selected.add(0);
+        MainActivity.photo_name.add(path);// TODO 添加图片路径
+
+
+        // 压缩图片并显示
+        Matrix matrix = new Matrix();
+        matrix.setScale(0.1f, 0.1f);
+        Bitmap tmp = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        photo_item.setImageBitmap(tmp);
+
+        // 添加选定功能
+        photo_border.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int index = MainActivity.photos.indexOfChild(photo_border);
+                if (MainActivity.photo_selected.get(index) == 0) {
+                    MainActivity.photo_selected.set(index, 1);
+                    photo_border.setBackgroundResource(R.color.greyC);
+                } else {
+                    MainActivity.photo_selected.set(index, 0);
+                    photo_border.setBackgroundResource(R.color.white);
+                }
+            }
+        });
     }
 
     CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
@@ -275,7 +328,7 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void takePictures() {
-        infoLog(capture_times + "");
+//        infoLog(capture_times + "");
         if (capture_times % 15 != 1) return;
         // TODO 进行拍摄
         try {

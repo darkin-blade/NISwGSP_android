@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
     static String appPath;
 
     public ImageView photo_result;
-    public LinearLayout photos;
+    public static LinearLayout photos;
     public Button button_save, button_camera, button_delete, button_stitch, button_clear;
     public TextView stitch_log;
     public ProgressBar stitch_progress;
@@ -54,9 +54,9 @@ public class MainActivity extends AppCompatActivity {
     Uri photoUri = null;
     String photoPath = null;
 
-    ArrayList<Bitmap> photo_list = new ArrayList<>();// 图片list
-    ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
-    ArrayList<Integer> photo_selected = new ArrayList<>();
+    static ArrayList<Bitmap> photo_list = new ArrayList<>();// 图片list
+    static ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
+    static ArrayList<Integer> photo_selected = new ArrayList<>();
     Bitmap bmp_result = null;// 拼接结果
 
     // 从jni更新UI
@@ -238,30 +238,34 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    // 接收系统拍摄的相片
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PERMISSION_CAMERA_REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 addToLog("get photo [" + photoPath + "]");
-                if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                    // Android 10 以上F
-                } else {
-                    // Android 10 以下
-                    try {
-                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(photoUri));
-                        addPhoto(bitmap);
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                }
+                addPhoto(photoPath);// 直接根据路径添加图片
+//                if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+//                    // Android 10 以上F
+//                } else {
+//                    // Android 10 以下
+//                    try {
+//                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(photoUri));
+//                        addPhoto(photoPath);
+//                    } catch (FileNotFoundException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
             } else {
                 addToLog("canceled");
             }
         }
     }
 
-    void addPhoto(Bitmap bitmap) {
+    void addPhoto(String path) {
+        Bitmap bitmap = BitmapFactory.decodeFile(path);
+
         final LinearLayout photo_border = new LinearLayout(this);
         ImageView photo_item = new ImageView(this);
 
@@ -278,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
         // 添加至列表
         photo_list.add(bitmap);
         photo_selected.add(0);
-        photo_name.add(photoPath);// TODO 添加图片路径
+        photo_name.add(path);// TODO 添加图片路径
 
 
         // 压缩图片并显示
