@@ -34,7 +34,6 @@ import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -89,7 +88,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
 
         appPath = getExternalFilesDir("").getAbsolutePath();
 
-//        stitch_1();
+//        stitch();
         initUI();
         initApp();
     }
@@ -144,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         for (int i = 0; i < customCamera2.photo_name.size(); i ++) {
             addPhoto(customCamera2.photo_name.get(i));
         }
-        stitch_1();
+        stitch();
     }
 
     void initUI() {
@@ -184,7 +183,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         button_stitch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                stitch_1();
+                stitch();
             }
         });
 
@@ -345,21 +344,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         stitch_log.setText("");
     }
 
-    void stitch_2() {
-        if (photo_list.size() < 2) {
-            addToLog("need at least 2 photos");
-            return;// 图片数目不够
-        }
-
-        Thread stitch_thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                // TODO 调用opencv原版stitch函数
-            }
-        });
-    }
-
-    void stitch_1() {
+    void stitch() {
         if (photo_list.size() < 2) {
             addToLog("need at least 2 photos");
             return;// 图片数目不够
@@ -405,8 +390,8 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                         // 压缩图片并显示
                         Matrix matrix = new Matrix();
                         matrix.setScale(0.2f, 0.2f);
-                        Bitmap tmp = Bitmap.createBitmap(bmp_result, 0, 0, bmp_result.getWidth(), bmp_result.getHeight(), matrix, true);
-                        photo_result.setImageBitmap(bmp_result);
+                        Bitmap bmp_thumbnail = Bitmap.createBitmap(bmp_result, 0, 0, bmp_result.getWidth(), bmp_result.getHeight(), matrix, true);
+                        photo_result.setImageBitmap(bmp_thumbnail);
                     }
                 });
             }

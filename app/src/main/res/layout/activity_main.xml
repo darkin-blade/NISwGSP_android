@@ -39,25 +39,16 @@
 
     </LinearLayout>
 
-    <HorizontalScrollView
+
+    <ImageView
+        android:id="@+id/photo_result"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="300px"
         android:layout_marginBottom="305px"
-        android:background="@color/greyE">
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+        app:layout_constraintTop_toTopOf="parent">
+    </ImageView>
 
-            <ImageView
-                android:id="@+id/photo_result"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                app:layout_constraintTop_toTopOf="parent">
-            </ImageView>
-
-        </ScrollView>
-    </HorizontalScrollView>
 
     <LinearLayout
         android:layout_width="match_parent"

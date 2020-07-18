@@ -74,12 +74,22 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
     img_paths.push_back(tmp_path);
   }
 
+  clock_t begin_time, end_time;
+  begin_time = clock();
+
   Mat result;
-  result = method_openCV(img_paths);
-  if (result.cols <= 1) {
+  if (1) {
       result = method_NISwGSP(img_paths);
+  } else {
+      result = method_openCV(img_paths);
+      LOG("opencv result %d %d", result.cols, result.rows);
+      if (result.cols <= 1) {
+          result = method_NISwGSP(img_paths);
+      }
   }
 
+  end_time = clock();
+  LOG("totoal time %f", (double)(end_time - begin_time)/CLOCKS_PER_SEC);
 
   *(Mat *)matBGR = result.clone();// 图像拼接
 
