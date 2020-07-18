@@ -1,12 +1,11 @@
 package com.example.niswgsp_1;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.ImageFormat;
-import android.graphics.Matrix;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.camera2.CameraAccessException;
@@ -33,8 +32,6 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -48,6 +45,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
@@ -72,6 +70,9 @@ public class CustomCamera2 extends DialogFragment {
     static final int REQUEST_CAMERA_PERMISSION = 200;
     Handler backgroundHandler;
     HandlerThread backgroundThread;// TODO
+
+    static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
+    static public int photo_num;
 
     static final SparseArray<Integer> ORIENTATIONS = new SparseArray<>();
     static {
@@ -99,9 +100,19 @@ public class CustomCamera2 extends DialogFragment {
         View view = inflater.inflate(R.layout.custom_camera, container);
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(0x00000000));// 背景透明
 
+        initCamera();// 初始化变量
         initUI(view);// 初始化按钮
 
         return view;
+    }
+
+    @Override
+    public void onDismiss(final DialogInterface dialogInterface) {
+        super.onDismiss(dialogInterface);
+        Activity activity = getActivity();
+        if (activity instanceof DialogInterface.OnDismissListener) {
+            ((DialogInterface.OnDismissListener) activity).onDismiss(dialogInterface);
+        }
     }
 
     @Override
@@ -114,6 +125,11 @@ public class CustomCamera2 extends DialogFragment {
     public void onPause() {
         super.onPause();
         // TODO
+    }
+
+    void initCamera() {
+        photo_name.clear();
+        photo_num = 0;
     }
 
     void initUI(View view) {
@@ -130,6 +146,7 @@ public class CustomCamera2 extends DialogFragment {
             @Override
             public void onClick(View view) {
                 capture_times = 0;
+                dismiss();
             }
         });
 
@@ -167,48 +184,6 @@ public class CustomCamera2 extends DialogFragment {
 
     static public void infoLog(String log) {
         Log.i("fuck", log);
-    }
-
-    void addPhoto(Bitmap bitmap, String path) {
-        final LinearLayout photo_border = new LinearLayout(getContext());
-        ImageView photo_item = new ImageView(getContext());
-
-        final LinearLayout.LayoutParams param_border = new LinearLayout.LayoutParams(300, 300);
-        LinearLayout.LayoutParams param_item = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-        param_item.setMargins(20, 20, 20, 20);
-
-        photo_border.setLayoutParams(param_border);
-        photo_item.setLayoutParams(param_item);
-
-        photo_border.addView(photo_item);
-        MainActivity.photos.addView(photo_border);
-
-        // 添加至列表
-        MainActivity.photo_list.add(bitmap);
-        MainActivity.photo_selected.add(0);
-        MainActivity.photo_name.add(path);// TODO 添加图片路径
-
-
-        // 压缩图片并显示
-        Matrix matrix = new Matrix();
-        matrix.setScale(0.1f, 0.1f);
-        Bitmap tmp = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-        photo_item.setImageBitmap(tmp);
-
-        // 添加选定功能
-        photo_border.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                int index = MainActivity.photos.indexOfChild(photo_border);
-                if (MainActivity.photo_selected.get(index) == 0) {
-                    MainActivity.photo_selected.set(index, 1);
-                    photo_border.setBackgroundResource(R.color.greyC);
-                } else {
-                    MainActivity.photo_selected.set(index, 0);
-                    photo_border.setBackgroundResource(R.color.white);
-                }
-            }
-        });
     }
 
     CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
@@ -273,7 +248,9 @@ public class CustomCamera2 extends DialogFragment {
             @Override
             public void onImageAvailable(ImageReader reader) {
                 Image image = reader.acquireLatestImage();
-                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".jpg";
+//                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".jpg";
+                photo_num ++;
+                String timeStamp = photo_num + ".jpg";
                 file = new File(appPath, timeStamp);
                 try {
                     // 将帧数据转成字节数组,类似回调的预览数据
@@ -288,6 +265,8 @@ public class CustomCamera2 extends DialogFragment {
                         backgroundHandler = new Handler(backgroundThread.getLooper());
                     }
                     backgroundHandler.post(new ImageSaver(bytes));
+                    // TODO 保存到图片list
+                    photo_name.add(file.getAbsolutePath());
                 } finally {
                     if (image != null) {
                         image.close();// TODO 画面会卡住

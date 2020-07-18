@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -41,7 +42,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements DialogInterface.OnDismissListener {
     static String appPath;
 
     public ImageView photo_result;
@@ -54,9 +55,9 @@ public class MainActivity extends AppCompatActivity {
     Uri photoUri = null;
     String photoPath = null;
 
-    static ArrayList<Bitmap> photo_list = new ArrayList<>();// 图片list
-    static ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
-    static ArrayList<Integer> photo_selected = new ArrayList<>();
+    ArrayList<Bitmap> photo_list = new ArrayList<>();// 图片list
+    ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
+    ArrayList<Integer> photo_selected = new ArrayList<>();
     Bitmap bmp_result = null;// 拼接结果
 
     // 从jni更新UI
@@ -91,6 +92,59 @@ public class MainActivity extends AppCompatActivity {
 //        stitch_1();
         initUI();
         initApp();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        // 权限处理回调
+        if (requestCode == PERMISSION_CAMERA_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // 允许权限
+                addToLog("camera is ready");
+            } else {
+                // TODO 权限被拒绝
+                addToLog("get camera permission failed");
+            }
+        }
+    }
+
+    // 接收系统拍摄的相片
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PERMISSION_CAMERA_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                addToLog("get photo [" + photoPath + "]");
+                addPhoto(photoPath);// 直接根据路径添加图片
+//                if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+//                    // Android 10 以上F
+//                } else {
+//                    // Android 10 以下
+//                    try {
+//                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(photoUri));
+//                        addPhoto(photoPath);
+//                    } catch (FileNotFoundException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+            } else {
+                addToLog("canceled");
+            }
+        }
+    }
+
+    @Override
+    public void onDismiss(DialogInterface dialogInterface) {
+        infoLog("dismiss");
+        // TODO 删除所有照片
+        for (int i = 0; i < photo_name.size(); i ++) {
+            photo_selected.set(i, 1);
+        }
+        deletePhoto();
+        for (int i = 0; i < customCamera2.photo_name.size(); i ++) {
+            addPhoto(customCamera2.photo_name.get(i));
+        }
+        stitch_1();
     }
 
     void initUI() {
@@ -155,20 +209,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        // 权限处理回调
-        if (requestCode == PERMISSION_CAMERA_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // 允许权限
-                addToLog("camera is ready");
-            } else {
-                // TODO 权限被拒绝
-                addToLog("get camera permission failed");
-            }
-        }
-    }
-
     void savePhoto() {
         Thread save_bmp = new Thread(new Runnable() {
             @Override
@@ -199,7 +239,7 @@ public class MainActivity extends AppCompatActivity {
 
     void openCustomCamera() {
         // 自定义相机
-        addToLog("open system camera");
+        addToLog("open custom camera");
 //        customCamera1.show(getSupportFragmentManager(), "custom camera");
         customCamera2.show(getSupportFragmentManager(), "custom camera");
     }
@@ -234,31 +274,6 @@ public class MainActivity extends AppCompatActivity {
                 intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
                 intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                 startActivityForResult(intent, PERMISSION_CAMERA_REQUEST_CODE);// TODO
-            }
-        }
-    }
-
-    // 接收系统拍摄的相片
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PERMISSION_CAMERA_REQUEST_CODE) {
-            if (resultCode == RESULT_OK) {
-                addToLog("get photo [" + photoPath + "]");
-                addPhoto(photoPath);// 直接根据路径添加图片
-//                if (Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-//                    // Android 10 以上F
-//                } else {
-//                    // Android 10 以下
-//                    try {
-//                        Bitmap bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(photoUri));
-//                        addPhoto(photoPath);
-//                    } catch (FileNotFoundException e) {
-//                        e.printStackTrace();
-//                    }
-//                }
-            } else {
-                addToLog("canceled");
             }
         }
     }
@@ -330,12 +345,26 @@ public class MainActivity extends AppCompatActivity {
         stitch_log.setText("");
     }
 
+    void stitch_2() {
+        if (photo_list.size() < 2) {
+            addToLog("need at least 2 photos");
+            return;// 图片数目不够
+        }
+
+        Thread stitch_thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                // TODO 调用opencv原版stitch函数
+            }
+        });
+    }
+
     void stitch_1() {
         if (photo_list.size() < 2) {
             addToLog("need at least 2 photos");
             return;// 图片数目不够
         }
-        jniProgress(1);
+        jniProgress(1);// TODO ???
 
         Thread run_test = new Thread(new Runnable() {
             @Override
