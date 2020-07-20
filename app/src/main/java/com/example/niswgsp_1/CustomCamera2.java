@@ -8,6 +8,10 @@ import android.content.pm.PackageManager;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.ColorDrawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -44,11 +48,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
-import java.util.Locale;
 
 import static com.example.niswgsp_1.MainActivity.PERMISSION_CAMERA_REQUEST_CODE;
 import static com.example.niswgsp_1.MainActivity.appPath;
@@ -72,7 +73,16 @@ public class CustomCamera2 extends DialogFragment {
     HandlerThread backgroundThread;// TODO
 
     static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
-    static public int photo_num;
+    static public int photo_num;// 照片索引
+    int capture_times;// 按钮按下的时间
+
+    // 传感器
+    SensorManager mSensorManager;
+    Sensor mSensor;
+    double lastX, lastY, lastZ;
+    long lastTime;
+    static final long SENSOR_INTERVAL = 500;
+    static final double SENSOR_SHRESHOLD = 5;
 
     static final SparseArray<Integer> ORIENTATIONS = new SparseArray<>();
     static {
@@ -82,7 +92,53 @@ public class CustomCamera2 extends DialogFragment {
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
 
-    int capture_times;// 按钮按下的时间
+    SensorEventListener mSensorEventListener = new SensorEventListener() {
+        @Override
+        public void onSensorChanged(SensorEvent sensorEvent) {
+            long curTime = System.currentTimeMillis();
+            long timeInterval = curTime - lastTime;
+            if (timeInterval < SENSOR_INTERVAL) {
+                return;
+            }
+            lastTime = curTime;
+            double x = sensorEvent.values[0];
+            double y = sensorEvent.values[1];
+            double z = sensorEvent.values[2];
+            double deltaX = x - lastX;
+            double deltaY = y - lastY;
+            double deltaZ = z - lastZ;
+            lastX = x;
+            lastY = y;
+            lastZ = z;
+            double accelerator = Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ) / timeInterval * 10000;
+            infoLog("speed: " + accelerator);
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int i) {
+
+        }
+    };
+
+    CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+        // 打开相机后调用
+        @Override
+        public void onOpened(@NonNull CameraDevice camera) {
+            mCameraDevice = camera;// 获取camera对象
+            createCameraPreview();
+        }
+
+        @Override
+        public void onDisconnected(@NonNull CameraDevice camera) {
+            camera.close();
+        }
+
+        @Override
+        public void onError(@NonNull CameraDevice camera, int i) {
+            camera.close();
+            mCameraDevice = null;
+        }
+    };
 
     @Override
     public void show(FragmentManager fragmentManager, String tag) {
@@ -101,6 +157,7 @@ public class CustomCamera2 extends DialogFragment {
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(0x00000000));// 背景透明
 
         initCamera();// 初始化变量
+        initSensor();// 初始化传感器
         initUI(view);// 初始化按钮
 
         return view;
@@ -118,18 +175,23 @@ public class CustomCamera2 extends DialogFragment {
     @Override
     public void onResume() {
         super.onResume();
-        // TODO
+        mSensorManager.registerListener(mSensorEventListener, mSensor, SensorManager.SENSOR_DELAY_UI);// 最慢,适合普通用户界面UI变化的频率
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        // TODO
+        mSensorManager.unregisterListener(mSensorEventListener);
     }
 
     void initCamera() {
         photo_name.clear();
         photo_num = 0;
+    }
+
+    void initSensor() {
+        mSensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);// 获得传感器manager
+        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);// 获取加速度传感器
     }
 
     void initUI(View view) {
@@ -185,26 +247,6 @@ public class CustomCamera2 extends DialogFragment {
     static public void infoLog(String log) {
         Log.i("fuck", log);
     }
-
-    CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
-        // 打开相机后调用
-        @Override
-        public void onOpened(@NonNull CameraDevice camera) {
-            mCameraDevice = camera;// 获取camera对象
-            createCameraPreview();
-        }
-
-        @Override
-        public void onDisconnected(@NonNull CameraDevice camera) {
-            camera.close();
-        }
-
-        @Override
-        public void onError(@NonNull CameraDevice camera, int i) {
-            camera.close();
-            mCameraDevice = null;
-        }
-    };
 
     void openCamera() {
         infoLog("open camera");
