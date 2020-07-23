@@ -143,7 +143,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         for (int i = 0; i < photo_name.size(); i ++) {
             photo_selected.set(i, 1);
         }
-        deletePhoto();
+        deleteSelected();
         for (int i = 0; i < customCamera2.photo_name.size(); i ++) {
             addPhoto(customCamera2.photo_name.get(i));
         }
@@ -180,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         button_delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                deletePhoto();
+                deleteSelected();
             }
         });
 
@@ -210,34 +210,6 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         } else {
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, PERMISSION_CAMERA_REQUEST_CODE);
         }
-    }
-
-    void savePhoto() {
-        Thread save_bmp = new Thread(new Runnable() {
-            @Override
-            public void run() {
-               if (bmp_result != null) {
-                   File file;
-                   for (int i = 0; i < 1000; i ++) {
-                       file = new File(appPath + "/result_" + i + ".jpg");
-                       if (file.exists() == false) {
-                           try {
-                               file.createNewFile();
-                               FileOutputStream stream = new FileOutputStream(file);
-                               bmp_result.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-                               stream.flush();
-                               infoLog("save succeed");
-                               return;
-                           } catch (IOException e) {
-                               e.printStackTrace();
-                           }
-                       }
-                   }
-                   infoLog("save failed");
-               }
-            }
-        });
-        save_bmp.start();
     }
 
     void openCustomCamera() {
@@ -279,6 +251,42 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                 startActivityForResult(intent, PERMISSION_CAMERA_REQUEST_CODE);// TODO
             }
         }
+    }
+
+    void removeRepeat() {
+        // 删除重复度较高的图片
+    }
+
+    void savePhoto() {
+        Thread save_bmp = new Thread(new Runnable() {
+            @Override
+            public void run() {
+               if (bmp_result != null) {
+                   File file;
+                   for (int i = 0; i < 1000; i ++) {
+                       file = new File(appPath + "/result_" + i + ".jpg");
+                       if (file.exists() == false) {
+                           try {
+                               file.createNewFile();
+                               FileOutputStream stream = new FileOutputStream(file);
+                               bmp_result.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                               stream.flush();
+                               infoLog("save succeed");
+                               return;
+                           } catch (IOException e) {
+                               e.printStackTrace();
+                           }
+                       }
+                   }
+                   infoLog("save failed");
+               }
+            }
+        });
+        save_bmp.start();
+    }
+
+    void deletePhoto(int index) {
+        // 删除对应索引的图片
     }
 
     void addPhoto(String path) {
@@ -325,7 +333,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         });
     }
 
-    void deletePhoto() {
+    void deleteSelected() {
         for (int i = 0; i < photo_selected.size(); i ++) {
             int tmp = photo_selected.get(i);
             if (tmp == 1) {
