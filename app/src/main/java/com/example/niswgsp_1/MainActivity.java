@@ -134,6 +134,10 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
 
     @Override
     public void onDismiss(DialogInterface dialogInterface) {
+        if (customCamera2.result == 0) {
+            // 返回
+            return;
+        }
         infoLog("dismiss");
         // TODO 删除所有照片
         for (int i = 0; i < photo_name.size(); i ++) {

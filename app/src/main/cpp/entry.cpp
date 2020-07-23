@@ -78,7 +78,7 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
   begin_time = clock();
 
   Mat result;
-  if (1) {
+  if (0) {
       result = method_NISwGSP(img_paths);
   } else {
       result = method_openCV(img_paths);

@@ -58,6 +58,7 @@ public class CustomCamera2 extends DialogFragment {
     Button btnCapture;
     Button btnBack;
     TextureView cameraPreview;
+    View cameraBackground;
 
     CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
     CameraCaptureSession mCameraCaptureSession;// 相机捕获会话,用于处理拍照和预览的工作
@@ -81,8 +82,11 @@ public class CustomCamera2 extends DialogFragment {
     Sensor mSensor;
     double lastX, lastY, lastZ;
     long lastTime;
-    static final long SENSOR_INTERVAL = 500;
-    static final double SENSOR_SHRESHOLD = 5;
+    static long sensor_interval = 500;
+    static final long SENSOR_INTERVAL = 5000;
+    static final double SENSOR_SHRESHOLD = 10;
+
+    static public int result = 0;// 0: 返回, 1: 拍照
 
     static final SparseArray<Integer> ORIENTATIONS = new SparseArray<>();
     static {
@@ -97,7 +101,7 @@ public class CustomCamera2 extends DialogFragment {
         public void onSensorChanged(SensorEvent sensorEvent) {
             long curTime = System.currentTimeMillis();
             long timeInterval = curTime - lastTime;
-            if (timeInterval < SENSOR_INTERVAL) {
+            if (timeInterval < sensor_interval) {
                 return;
             }
             lastTime = curTime;
@@ -111,7 +115,21 @@ public class CustomCamera2 extends DialogFragment {
             lastY = y;
             lastZ = z;
             double accelerator = Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ) / timeInterval * 10000;
+//            sensor_interval = Math.max((long) (SENSOR_INTERVAL / accelerator), );
             infoLog("speed: " + accelerator);
+
+            // TODO 在按钮按下的时候拍摄
+            if (capture_times > 0) {
+                // 在移动的时候拍摄
+                if (accelerator > SENSOR_SHRESHOLD) {
+                    takePictures();
+                    if (photo_num % 2 == 1) {
+                        cameraBackground.setBackgroundDrawable(new ColorDrawable(0xffff00ff));
+                    } else {
+                        cameraBackground.setBackgroundDrawable(new ColorDrawable(0xff0000ff));
+                    }
+                }
+            }
         }
 
         @Override
@@ -175,13 +193,13 @@ public class CustomCamera2 extends DialogFragment {
     @Override
     public void onResume() {
         super.onResume();
-        mSensorManager.registerListener(mSensorEventListener, mSensor, SensorManager.SENSOR_DELAY_UI);// 最慢,适合普通用户界面UI变化的频率
+//        mSensorManager.registerListener(mSensorEventListener, mSensor, SensorManager.SENSOR_DELAY_UI);// 最慢,适合普通用户界面UI变化的频率
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        mSensorManager.unregisterListener(mSensorEventListener);
+//        mSensorManager.unregisterListener(mSensorEventListener);
     }
 
     void initCamera() {
@@ -208,6 +226,7 @@ public class CustomCamera2 extends DialogFragment {
             @Override
             public void onClick(View view) {
                 capture_times = 0;
+                result = 1;
                 dismiss();
             }
         });
@@ -216,6 +235,7 @@ public class CustomCamera2 extends DialogFragment {
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                result = 0;
                 dismiss();
             }
         });
@@ -242,6 +262,8 @@ public class CustomCamera2 extends DialogFragment {
 
             }
         });
+
+        cameraBackground = view.findViewById(R.id.camera_background);
     }
 
     static public void infoLog(String log) {
@@ -349,9 +371,9 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void takePictures() {
-//        infoLog(capture_times + "");
-        if (capture_times % 15 != 1) return;
-        // TODO 进行拍摄
+        infoLog(capture_times + "");
+        if (capture_times % 10 != 1) return;
+//         TODO 进行拍摄
         try {
             final CaptureRequest.Builder builder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             builder.addTarget(mImageReader.getSurface());// 将captureRequest输出到imageReader
