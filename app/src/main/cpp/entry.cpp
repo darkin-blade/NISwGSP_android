@@ -82,7 +82,7 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
       result = method_NISwGSP(img_paths);
   } else {
       result = method_openCV(img_paths);
-      LOG("opencv result %d %d", result.cols, result.rows);
+      LOG("opencv dismiss_result %d %d", result.cols, result.rows);
       if (result.cols <= 1) {
           result = method_NISwGSP(img_paths);
       }

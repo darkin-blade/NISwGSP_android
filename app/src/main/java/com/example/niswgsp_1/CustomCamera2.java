@@ -86,7 +86,7 @@ public class CustomCamera2 extends DialogFragment {
     static final long SENSOR_INTERVAL = 5000;
     static final double SENSOR_SHRESHOLD = 10;
 
-    static public int result = 0;// 0: 返回, 1: 拍照
+    static public int dismiss_result = 0;// 0: 返回, 1: 拍照
 
     static final SparseArray<Integer> ORIENTATIONS = new SparseArray<>();
     static {
@@ -227,7 +227,7 @@ public class CustomCamera2 extends DialogFragment {
             @Override
             public void onClick(View view) {
                 capture_times = 0;
-                result = 1;
+                dismiss_result = 1;
                 dismiss();
             }
         });
@@ -236,7 +236,7 @@ public class CustomCamera2 extends DialogFragment {
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                result = 0;
+                dismiss_result = 0;
                 dismiss();
             }
         });

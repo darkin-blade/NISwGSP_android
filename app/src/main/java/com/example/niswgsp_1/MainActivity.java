@@ -139,27 +139,30 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
 
     @Override
     public void onDismiss(DialogInterface dialogInterface) {
-        if (customCamera2.result == 0) {
+        if (customCamera2.dismiss_result == 0) {
             // 返回
             return;
         }
         infoLog("dismiss");
+        infoLog("" + photos.getChildCount());
         // 删除所有照片及ImageView
-        for (int i = 0; i < photo_name.size(); i ++) {
-            deletePhoto(i);
-            photos.removeViewAt(i);
+        int view_count = photos.getChildCount();
+        for (int i = 0; i < view_count; i ++) {
+            deletePhoto(0);
+            photos.removeViewAt(0);
         }
+        infoLog("" + photos.getChildCount());
         for (int i = 0; i < customCamera2.photo_name.size(); i ++) {
             addPhoto(customCamera2.photo_name.get(i));
         }
-        Thread thread = new Thread(new Runnable() {
+        new Thread(new Runnable() {
             @Override
             public void run() {
                 removeRepeat(customCamera2.photo_name);
                 stitch();
             }
-        });
-        thread.start();
+        }).start();
+        infoLog("" + photos.getChildCount());
     }
 
     void initUI() {
