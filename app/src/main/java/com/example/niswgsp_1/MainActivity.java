@@ -30,7 +30,11 @@ import android.widget.TextView;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfFloat;
+import org.opencv.core.MatOfInt;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
@@ -39,6 +43,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements DialogInterface.OnDismissListener {
@@ -139,15 +144,22 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             return;
         }
         infoLog("dismiss");
-        // TODO 删除所有照片
+        // 删除所有照片及ImageView
         for (int i = 0; i < photo_name.size(); i ++) {
-            photo_selected.set(i, 1);
+            deletePhoto(i);
+            photos.removeViewAt(i);
         }
-        deleteSelected();
         for (int i = 0; i < customCamera2.photo_name.size(); i ++) {
             addPhoto(customCamera2.photo_name.get(i));
         }
-        stitch();
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                removeRepeat(customCamera2.photo_name);
+                stitch();
+            }
+        });
+        thread.start();
     }
 
     void initUI() {
@@ -253,8 +265,47 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         }
     }
 
-    void removeRepeat() {
-        // 删除重复度较高的图片
+    void removeRepeat(ArrayList<String> path_list) {
+        // TODO 删除重复度较高的图片
+        for (int i = 0; i < path_list.size(); i ++) {
+            for (int j = i + 1; j < path_list.size(); j ++) {
+
+                Mat img_1 = Imgcodecs.imread(path_list.get(i));
+                Mat img_2 = Imgcodecs.imread(path_list.get(j));
+                Mat hist_1 = new Mat();
+                Mat hist_2 = new Mat();
+
+                if (img_1.channels() == 1) {
+                    // TODO 如果是单通道
+                    infoLog("TODO");
+                } else {
+                    Imgproc.cvtColor(img_1, img_1, Imgproc.COLOR_BGR2HSV);
+                    Imgproc.cvtColor(img_2, img_2, Imgproc.COLOR_BGR2HSV);
+
+                    List<Mat> images_1 = new ArrayList<>();
+                    images_1.add(img_1);
+                    List<Mat> images_2 = new ArrayList<>();
+                    images_2.add(img_2);
+
+                    int h_bins = 50;
+                    int s_bins = 60;
+                    float h_ranges[] = { 0, 180 };
+                    float s_ranges[] = { 0, 256 };
+                    MatOfInt channels = new MatOfInt(0, 1);// TODO
+                    MatOfInt histSize = new MatOfInt(h_bins, s_bins);// TODO
+                    MatOfFloat ranges = new MatOfFloat(0, 180, 0, 256);
+                    final boolean accumulate = false;
+
+                    Imgproc.calcHist(images_1, channels, new Mat(), hist_1, histSize, ranges, accumulate);
+                    Core.normalize(hist_1, hist_1, 0, 1, Core.NORM_MINMAX, -1, new Mat());
+                    Imgproc.calcHist(images_2, channels, new Mat(), hist_2, histSize, ranges, accumulate);
+                    Core.normalize(hist_2, hist_2, 0, 1, Core.NORM_MINMAX, -1, new Mat());
+
+                    double similarity = Imgproc.compareHist(hist_1, hist_2, Imgproc.CV_COMP_CORREL);
+                    infoLog("(" + i + ", " + j + ")" + similarity);
+                }
+            }
+        }
     }
 
     void savePhoto() {
@@ -283,10 +334,6 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             }
         });
         save_bmp.start();
-    }
-
-    void deletePhoto(int index) {
-        // 删除对应索引的图片
     }
 
     void addPhoto(String path) {
@@ -338,13 +385,18 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             int tmp = photo_selected.get(i);
             if (tmp == 1) {
                 // 被选中
-                photo_list.remove(i);
-                photo_selected.remove(i);
-                photo_name.remove(i);
-                photos.removeViewAt(i);// TODO
+                deletePhoto(i);
+                photos.removeViewAt(i);
                 i --;
             }
         }
+    }
+
+    void deletePhoto(int index) {
+        // 删除对应索引的图片, 不包括ImageView
+        photo_list.remove(index);
+        photo_selected.remove(index);
+        photo_name.remove(index);
     }
 
     void addToLog(String log) {

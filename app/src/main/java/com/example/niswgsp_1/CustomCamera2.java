@@ -372,9 +372,9 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void takePictures() {
-        infoLog(capture_times + "");
+//        infoLog(capture_times + "");
         if (capture_times % 10 != 1) return;
-//         TODO 进行拍摄
+        // 进行拍摄
         try {
             final CaptureRequest.Builder builder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             builder.addTarget(mImageReader.getSurface());// 将captureRequest输出到imageReader
