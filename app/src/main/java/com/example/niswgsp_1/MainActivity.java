@@ -16,6 +16,7 @@ import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.FileUtils;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -52,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     public ImageView photo_result;
     public static LinearLayout photos;
     public Button button_save, button_camera, button_delete, button_stitch, button_clear;
-    public TextView stitch_log;
+//    public TextView stitch_log;
     public ProgressBar stitch_progress;
 
     public static final int PERMISSION_CAMERA_REQUEST_CODE = 0x00000012;// 相机权限的 request code
@@ -64,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     ArrayList<Integer> photo_selected = new ArrayList<>();
     Bitmap bmp_result = null;// 拼接结果
 
+    Thread stitch_thread;
     // 从jni更新UI
     static MainHandler mainHandler;
 
@@ -158,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         new Thread(new Runnable() {
             @Override
             public void run() {
-                removeRepeat(customCamera2.photo_name);
+//                removeRepeat(customCamera2.photo_name);
                 stitch();
             }
         }).start();
@@ -168,7 +170,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     void initUI() {
         photo_result = findViewById(R.id.photo_result);
         photos = findViewById(R.id.photos);
-        stitch_log = findViewById(R.id.stitch_log);
+//        stitch_log = findViewById(R.id.stitch_log);
         button_save = findViewById(R.id.save_button);
         button_camera = findViewById(R.id.camera_button);
         button_delete = findViewById(R.id.delete_button);
@@ -268,46 +270,64 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         }
     }
 
+    static public double compareImg(Mat img_1, Mat img_2) {
+        Mat hist_1 = new Mat();
+        Mat hist_2 = new Mat();
+
+        if (img_1.channels() == 1) {
+            // TODO 如果是单通道
+            infoLog("TODO");
+            return 0;
+        } else {
+            Imgproc.cvtColor(img_1, img_1, Imgproc.COLOR_BGR2HSV);
+            Imgproc.cvtColor(img_2, img_2, Imgproc.COLOR_BGR2HSV);
+
+            List<Mat> images_1 = new ArrayList<>();
+            images_1.add(img_1);
+            List<Mat> images_2 = new ArrayList<>();
+            images_2.add(img_2);
+
+            int h_bins = 50;
+            int s_bins = 60;
+            float h_ranges[] = {0, 180};
+            float s_ranges[] = {0, 256};
+            MatOfInt channels = new MatOfInt(0, 1);// TODO
+            MatOfInt histSize = new MatOfInt(h_bins, s_bins);// TODO
+            MatOfFloat ranges = new MatOfFloat(0, 180, 0, 256);
+            final boolean accumulate = false;
+
+            Imgproc.calcHist(images_1, channels, new Mat(), hist_1, histSize, ranges, accumulate);
+            Core.normalize(hist_1, hist_1, 0, 1, Core.NORM_MINMAX, -1, new Mat());
+            Imgproc.calcHist(images_2, channels, new Mat(), hist_2, histSize, ranges, accumulate);
+            Core.normalize(hist_2, hist_2, 0, 1, Core.NORM_MINMAX, -1, new Mat());
+
+            double similarity = Imgproc.compareHist(hist_1, hist_2, Imgproc.CV_COMP_CORREL);
+            return similarity;
+        }
+    }
+
     void removeRepeat(ArrayList<String> path_list) {
         // TODO 删除重复度较高的图片
         for (int i = 0; i < path_list.size(); i ++) {
+            int next_i = i;
             for (int j = i + 1; j < path_list.size(); j ++) {
-
                 Mat img_1 = Imgcodecs.imread(path_list.get(i));
                 Mat img_2 = Imgcodecs.imread(path_list.get(j));
-                Mat hist_1 = new Mat();
-                Mat hist_2 = new Mat();
+                double similarity = compareImg(img_1, img_2);
+                infoLog("(" + i + ", " + j + ")" + similarity);
 
-                if (img_1.channels() == 1) {
-                    // TODO 如果是单通道
-                    infoLog("TODO");
+                if (similarity > 0.8) {
+                    if (j != photo_list.size() - 1) {// TODO 保留最后一张图片
+                        infoLog("remove " + j);
+                        next_i = j;// 下次循环跳过中间所有的
+                    }
                 } else {
-                    Imgproc.cvtColor(img_1, img_1, Imgproc.COLOR_BGR2HSV);
-                    Imgproc.cvtColor(img_2, img_2, Imgproc.COLOR_BGR2HSV);
-
-                    List<Mat> images_1 = new ArrayList<>();
-                    images_1.add(img_1);
-                    List<Mat> images_2 = new ArrayList<>();
-                    images_2.add(img_2);
-
-                    int h_bins = 50;
-                    int s_bins = 60;
-                    float h_ranges[] = { 0, 180 };
-                    float s_ranges[] = { 0, 256 };
-                    MatOfInt channels = new MatOfInt(0, 1);// TODO
-                    MatOfInt histSize = new MatOfInt(h_bins, s_bins);// TODO
-                    MatOfFloat ranges = new MatOfFloat(0, 180, 0, 256);
-                    final boolean accumulate = false;
-
-                    Imgproc.calcHist(images_1, channels, new Mat(), hist_1, histSize, ranges, accumulate);
-                    Core.normalize(hist_1, hist_1, 0, 1, Core.NORM_MINMAX, -1, new Mat());
-                    Imgproc.calcHist(images_2, channels, new Mat(), hist_2, histSize, ranges, accumulate);
-                    Core.normalize(hist_2, hist_2, 0, 1, Core.NORM_MINMAX, -1, new Mat());
-
-                    double similarity = Imgproc.compareHist(hist_1, hist_2, Imgproc.CV_COMP_CORREL);
-                    infoLog("(" + i + ", " + j + ")" + similarity);
+                    if (i != 0) {
+                        break;// 之后的图片全部保留
+                    }
                 }
             }
+            i = next_i;
         }
     }
 
@@ -384,6 +404,15 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     }
 
     void deleteSelected() {
+        try {
+            infoLog("is alive " + stitch_thread.isAlive());
+            if (stitch_thread.isAlive()) {// TODO 是否在启动
+                stitch_thread.interrupt();
+                stitch_thread.join();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         for (int i = 0; i < photo_selected.size(); i ++) {
             int tmp = photo_selected.get(i);
             if (tmp == 1) {
@@ -403,12 +432,12 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     }
 
     void addToLog(String log) {
-        String old_log = (String) stitch_log.getText();
-        stitch_log.setText(old_log + log + "\n");
+//        String old_log = (String) stitch_log.getText();
+//        stitch_log.setText(old_log + log + "\n");
     }
 
     void clearLog() {
-        stitch_log.setText("");
+//        stitch_log.setText("");
     }
 
     void stitch() {
@@ -418,7 +447,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         }
         jniProgress(1);// TODO ???
 
-        Thread run_test = new Thread(new Runnable() {
+        stitch_thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 int photo_num = photo_list.size();
@@ -464,7 +493,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             }
         });
 
-        run_test.start();
+        stitch_thread.start();
     }
 
     class MainHandler extends Handler {

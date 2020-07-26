@@ -45,14 +45,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="300px"
-        android:layout_marginBottom="305px"
+        android:layout_marginBottom="105px"
         app:layout_constraintTop_toTopOf="parent">
     </ImageView>
 
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="305px"
+        android:layout_height="105px"
         app:layout_constraintBottom_toBottomOf="parent"
         android:orientation="vertical">
 
@@ -63,22 +63,22 @@
             android:id="@+id/stitch_progress">
         </ProgressBar>
 
-        <ScrollView
-            android:layout_width="match_parent"
-            android:layout_height="200px"
-            app:layout_constraintBottom_toBottomOf="parent">
+<!--        <ScrollView-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="200px"-->
+<!--            app:layout_constraintBottom_toBottomOf="parent">-->
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:padding="10px"
-                android:textSize="8dp"
-                android:textColor="@color/black"
-                android:id="@+id/stitch_log"
-                android:fontFamily="monospace">
-            </TextView>
+<!--            <TextView-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent"-->
+<!--                android:padding="10px"-->
+<!--                android:textSize="8dp"-->
+<!--                android:textColor="@color/black"-->
+<!--                android:id="@+id/stitch_log"-->
+<!--                android:fontFamily="monospace">-->
+<!--            </TextView>-->
 
-        </ScrollView>
+<!--        </ScrollView>-->
 
         <LinearLayout
             android:layout_width="match_parent"

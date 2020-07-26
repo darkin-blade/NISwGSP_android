@@ -43,6 +43,12 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
+import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -53,6 +59,7 @@ import java.util.Arrays;
 
 import static com.example.niswgsp_1.MainActivity.PERMISSION_CAMERA_REQUEST_CODE;
 import static com.example.niswgsp_1.MainActivity.appPath;
+import static com.example.niswgsp_1.MainActivity.compareImg;
 
 public class CustomCamera2 extends DialogFragment {
     Button btnCapture;
@@ -323,15 +330,13 @@ public class CustomCamera2 extends DialogFragment {
                     byte[] bytes = new byte[buffer.capacity()];
                     buffer.get(bytes);
 
-                    // TODO 新建线程保存图片
+                    // 新建线程保存图片
                     if (backgroundThread == null) {
                         backgroundThread = new HandlerThread("camera background");
                         backgroundThread.start();
                         backgroundHandler = new Handler(backgroundThread.getLooper());
                     }
-                    backgroundHandler.post(new ImageSaver(bytes));
-                    // TODO 保存到图片list
-                    photo_name.add(file.getAbsolutePath());
+                    backgroundHandler.post(new ImageSaver(bytes, image.getHeight(), image.getWidth()));
                 } finally {
                     if (image != null) {
                         image.close();// TODO 画面会卡住
@@ -400,15 +405,56 @@ public class CustomCamera2 extends DialogFragment {
 
     class ImageSaver implements Runnable {
         byte[] bytes;
+        int rows, cols;
         public ImageSaver(byte[] b) {
             bytes = b;
+        }
+        public ImageSaver(byte[] b, int r, int c) {
+            bytes = b;
+            rows = r;
+            cols = c;
         }
 
         @Override
         public void run() {
             try {
+                // TODO 对比相似度
+                Mat img_1;
+                Mat img_2 = Imgcodecs.imdecode(new MatOfByte(bytes), Imgcodecs.CV_LOAD_IMAGE_COLOR);
+                Mat img_3;
+
+                // TODO byte 转 Mat
+
                 OutputStream outputStream = new FileOutputStream(file);
                 outputStream.write(bytes);
+
+                img_3 = Imgcodecs.imread(file.getAbsolutePath());
+                Imgproc.cvtColor(img_2, img_2, Imgproc.COLOR_RGB2BGR);
+                img_1 = img_3.clone();
+                infoLog(img_1.toString());
+                infoLog(img_2.toString());
+                infoLog(img_3.toString());
+                infoLog(photo_name.size() + ": " + compareImg(img_1, img_3));
+                infoLog(photo_name.size() + ": " + compareImg(img_2, img_3));
+
+//                for (int i = 0; i < img_2.rows(); i ++) {
+//                    for (int j = 0; j < img_2.cols(); j ++) {
+//                        if (img_2.get(i, j) != img_3.get(i, j)) {
+//                            count ++;
+//                        }
+//                    }
+//                }
+//                infoLog(photo_name.size() + ": " + img_2.get(0, 0) + ", " + img_3.get(0, 0));
+
+//                for (int i = 0; i < photo_name.size(); i ++) {
+//                    img_1 = Imgcodecs.imread(photo_name.get(i));
+//                    infoLog(i + "," + photo_name.size() + ": " + compareImg(img_1, img_2));
+//                    infoLog(i + "," + photo_name.size() + ": " + compareImg(img_1, img_3));
+//                }
+
+                // TODO 保存到图片list
+                photo_name.add(file.getAbsolutePath());
+
                 infoLog("save photo " + file);
             } catch (IOException e) {
                 e.printStackTrace();
