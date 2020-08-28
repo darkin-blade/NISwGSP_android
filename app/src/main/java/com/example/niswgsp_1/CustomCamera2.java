@@ -296,7 +296,13 @@ public class CustomCamera2 extends DialogFragment {
             public void onClick(View view) {
                 dismiss_result = 1;
                 takePictures();// TODO 无条件拍摄最后一张
-                dismiss();
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        dismiss();
+                    }
+                }).run();
             }
         });
 
@@ -374,39 +380,6 @@ public class CustomCamera2 extends DialogFragment {
         }
     }
 
-    void setupImageReader() {
-        mImageReader = ImageReader.newInstance(captureSize.getWidth(), captureSize.getHeight(), ImageFormat.JPEG, 2);
-        // 对内容进行监听
-        mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
-            @Override
-            public void onImageAvailable(ImageReader reader) {
-                Image image = reader.acquireLatestImage();
-//                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".jpg";
-                String timeStamp = photo_num + ".jpg";
-                file = new File(appPath, timeStamp);
-                try {
-                    // 将帧数据转成字节数组,类似回调的预览数据
-                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                    byte[] bytes = new byte[buffer.capacity()];
-                    buffer.get(bytes);
-
-                    // 新建线程保存图片
-                    if (backgroundThread == null) {
-                        backgroundThread = new HandlerThread("camera background");
-                        backgroundThread.start();
-                        backgroundHandler = new Handler(backgroundThread.getLooper());
-                    }
-                    backgroundHandler.post(new ImageSaver(bytes));
-                } finally {
-                    if (image != null) {
-                        image.close();// TODO 画面会卡住
-                    }
-                }
-
-            }
-        }, backgroundHandler);
-    }
-
     void createCameraPreview() {
         SurfaceTexture surfaceTexture = cameraPreview.getSurfaceTexture();
         surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
@@ -434,6 +407,40 @@ public class CustomCamera2 extends DialogFragment {
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
+    }
+
+    void setupImageReader() {
+        mImageReader = ImageReader.newInstance(captureSize.getWidth(), captureSize.getHeight(), ImageFormat.JPEG, 2);
+        // 对内容进行监听
+        mImageReader.setOnImageAvailableListener(new ImageReader.OnImageAvailableListener() {
+            @Override
+            public void onImageAvailable(ImageReader reader) {
+                // 有新的照片
+                Image image = reader.acquireLatestImage();
+//                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".jpg";
+                String timeStamp = photo_num + ".jpg";
+                file = new File(appPath, timeStamp);
+                try {
+                    // 将帧数据转成字节数组,类似回调的预览数据
+                    ByteBuffer buffer = image.getPlanes()[0].getBuffer();
+                    byte[] bytes = new byte[buffer.capacity()];
+                    buffer.get(bytes);
+
+                    // 新建线程保存图片
+                    if (backgroundThread == null) {
+                        backgroundThread = new HandlerThread("camera background");
+                        backgroundThread.start();
+                        backgroundHandler = new Handler(backgroundThread.getLooper());
+                    }
+                    backgroundHandler.post(new ImageSaver(bytes));
+                } finally {
+                    if (image != null) {
+                        image.close();// TODO 画面会卡住
+                    }
+                }
+
+            }
+        }, backgroundHandler);
     }
 
     void takePictures() {
