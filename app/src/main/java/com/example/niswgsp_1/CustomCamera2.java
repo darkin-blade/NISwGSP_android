@@ -62,6 +62,7 @@ public class CustomCamera2 extends DialogFragment {
     TextureView cameraPreview;
     View cameraBackground;
     TextView orientationX, orientationY, orientationZ;
+    TextView photoNum;
 
     CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
     CameraCaptureSession mCameraCaptureSession;// 相机捕获会话,用于处理拍照和预览的工作
@@ -223,11 +224,11 @@ public class CustomCamera2 extends DialogFragment {
         View view = inflater.inflate(R.layout.custom_camera, container);
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(0x00000000));// 背景透明
 
-        initSensor();// 初始化传感器
-        initUI(view);// 初始化按钮
         if (is_inited == 0) {
             initCamera();// 初始化变量
         }
+        initSensor();// 初始化传感器
+        initUI(view);// 初始化按钮
         is_inited = 1;
 
         return view;
@@ -282,6 +283,8 @@ public class CustomCamera2 extends DialogFragment {
         orientationX = view.findViewById(R.id.orientationX);
         orientationY = view.findViewById(R.id.orientationY);
         orientationZ = view.findViewById(R.id.orientationZ);
+        photoNum = view.findViewById(R.id.photo_num);
+        photoNum.setText("photos: " + photo_num);
 
         btnCapture = view.findViewById(R.id.capture);
         btnCapture.setOnTouchListener(new View.OnTouchListener() {
@@ -295,6 +298,7 @@ public class CustomCamera2 extends DialogFragment {
             @Override
             public void onClick(View view) {
                 dismiss_result = 1;
+                capture_times = 0;
                 takePictures();// TODO 无条件拍摄最后一张
 
                 new Thread(new Runnable() {
@@ -418,21 +422,39 @@ public class CustomCamera2 extends DialogFragment {
                 // 有新的照片
                 Image image = reader.acquireLatestImage();
 //                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".jpg";
-                String timeStamp = photo_num + ".jpg";
-                file = new File(appPath, timeStamp);
                 try {
                     // 将帧数据转成字节数组,类似回调的预览数据
                     ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                    byte[] bytes = new byte[buffer.capacity()];
+                    final byte[] bytes = new byte[buffer.capacity()];// TODO final
                     buffer.get(bytes);
 
-                    // 新建线程保存图片
-                    if (backgroundThread == null) {
-                        backgroundThread = new HandlerThread("camera background");
-                        backgroundThread.start();
-                        backgroundHandler = new Handler(backgroundThread.getLooper());
+                    // TODO 新建线程保存图片
+                    Thread thread = new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                OutputStream outputStream = new FileOutputStream(file);
+                                outputStream.write(bytes);
+
+                                infoLog("save photo " + file);
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    });
+                    thread.start();
+                    if (dismiss_result == 1) {
+                        // TODO 松开快门
+                        thread.join();
                     }
-                    backgroundHandler.post(new ImageSaver(bytes));
+//                    if (backgroundThread == null) {
+//                        backgroundThread = new HandlerThread("camera background");
+//                        backgroundThread.start();
+//                        backgroundHandler = new Handler(backgroundThread.getLooper());
+//                    }
+//                    backgroundHandler.post(new ImageSaver(bytes));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 } finally {
                     if (image != null) {
                         image.close();// TODO 画面会卡住
@@ -447,7 +469,12 @@ public class CustomCamera2 extends DialogFragment {
 //        infoLog(capture_times + "");
 //        if (capture_times % 15 != 1) return;
         photo_num ++;
+        photoNum.setText("photos: " + photo_num);
         photo_orientation.add((ArrayList<Integer>) this_orientation.clone());// TODO 记录照片的角度
+        // TODO 保存到图片list
+        String timeStamp = photo_num + ".jpg";
+        file = new File(appPath, timeStamp);
+        photo_name.add(file.getAbsolutePath());
 
         // 进行拍摄
         try {

@@ -157,6 +157,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         infoLog("photo num: " + customCamera2.photo_name.size() + "/" + customCamera2.photo_num);
         for (int i = 0; i < customCamera2.photo_name.size(); i ++) {
             addPhoto(customCamera2.photo_name.get(i));
+            infoLog("add photo: " + customCamera2.photo_name.get(i));
         }
 
         new Thread(new Runnable() {
