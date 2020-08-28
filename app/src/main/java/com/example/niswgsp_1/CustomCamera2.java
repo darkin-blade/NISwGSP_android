@@ -36,6 +36,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -59,6 +60,7 @@ public class CustomCamera2 extends DialogFragment {
     Button btnBack;
     TextureView cameraPreview;
     View cameraBackground;
+    TextView orientationX, orientationY, orientationZ;
 
     CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
     CameraCaptureSession mCameraCaptureSession;// 相机捕获会话,用于处理拍照和预览的工作
@@ -85,6 +87,7 @@ public class CustomCamera2 extends DialogFragment {
     float[] magnetmeterValue = new float[3];// 地磁传感器xyz
     float[] rotationMatrix = new float[9];// 旋转矩阵
     float[] orientationValue = new float[3];// 旋转角度xyz
+    long last_time;
 
     static public int dismiss_result = 0;// 0: 返回, 1: 拍照
 
@@ -113,6 +116,16 @@ public class CustomCamera2 extends DialogFragment {
             SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerValue, magnetmeterValue);
             SensorManager.getOrientation(rotationMatrix, orientationValue);
             infoLog("orientation: " + orientationValue[0] + ", " + orientationValue[1] + ", " + orientationValue[2]);
+
+            long cur_time = System.currentTimeMillis();
+            long time_interval = cur_time - last_time;
+            if (time_interval > 1000) {
+                // 更新UI
+                orientationX.setText("x: " + (orientationValue[1] * 180));
+                orientationY.setText("y: " + (orientationValue[2] * 180));
+                orientationZ.setText("z: " + (orientationValue[0] * 180));
+                last_time = cur_time;
+            }
         }
 
         @Override
@@ -208,6 +221,10 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void initUI(View view) {
+        orientationX = view.findViewById(R.id.orientationX);
+        orientationY = view.findViewById(R.id.orientationY);
+        orientationZ = view.findViewById(R.id.orientationZ);
+
         btnCapture = view.findViewById(R.id.capture);
         btnCapture.setOnTouchListener(new View.OnTouchListener() {
             @Override
