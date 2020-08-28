@@ -43,12 +43,6 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
-import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.imgproc.Imgproc;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -59,7 +53,6 @@ import java.util.Arrays;
 
 import static com.example.niswgsp_1.MainActivity.PERMISSION_CAMERA_REQUEST_CODE;
 import static com.example.niswgsp_1.MainActivity.appPath;
-import static com.example.niswgsp_1.MainActivity.compareImg;
 
 public class CustomCamera2 extends DialogFragment {
     Button btnCapture;
@@ -86,12 +79,12 @@ public class CustomCamera2 extends DialogFragment {
 
     // 传感器
     SensorManager mSensorManager;
-    Sensor mSensor;
-    double lastX, lastY, lastZ;
-    long lastTime;
-    static long sensor_interval = 500;
-    static final long SENSOR_INTERVAL = 5000;
-    static final double SENSOR_SHRESHOLD = 10;
+    Sensor mAccelerator;// 加速度传感器
+    Sensor mMagnet;// 地磁传感器
+    float[] accelerometerValue = new float[3];// 加速度传感器xyz
+    float[] magnetmeterValue = new float[3];// 地磁传感器xyz
+    float[] rotationMatrix = new float[9];// 旋转矩阵
+    float[] rotationValue = new float[3];// 旋转角度xyz
 
     static public int dismiss_result = 0;// 0: 返回, 1: 拍照
 
@@ -106,36 +99,12 @@ public class CustomCamera2 extends DialogFragment {
     SensorEventListener mSensorEventListener = new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
-            long curTime = System.currentTimeMillis();
-            long timeInterval = curTime - lastTime;
-            if (timeInterval < sensor_interval) {
-                return;
-            }
-            lastTime = curTime;
-            double x = sensorEvent.values[0];
-            double y = sensorEvent.values[1];
-            double z = sensorEvent.values[2];
-            double deltaX = x - lastX;
-            double deltaY = y - lastY;
-            double deltaZ = z - lastZ;
-            lastX = x;
-            lastY = y;
-            lastZ = z;
-            double accelerator = Math.sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ) / timeInterval * 10000;
-//            sensor_interval = Math.max((long) (SENSOR_INTERVAL / accelerator), );
-            infoLog("speed: " + accelerator);
-
-            // TODO 在按钮按下的时候拍摄
-            if (capture_times > 0) {
-                // 在移动的时候拍摄
-                if (accelerator > SENSOR_SHRESHOLD) {
-                    takePictures();
-                    if (photo_num % 2 == 1) {
-                        cameraBackground.setBackgroundDrawable(new ColorDrawable(0xffff00ff));
-                    } else {
-                        cameraBackground.setBackgroundDrawable(new ColorDrawable(0xff0000ff));
-                    }
-                }
+            if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                // 加速度改变
+                infoLog("accelerator");
+            } else if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+                // 磁场改变
+                infoLog("magnet");
             }
         }
 
@@ -201,7 +170,7 @@ public class CustomCamera2 extends DialogFragment {
     @Override
     public void onResume() {
         super.onResume();
-//        mSensorManager.registerListener(mSensorEventListener, mSensor, SensorManager.SENSOR_DELAY_UI);// 最慢,适合普通用户界面UI变化的频率
+//        mSensorManager.registerListener(mSensorEventListener, mAccelerator, SensorManager.SENSOR_DELAY_UI);// 最慢,适合普通用户界面UI变化的频率
     }
 
     @Override
@@ -217,7 +186,11 @@ public class CustomCamera2 extends DialogFragment {
 
     void initSensor() {
         mSensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);// 获得传感器manager
-        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);// 获取加速度传感器
+        mAccelerator = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);// 获取加速度传感器
+        mMagnet = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);// 地磁传感器
+        // 注册监听
+        mSensorManager.registerListener(mSensorEventListener, mAccelerator, SensorManager.SENSOR_DELAY_UI);
+        mSensorManager.registerListener(mSensorEventListener, mMagnet, SensorManager.SENSOR_DELAY_UI);
     }
 
     void initUI(View view) {
@@ -378,7 +351,7 @@ public class CustomCamera2 extends DialogFragment {
 
     void takePictures() {
 //        infoLog(capture_times + "");
-        if (capture_times % 10 != 1) return;
+        if (capture_times % 15 != 1) return;
         // 进行拍摄
         try {
             final CaptureRequest.Builder builder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
@@ -419,38 +392,11 @@ public class CustomCamera2 extends DialogFragment {
         public void run() {
             try {
                 // TODO 对比相似度
-                Mat img_1;
-                Mat img_2 = Imgcodecs.imdecode(new MatOfByte(bytes), Imgcodecs.CV_LOAD_IMAGE_COLOR);
-                Mat img_3;
 
                 // TODO byte 转 Mat
 
                 OutputStream outputStream = new FileOutputStream(file);
                 outputStream.write(bytes);
-
-                img_3 = Imgcodecs.imread(file.getAbsolutePath());
-                Imgproc.cvtColor(img_2, img_2, Imgproc.COLOR_RGB2BGR);
-                img_1 = img_3.clone();
-                infoLog(img_1.toString());
-                infoLog(img_2.toString());
-                infoLog(img_3.toString());
-                infoLog(photo_name.size() + ": " + compareImg(img_1, img_3));
-                infoLog(photo_name.size() + ": " + compareImg(img_2, img_3));
-
-//                for (int i = 0; i < img_2.rows(); i ++) {
-//                    for (int j = 0; j < img_2.cols(); j ++) {
-//                        if (img_2.get(i, j) != img_3.get(i, j)) {
-//                            count ++;
-//                        }
-//                    }
-//                }
-//                infoLog(photo_name.size() + ": " + img_2.get(0, 0) + ", " + img_3.get(0, 0));
-
-//                for (int i = 0; i < photo_name.size(); i ++) {
-//                    img_1 = Imgcodecs.imread(photo_name.get(i));
-//                    infoLog(i + "," + photo_name.size() + ": " + compareImg(img_1, img_2));
-//                    infoLog(i + "," + photo_name.size() + ": " + compareImg(img_1, img_3));
-//                }
 
                 // TODO 保存到图片list
                 photo_name.add(file.getAbsolutePath());
