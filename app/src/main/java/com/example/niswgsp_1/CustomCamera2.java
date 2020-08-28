@@ -60,7 +60,6 @@ public class CustomCamera2 extends DialogFragment {
     Button btnCapture;
     Button btnBack;
     TextureView cameraPreview;
-    View cameraBackground;
     TextView orientationX, orientationY, orientationZ;
     TextView photoNum;
 
@@ -85,7 +84,6 @@ public class CustomCamera2 extends DialogFragment {
     int capture_times;// TODO
 
     // 传感器
-    int is_inited = 0;
     SensorManager mSensorManager;
     Sensor mAccelerator;// 加速度传感器
     Sensor mMagnet;// 地磁传感器
@@ -224,12 +222,9 @@ public class CustomCamera2 extends DialogFragment {
         View view = inflater.inflate(R.layout.custom_camera, container);
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(0x00000000));// 背景透明
 
-        if (is_inited == 0) {
-            initCamera();// 初始化变量
-        }
+        initCamera();// 初始化变量
         initSensor();// 初始化传感器
         initUI(view);// 初始化按钮
-        is_inited = 1;
 
         return view;
     }
@@ -301,12 +296,12 @@ public class CustomCamera2 extends DialogFragment {
                 capture_times = 0;
                 takePictures();// TODO 无条件拍摄最后一张
 
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        dismiss();
-                    }
-                }).run();
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                dismiss();
             }
         });
 
@@ -341,8 +336,6 @@ public class CustomCamera2 extends DialogFragment {
 
             }
         });
-
-        cameraBackground = view.findViewById(R.id.camera_background);
     }
 
     static public void infoLog(String log) {
@@ -429,7 +422,7 @@ public class CustomCamera2 extends DialogFragment {
                     buffer.get(bytes);
 
                     // TODO 新建线程保存图片
-                    Thread thread = new Thread(new Runnable() {
+                    new Thread(new Runnable() {
                         @Override
                         public void run() {
                             try {
@@ -441,20 +434,13 @@ public class CustomCamera2 extends DialogFragment {
                                 e.printStackTrace();
                             }
                         }
-                    });
-                    thread.start();
-                    if (dismiss_result == 1) {
-                        // TODO 松开快门
-                        thread.join();
-                    }
+                    }).start();
 //                    if (backgroundThread == null) {
 //                        backgroundThread = new HandlerThread("camera background");
 //                        backgroundThread.start();
 //                        backgroundHandler = new Handler(backgroundThread.getLooper());
 //                    }
 //                    backgroundHandler.post(new ImageSaver(bytes));
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
                 } finally {
                     if (image != null) {
                         image.close();// TODO 画面会卡住
