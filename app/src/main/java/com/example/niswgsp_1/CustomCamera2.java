@@ -161,6 +161,9 @@ public class CustomCamera2 extends DialogFragment {
     @Override
     public void onDismiss(final DialogInterface dialogInterface) {
         super.onDismiss(dialogInterface);
+
+        destroySensor();// 取消注册传感器
+
         Activity activity = getActivity();
         if (activity instanceof DialogInterface.OnDismissListener) {
             ((DialogInterface.OnDismissListener) activity).onDismiss(dialogInterface);
@@ -191,6 +194,10 @@ public class CustomCamera2 extends DialogFragment {
         // 注册监听
         mSensorManager.registerListener(mSensorEventListener, mAccelerator, SensorManager.SENSOR_DELAY_UI);
         mSensorManager.registerListener(mSensorEventListener, mMagnet, SensorManager.SENSOR_DELAY_UI);
+    }
+
+    void destroySensor() {
+        mSensorManager.unregisterListener(mSensorEventListener);
     }
 
     void initUI(View view) {
