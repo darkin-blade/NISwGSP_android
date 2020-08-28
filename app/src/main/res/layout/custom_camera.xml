@@ -21,6 +21,19 @@
             android:id="@+id/camera_preview">
         </TextureView>
 
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="25dp"
+            android:layout_centerVertical="true"
+            android:textAlignment="center"
+            android:shadowColor="@color/black"
+            android:shadowDx="0"
+            android:shadowDy="0"
+            android:shadowRadius="5"
+            android:textColor="@color/white"
+            android:text="+">
+        </TextView>
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="25dp"

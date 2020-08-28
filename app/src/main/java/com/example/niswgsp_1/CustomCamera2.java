@@ -84,6 +84,7 @@ public class CustomCamera2 extends DialogFragment {
     int capture_times;// TODO
 
     // 传感器
+    int is_inited = 0;
     SensorManager mSensorManager;
     Sensor mAccelerator;// 加速度传感器
     Sensor mMagnet;// 地磁传感器
@@ -143,9 +144,39 @@ public class CustomCamera2 extends DialogFragment {
             }
 
             if (capture_times > 0) {
+                // 按下快门, TODO 拍摄条件判断
+                int take_next_picture = 0;
+                if (photo_num == 0) {
+                    take_next_picture = 1;
+                }
+                int this_x, last_x, this_z, last_z;
+                int delta_z = 0;
+                int delta_x = 0;
 
-                // 按下快门, TODO 进行拍摄
-                takePictures();
+                if (take_next_picture == 0) {
+                    this_z = this_orientation.get(2);// z
+                    last_z = photo_orientation.get(photo_num - 1).get(2);// last z
+
+                    delta_z = Math.abs(this_z - last_z);
+                    delta_z = Math.min(delta_z, Math.abs(delta_z - 360));
+                    if (delta_z >= 25) {
+                        take_next_picture = 1;
+                    }
+                }
+
+                if (take_next_picture == 0) {
+                    this_x = this_orientation.get(0);// x
+                    last_x = photo_orientation.get(photo_num - 1).get(0);// last x
+
+                    delta_x = Math.abs(this_x - last_x);
+                    // TODO
+                }
+
+                if (take_next_picture == 1) {
+                    infoLog("delta: " + delta_x + ", " + delta_z);
+                    infoLog("photo num: " + photo_num);
+                    takePictures();
+                }
             }
         }
 
@@ -192,15 +223,19 @@ public class CustomCamera2 extends DialogFragment {
         View view = inflater.inflate(R.layout.custom_camera, container);
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(0x00000000));// 背景透明
 
-        initCamera();// 初始化变量
         initSensor();// 初始化传感器
         initUI(view);// 初始化按钮
+        if (is_inited == 0) {
+            initCamera();// 初始化变量
+        }
+        is_inited = 1;
 
         return view;
     }
 
     @Override
     public void onDismiss(final DialogInterface dialogInterface) {
+        infoLog((getActivity() == null) + " is null");
         super.onDismiss(dialogInterface);
 
         destroySensor();// 取消注册传感器
@@ -225,7 +260,9 @@ public class CustomCamera2 extends DialogFragment {
 
     void initCamera() {
         photo_name.clear();
+        photo_orientation.clear();
         photo_num = 0;
+        capture_times = 0;
     }
 
     void initSensor() {
@@ -251,15 +288,14 @@ public class CustomCamera2 extends DialogFragment {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 capture_times ++;
-                takePictures();
                 return false;
             }
         });
         btnCapture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                capture_times = 0;
                 dismiss_result = 1;
+                takePictures();// TODO 无条件拍摄最后一张
                 dismiss();
             }
         });
@@ -346,7 +382,6 @@ public class CustomCamera2 extends DialogFragment {
             public void onImageAvailable(ImageReader reader) {
                 Image image = reader.acquireLatestImage();
 //                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".jpg";
-                photo_num ++;
                 String timeStamp = photo_num + ".jpg";
                 file = new File(appPath, timeStamp);
                 try {
@@ -402,14 +437,10 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void takePictures() {
-        // 拍摄条件判断
-        if (photo_num != 0) {
-            // 判断yz方向的偏转
-            ArrayList<Integer> old_orientation = photo_orientation.get(photo_num - 1);// 获取上一张图片的偏转角度
-
-        }
 //        infoLog(capture_times + "");
 //        if (capture_times % 15 != 1) return;
+        photo_num ++;
+        photo_orientation.add((ArrayList<Integer>) this_orientation.clone());// TODO 记录照片的角度
 
         // 进行拍摄
         try {
@@ -443,7 +474,8 @@ public class CustomCamera2 extends DialogFragment {
 
         @Override
         public void run() {
-            try {OutputStream outputStream = new FileOutputStream(file);
+            try {
+                OutputStream outputStream = new FileOutputStream(file);
                 outputStream.write(bytes);
 
                 // TODO 保存到图片list

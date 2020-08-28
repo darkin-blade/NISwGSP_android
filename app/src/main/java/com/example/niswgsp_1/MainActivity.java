@@ -141,22 +141,24 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
 
     @Override
     public void onDismiss(DialogInterface dialogInterface) {
+        infoLog("dismiss");
         if (customCamera2.dismiss_result == 0) {
             // 返回
             return;
         }
-        infoLog("dismiss");
-        infoLog("" + photos.getChildCount());
+
         // 删除所有照片及ImageView
         int view_count = photos.getChildCount();
         for (int i = 0; i < view_count; i ++) {
             deletePhoto(0);
             photos.removeViewAt(0);
         }
-        infoLog("" + photos.getChildCount());
+
+        infoLog("photo num: " + customCamera2.photo_name.size() + "/" + customCamera2.photo_num);
         for (int i = 0; i < customCamera2.photo_name.size(); i ++) {
             addPhoto(customCamera2.photo_name.get(i));
         }
+
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -164,7 +166,6 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                 stitch();
             }
         }).start();
-        infoLog("" + photos.getChildCount());
     }
 
     void initUI() {
@@ -308,27 +309,6 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
 
     void removeRepeat(ArrayList<String> path_list) {
         // TODO 删除重复度较高的图片
-        for (int i = 0; i < path_list.size(); i ++) {
-            int next_i = i;
-            for (int j = i + 1; j < path_list.size(); j ++) {
-                Mat img_1 = Imgcodecs.imread(path_list.get(i));
-                Mat img_2 = Imgcodecs.imread(path_list.get(j));
-                double similarity = compareImg(img_1, img_2);
-                infoLog("(" + i + ", " + j + ")" + similarity);
-
-                if (similarity > 0.8) {
-                    if (j != photo_list.size() - 1) {// TODO 保留最后一张图片
-                        infoLog("remove " + j);
-                        next_i = j;// 下次循环跳过中间所有的
-                    }
-                } else {
-                    if (i != 0) {
-                        break;// 之后的图片全部保留
-                    }
-                }
-            }
-            i = next_i;
-        }
     }
 
     void savePhoto() {
