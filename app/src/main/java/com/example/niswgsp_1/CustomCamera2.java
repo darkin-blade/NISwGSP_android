@@ -84,7 +84,7 @@ public class CustomCamera2 extends DialogFragment {
     float[] accelerometerValue = new float[3];// 加速度传感器xyz
     float[] magnetmeterValue = new float[3];// 地磁传感器xyz
     float[] rotationMatrix = new float[9];// 旋转矩阵
-    float[] rotationValue = new float[3];// 旋转角度xyz
+    float[] orientationValue = new float[3];// 旋转角度xyz
 
     static public int dismiss_result = 0;// 0: 返回, 1: 拍照
 
@@ -101,11 +101,18 @@ public class CustomCamera2 extends DialogFragment {
         public void onSensorChanged(SensorEvent sensorEvent) {
             if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
                 // 加速度改变
-                infoLog("accelerator");
+//                infoLog("accelerator");
+                System.arraycopy(sensorEvent.values, 0, accelerometerValue, 0, accelerometerValue.length);
             } else if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
                 // 磁场改变
-                infoLog("magnet");
+//                infoLog("magnet");
+                System.arraycopy(sensorEvent.values, 0, magnetmeterValue, 0, magnetmeterValue.length);
             }
+
+            // 计算旋转角度
+            SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerValue, magnetmeterValue);
+            SensorManager.getOrientation(rotationMatrix, orientationValue);
+            infoLog("orientation: " + orientationValue[0] + ", " + orientationValue[1] + ", " + orientationValue[2]);
         }
 
         @Override
