@@ -49,6 +49,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -69,15 +70,18 @@ public class CustomCamera2 extends DialogFragment {
     Size previewSize;// 在textureView预览的尺寸
     Size captureSize;// 拍摄的尺寸
 
-    File file;
+    // 当前图片
+    File file;// 图片文件
+    ArrayList<Integer> this_orientation = new ArrayList<>();// TODO 当前偏转角度
+
     ImageReader mImageReader;
-    static final int REQUEST_CAMERA_PERMISSION = 200;
     Handler backgroundHandler;
-    HandlerThread backgroundThread;// TODO
+    HandlerThread backgroundThread;// TODO 用于保存照片的线程
 
     static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
-    static public int photo_num;// 照片索引
-    int capture_times;// 按钮按下的时间
+    static public ArrayList<ArrayList<Integer> > photo_orientation = new ArrayList<>();// 每张图片的xyz偏转角度
+    static public int photo_num;// 照片总数
+    int capture_times;// TODO
 
     // 传感器
     SensorManager mSensorManager;
@@ -115,16 +119,34 @@ public class CustomCamera2 extends DialogFragment {
             // 计算旋转角度
             SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerValue, magnetmeterValue);
             SensorManager.getOrientation(rotationMatrix, orientationValue);
-            infoLog("orientation: " + orientationValue[0] + ", " + orientationValue[1] + ", " + orientationValue[2]);
+//            infoLog("orientation: " + orientationValue[0] + ", " + orientationValue[1] + ", " + orientationValue[2]);
+
+            // 将角度转为度数
+            DecimalFormat decimalFormat = new DecimalFormat("#.00");// 保留两位小数
+            if (this_orientation.size() == 0) {
+                this_orientation.add((int) Math.toDegrees(orientationValue[1]));// x
+                this_orientation.add((int) Math.toDegrees(orientationValue[2]));// y
+                this_orientation.add((int) Math.toDegrees(orientationValue[0]));// z
+            } else {
+                this_orientation.set(0, (int) Math.toDegrees(orientationValue[1]));// x
+                this_orientation.set(1, (int) Math.toDegrees(orientationValue[2]));// y
+                this_orientation.set(2, (int) Math.toDegrees(orientationValue[0]));// z
+            }
 
             long cur_time = System.currentTimeMillis();
             long time_interval = cur_time - last_time;
             if (time_interval > 1000) {
                 // 更新UI
-                orientationX.setText("x: " + (orientationValue[1] * 180));
-                orientationY.setText("y: " + (orientationValue[2] * 180));
-                orientationZ.setText("z: " + (orientationValue[0] * 180));
+                orientationX.setText("x: " + this_orientation.get(0));
+                orientationY.setText("y: " + this_orientation.get(1));
+                orientationZ.setText("z: " + this_orientation.get(2));
                 last_time = cur_time;
+            }
+
+            if (capture_times > 0) {
+
+                // 按下快门, TODO 进行拍摄
+                takePictures();
             }
         }
 
@@ -340,7 +362,7 @@ public class CustomCamera2 extends DialogFragment {
                         backgroundThread.start();
                         backgroundHandler = new Handler(backgroundThread.getLooper());
                     }
-                    backgroundHandler.post(new ImageSaver(bytes, image.getHeight(), image.getWidth()));
+                    backgroundHandler.post(new ImageSaver(bytes));
                 } finally {
                     if (image != null) {
                         image.close();// TODO 画面会卡住
@@ -381,8 +403,15 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void takePictures() {
+        // 拍摄条件判断
+        if (photo_num != 0) {
+            // 判断yz方向的偏转
+            ArrayList<Integer> old_orientation = photo_orientation.get(photo_num - 1);// 获取上一张图片的偏转角度
+
+        }
 //        infoLog(capture_times + "");
-        if (capture_times % 15 != 1) return;
+//        if (capture_times % 15 != 1) return;
+
         // 进行拍摄
         try {
             final CaptureRequest.Builder builder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
@@ -409,24 +438,13 @@ public class CustomCamera2 extends DialogFragment {
 
     class ImageSaver implements Runnable {
         byte[] bytes;
-        int rows, cols;
         public ImageSaver(byte[] b) {
             bytes = b;
-        }
-        public ImageSaver(byte[] b, int r, int c) {
-            bytes = b;
-            rows = r;
-            cols = c;
         }
 
         @Override
         public void run() {
-            try {
-                // TODO 对比相似度
-
-                // TODO byte 转 Mat
-
-                OutputStream outputStream = new FileOutputStream(file);
+            try {OutputStream outputStream = new FileOutputStream(file);
                 outputStream.write(bytes);
 
                 // TODO 保存到图片list
