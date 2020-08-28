@@ -61,6 +61,7 @@ public class CustomCamera2 extends DialogFragment {
     Button btnBack;
     TextureView cameraPreview;
     TextView orientationX, orientationY, orientationZ;
+    TextView acceleratorX, acceleratorY, acceleratorZ;
     TextView photoNum;
 
     CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
@@ -136,6 +137,9 @@ public class CustomCamera2 extends DialogFragment {
             long time_interval = cur_time - last_time;
             if (time_interval > 500) {
                 // 更新UI
+                acceleratorX.setText("x: " + accelerometerValue[0]);
+                acceleratorY.setText("y: " + accelerometerValue[1]);
+                acceleratorZ.setText("z: " + accelerometerValue[2]);
                 orientationX.setText("x: " + this_orientation.get(0));
                 orientationY.setText("y: " + this_orientation.get(1));
                 orientationZ.setText("z: " + this_orientation.get(2));
@@ -278,6 +282,9 @@ public class CustomCamera2 extends DialogFragment {
         orientationX = view.findViewById(R.id.orientationX);
         orientationY = view.findViewById(R.id.orientationY);
         orientationZ = view.findViewById(R.id.orientationZ);
+        acceleratorX = view.findViewById(R.id.acceleratorX);
+        acceleratorY = view.findViewById(R.id.acceleratorY);
+        acceleratorZ = view.findViewById(R.id.acceleratorZ);
         photoNum = view.findViewById(R.id.photo_num);
         photoNum.setText("photos: " + photo_num);
 
