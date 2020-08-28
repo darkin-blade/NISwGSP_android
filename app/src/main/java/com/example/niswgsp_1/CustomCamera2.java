@@ -122,7 +122,6 @@ public class CustomCamera2 extends DialogFragment {
 //            infoLog("orientation: " + orientationValue[0] + ", " + orientationValue[1] + ", " + orientationValue[2]);
 
             // 将角度转为度数
-            DecimalFormat decimalFormat = new DecimalFormat("#.00");// 保留两位小数
             if (this_orientation.size() == 0) {
                 this_orientation.add((int) Math.toDegrees(orientationValue[1]));// x
                 this_orientation.add((int) Math.toDegrees(orientationValue[2]));// y
@@ -135,7 +134,7 @@ public class CustomCamera2 extends DialogFragment {
 
             long cur_time = System.currentTimeMillis();
             long time_interval = cur_time - last_time;
-            if (time_interval > 1000) {
+            if (time_interval > 500) {
                 // 更新UI
                 orientationX.setText("x: " + this_orientation.get(0));
                 orientationY.setText("y: " + this_orientation.get(1));
