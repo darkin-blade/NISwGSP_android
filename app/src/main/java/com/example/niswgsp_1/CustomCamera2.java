@@ -122,15 +122,27 @@ public class CustomCamera2 extends DialogFragment {
             SensorManager.getOrientation(rotationMatrix, orientationValue);
 //            infoLog("orientation: " + orientationValue[0] + ", " + orientationValue[1] + ", " + orientationValue[2]);
 
+            float accelerate_z = accelerometerValue[2];
             // 将角度转为度数
+            int orientation_x = (int) Math.toDegrees(orientationValue[1]);
+            int orientation_y = (int) Math.toDegrees(orientationValue[2]);
+            int orientation_z = (int) Math.toDegrees(orientationValue[0]);
+            if (accelerate_z < 0) {
+                // 镜头朝上
+                if (orientation_x < 0) {
+                    orientation_x = -180 - orientation_x;
+                } else {
+                    orientation_x = 180 - orientation_x;
+                }
+            }
             if (this_orientation.size() == 0) {
-                this_orientation.add((int) Math.toDegrees(orientationValue[1]));// x
-                this_orientation.add((int) Math.toDegrees(orientationValue[2]));// y
-                this_orientation.add((int) Math.toDegrees(orientationValue[0]));// z
+                this_orientation.add(orientation_x);
+                this_orientation.add(orientation_y);
+                this_orientation.add(orientation_z);
             } else {
-                this_orientation.set(0, (int) Math.toDegrees(orientationValue[1]));// x
-                this_orientation.set(1, (int) Math.toDegrees(orientationValue[2]));// y
-                this_orientation.set(2, (int) Math.toDegrees(orientationValue[0]));// z
+                this_orientation.set(0, orientation_x);
+                this_orientation.set(1, orientation_y);
+                this_orientation.set(2, orientation_z);
             }
 
             long cur_time = System.currentTimeMillis();
