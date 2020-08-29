@@ -49,7 +49,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -62,6 +61,7 @@ public class CustomCamera2 extends DialogFragment {
     TextureView cameraPreview;
     TextView orientationX, orientationY, orientationZ;
     TextView acceleratorX, acceleratorY, acceleratorZ;
+    TextView rotationTheta;
     TextView photoNum;
 
     CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
@@ -88,8 +88,10 @@ public class CustomCamera2 extends DialogFragment {
     SensorManager mSensorManager;
     Sensor mAccelerator;// 加速度传感器
     Sensor mMagnet;// 地磁传感器
+    Sensor mGame;// 游戏传感器
     float[] accelerometerValue = new float[3];// 加速度传感器xyz
     float[] magnetmeterValue = new float[3];// 地磁传感器xyz
+    float[] rotationValue = new float[4];// 游戏传感器xyz
     float[] rotationMatrix = new float[9];// 旋转矩阵
     float[] orientationValue = new float[3];// 旋转角度xyz
     long last_time;
@@ -109,12 +111,13 @@ public class CustomCamera2 extends DialogFragment {
         public void onSensorChanged(SensorEvent sensorEvent) {
             if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
                 // 加速度改变
-//                infoLog("accelerator");
                 System.arraycopy(sensorEvent.values, 0, accelerometerValue, 0, accelerometerValue.length);
             } else if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
                 // 磁场改变
-//                infoLog("magnet");
                 System.arraycopy(sensorEvent.values, 0, magnetmeterValue, 0, magnetmeterValue.length);
+            } else if (sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+                // TODO
+                System.arraycopy(sensorEvent.values, 0, rotationValue, 0, rotationValue.length);
             }
 
             // 计算旋转角度
@@ -122,76 +125,44 @@ public class CustomCamera2 extends DialogFragment {
             SensorManager.getOrientation(rotationMatrix, orientationValue);
 //            infoLog("orientation: " + orientationValue[0] + ", " + orientationValue[1] + ", " + orientationValue[2]);
 
-            float accelerate_z = accelerometerValue[2];
-            // 将角度转为度数
-            int orientation_x = (int) Math.toDegrees(orientationValue[1]);
-            int orientation_y = (int) Math.toDegrees(orientationValue[2]);
-            int orientation_z = (int) Math.toDegrees(orientationValue[0]);
-            if (accelerate_z < 0) {
-                // 镜头朝上
-                if (orientation_x < 0) {
-                    orientation_x = -180 - orientation_x;
-                } else {
-                    orientation_x = 180 - orientation_x;
-                }
-            }
-            if (this_orientation.size() == 0) {
-                this_orientation.add(orientation_x);
-                this_orientation.add(orientation_y);
-                this_orientation.add(orientation_z);
-            } else {
-                this_orientation.set(0, orientation_x);
-                this_orientation.set(1, orientation_y);
-                this_orientation.set(2, orientation_z);
-            }
+            // 将四元数转换为欧拉角
+            int roll, pitch, yaw;
+            float quaternion_w = rotationValue[3];// cos(theta / 2)
+            float quaternion_x = rotationValue[0];
+            float quaternion_y = rotationValue[1];
+            float quaternion_z = rotationValue[2];
+            float sin_r = 2 * (quaternion_w * quaternion_x + quaternion_y * quaternion_z);
+            float cos_r = 1 - 2 * (quaternion_x * quaternion_x + quaternion_y * quaternion_y);
+            roll = (int) Math.toDegrees(Math.atan2(sin_r, cos_r));// 方位角
+            float sin_p = 2 * (quaternion_w * quaternion_y - quaternion_z * quaternion_x);
+            pitch = (int) Math.toDegrees(Math.asin(sin_p));
+            float sin_y = 2 * (quaternion_w * quaternion_z + quaternion_x * quaternion_y);
+            float cos_y = 1 - 2 * (quaternion_y * quaternion_y + quaternion_z * quaternion_z);
+            yaw = (int) Math.toDegrees(Math.atan2(sin_y, cos_y));
+            // 将四元数转换为轴角 axis angle
+            int theta = (int) Math.round(Math.toDegrees(Math.acos(quaternion_w))) * 2;
+            float sin_theta = (float) Math.sin(Math.acos(quaternion_w));// sin(theta / 2)
+            float axis_x = quaternion_x / sin_theta;
+            float axis_y = quaternion_y / sin_theta;
+            float axis_z = quaternion_z / sin_theta;
 
             long cur_time = System.currentTimeMillis();
             long time_interval = cur_time - last_time;
             if (time_interval > 500) {
                 // 更新UI
-                acceleratorX.setText("x: " + accelerometerValue[0]);
-                acceleratorY.setText("y: " + accelerometerValue[1]);
-                acceleratorZ.setText("z: " + accelerometerValue[2]);
-                orientationX.setText("x: " + this_orientation.get(0));
-                orientationY.setText("y: " + this_orientation.get(1));
-                orientationZ.setText("z: " + this_orientation.get(2));
+                acceleratorX.setText("" + axis_x);
+                acceleratorY.setText("" + axis_y);
+                acceleratorZ.setText("" + axis_z);
+                rotationTheta.setText("" + theta);
+
+                orientationX.setText("x: " + rotationValue[0]);
+                orientationY.setText("y: " + rotationValue[1]);
+                orientationZ.setText("z: " + rotationValue[2]);
                 last_time = cur_time;
             }
 
             if (capture_times > 0) {
                 // 按下快门, TODO 拍摄条件判断
-                int take_next_picture = 0;
-                if (photo_num == 0) {
-                    take_next_picture = 1;
-                }
-                int this_x, last_x, this_z, last_z;
-                int delta_z = 0;
-                int delta_x = 0;
-
-                if (take_next_picture == 0) {
-                    this_z = this_orientation.get(2);// z
-                    last_z = photo_orientation.get(photo_num - 1).get(2);// last z
-
-                    delta_z = Math.abs(this_z - last_z);
-                    delta_z = Math.min(delta_z, Math.abs(delta_z - 360));
-                    if (delta_z >= 25) {
-                        take_next_picture = 1;
-                    }
-                }
-
-                if (take_next_picture == 0) {
-                    this_x = this_orientation.get(0);// x
-                    last_x = photo_orientation.get(photo_num - 1).get(0);// last x
-
-                    delta_x = Math.abs(this_x - last_x);
-                    // TODO
-                }
-
-                if (take_next_picture == 1) {
-                    infoLog("delta: " + delta_x + ", " + delta_z);
-                    infoLog("photo num: " + photo_num);
-                    takePictures();
-                }
             }
         }
 
@@ -281,9 +252,11 @@ public class CustomCamera2 extends DialogFragment {
         mSensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);// 获得传感器manager
         mAccelerator = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);// 获取加速度传感器
         mMagnet = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);// 地磁传感器
+        mGame = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);// 游戏传感器
         // 注册监听
         mSensorManager.registerListener(mSensorEventListener, mAccelerator, SensorManager.SENSOR_DELAY_UI);
         mSensorManager.registerListener(mSensorEventListener, mMagnet, SensorManager.SENSOR_DELAY_UI);
+        mSensorManager.registerListener(mSensorEventListener, mGame, SensorManager.SENSOR_DELAY_UI);
     }
 
     void destroySensor() {
@@ -294,9 +267,10 @@ public class CustomCamera2 extends DialogFragment {
         orientationX = view.findViewById(R.id.orientationX);
         orientationY = view.findViewById(R.id.orientationY);
         orientationZ = view.findViewById(R.id.orientationZ);
-        acceleratorX = view.findViewById(R.id.acceleratorX);
-        acceleratorY = view.findViewById(R.id.acceleratorY);
-        acceleratorZ = view.findViewById(R.id.acceleratorZ);
+        acceleratorX = view.findViewById(R.id.rotation_x);
+        acceleratorY = view.findViewById(R.id.rotation_y);
+        acceleratorZ = view.findViewById(R.id.rotation_z);
+        rotationTheta = view.findViewById(R.id.rotation_theta);
         photoNum = view.findViewById(R.id.photo_num);
         photoNum.setText("photos: " + photo_num);
 
