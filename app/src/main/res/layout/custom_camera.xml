@@ -162,7 +162,15 @@
                 style="@style/button_1"
                 android:id="@+id/back"
                 android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
                 android:text="back">
+            </Button>
+
+            <Button
+                style="@style/button_1"
+                android:id="@+id/debug"
+                android:layout_marginLeft="5dp"
+                android:text="debug">
             </Button>
 
         </LinearLayout>

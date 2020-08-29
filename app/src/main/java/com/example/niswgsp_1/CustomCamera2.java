@@ -58,6 +58,7 @@ import static com.example.niswgsp_1.MainActivity.appPath;
 public class CustomCamera2 extends DialogFragment {
     Button btnCapture;
     Button btnBack;
+    Button btnDebug;
     TextureView cameraPreview;
     TextView rotationX, rotationY, rotationZ;
     TextView gameRotationX, gameRotationY, gameRotationZ;
@@ -73,6 +74,8 @@ public class CustomCamera2 extends DialogFragment {
 
     // 当前图片
     File file;// 图片文件
+    float last_rotation_matrix[] = new float[16];
+    float this_rotation_matrix[] = new float[16];
     // TODO 当前偏转角度
 
     ImageReader mImageReader;
@@ -108,12 +111,15 @@ public class CustomCamera2 extends DialogFragment {
                 System.arraycopy(sensorEvent.values, 0, gameRotationValue, 0, gameRotationValue.length);
             } else if (sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
                 System.arraycopy(sensorEvent.values, 0, rotationValue, 0, rotationValue.length);
+                SensorManager.getRotationMatrixFromVector(this_rotation_matrix, sensorEvent.values);
             }
 
             long cur_time = System.currentTimeMillis();
             long time_interval = cur_time - last_time;
 
             if (time_interval > 500) {
+                last_time = cur_time;
+
                 // 获取四元数
                 float quaternion_w;
                 float quaternion_x;
@@ -150,19 +156,19 @@ public class CustomCamera2 extends DialogFragment {
                 rotationTheta.setText("" + theta);
 
                 // 将四元数转换为轴角 axis angle
-                quaternion_w = gameRotationValue[3];// cos(theta / 2)
-                quaternion_x = gameRotationValue[0];
-                quaternion_y = gameRotationValue[1];
-                quaternion_z = gameRotationValue[2];
-                theta = (int) Math.round(Math.toDegrees(Math.acos(quaternion_w))) * 2;
-                sin_theta = (float) Math.sin(Math.acos(quaternion_w));// sin(theta / 2)
-                axis_x = quaternion_x / sin_theta;
-                axis_y = quaternion_y / sin_theta;
-                axis_z = quaternion_z / sin_theta;
-                gameRotationX.setText("" + axis_x);
-                gameRotationY.setText("" + axis_y);
-                gameRotationZ.setText("" + axis_z);
-                gameRotationTheta.setText("" + theta);
+//                quaternion_w = gameRotationValue[3];// cos(theta / 2)
+//                quaternion_x = gameRotationValue[0];
+//                quaternion_y = gameRotationValue[1];
+//                quaternion_z = gameRotationValue[2];
+//                theta = (int) Math.round(Math.toDegrees(Math.acos(quaternion_w))) * 2;
+//                sin_theta = (float) Math.sin(Math.acos(quaternion_w));// sin(theta / 2)
+//                axis_x = quaternion_x / sin_theta;
+//                axis_y = quaternion_y / sin_theta;
+//                axis_z = quaternion_z / sin_theta;
+//                gameRotationX.setText("" + axis_x);
+//                gameRotationY.setText("" + axis_y);
+//                gameRotationZ.setText("" + axis_z);
+//                gameRotationTheta.setText("" + theta);
             }
 
             if (capture_times > 0) {
@@ -289,7 +295,7 @@ public class CustomCamera2 extends DialogFragment {
             public void onClick(View view) {
                 dismiss_result = 1;
                 capture_times = 0;
-                takePictures();// TODO 无条件拍摄最后一张
+                takePictures();// 无条件拍摄最后一张
 
                 try {
                     Thread.sleep(1000);
@@ -306,6 +312,14 @@ public class CustomCamera2 extends DialogFragment {
             public void onClick(View view) {
                 dismiss_result = 0;
                 dismiss();
+            }
+        });
+
+        btnDebug = view.findViewById(R.id.debug);
+        btnDebug.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // TODO 根据两个旋转矩阵, 计算3个方向的旋转角度
             }
         });
 
@@ -357,7 +371,7 @@ public class CustomCamera2 extends DialogFragment {
             }
             setupImageReader();
 
-            // TODO 只适用 SDK > 23
+            // 只适用 SDK > 23
             int hasCameraPermission = ContextCompat.checkSelfPermission(getActivity().getApplication(), Manifest.permission.CAMERA);
             if (hasCameraPermission == PackageManager.PERMISSION_GRANTED) {
                 // 有调用相机权限
@@ -413,10 +427,10 @@ public class CustomCamera2 extends DialogFragment {
                 try {
                     // 将帧数据转成字节数组,类似回调的预览数据
                     ByteBuffer buffer = image.getPlanes()[0].getBuffer();
-                    final byte[] bytes = new byte[buffer.capacity()];// TODO final
+                    final byte[] bytes = new byte[buffer.capacity()];
                     buffer.get(bytes);
 
-                    // TODO 新建线程保存图片
+                    // 新建线程保存图片
                     new Thread(new Runnable() {
                         @Override
                         public void run() {
@@ -438,7 +452,7 @@ public class CustomCamera2 extends DialogFragment {
 //                    backgroundHandler.post(new ImageSaver(bytes));
                 } finally {
                     if (image != null) {
-                        image.close();// TODO 画面会卡住
+                        image.close();// 画面会卡住
                     }
                 }
 
@@ -452,7 +466,7 @@ public class CustomCamera2 extends DialogFragment {
         photo_num ++;
 //        photoNum.setText("photos: " + photo_num);
         // TODO 记录照片的角度
-        // TODO 保存到图片list
+        // 保存到图片list
         String timeStamp = photo_num + ".jpg";
         file = new File(appPath, timeStamp);
         photo_name.add(file.getAbsolutePath());
@@ -469,7 +483,7 @@ public class CustomCamera2 extends DialogFragment {
                 @Override
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
                     try {
-                        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);// TODO
+                        captureRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER, CameraMetadata.CONTROL_AF_TRIGGER_CANCEL);
                         mCameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
                     } catch (CameraAccessException e) {
                         e.printStackTrace();
@@ -478,28 +492,6 @@ public class CustomCamera2 extends DialogFragment {
             }, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
-        }
-    }
-
-    class ImageSaver implements Runnable {
-        byte[] bytes;
-        public ImageSaver(byte[] b) {
-            bytes = b;
-        }
-
-        @Override
-        public void run() {
-            try {
-                OutputStream outputStream = new FileOutputStream(file);
-                outputStream.write(bytes);
-
-                // TODO 保存到图片list
-                photo_name.add(file.getAbsolutePath());
-
-                infoLog("save photo " + file);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 }
