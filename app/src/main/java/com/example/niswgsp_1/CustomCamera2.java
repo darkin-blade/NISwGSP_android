@@ -59,10 +59,10 @@ public class CustomCamera2 extends DialogFragment {
     Button btnCapture;
     Button btnBack;
     TextureView cameraPreview;
-    TextView orientationX, orientationY, orientationZ;
-    TextView acceleratorX, acceleratorY, acceleratorZ;
-    TextView rotationTheta;
-    TextView photoNum;
+    TextView rotationX, rotationY, rotationZ;
+    TextView gameRotationX, gameRotationY, gameRotationZ;
+    TextView rotationTheta, gameRotationTheta;
+//    TextView photoNum;
 
     CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
     CameraCaptureSession mCameraCaptureSession;// 相机捕获会话,用于处理拍照和预览的工作
@@ -73,27 +73,22 @@ public class CustomCamera2 extends DialogFragment {
 
     // 当前图片
     File file;// 图片文件
-    ArrayList<Integer> this_orientation = new ArrayList<>();// TODO 当前偏转角度
+    // TODO 当前偏转角度
 
     ImageReader mImageReader;
     Handler backgroundHandler;
     HandlerThread backgroundThread;// TODO 用于保存照片的线程
 
     static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
-    static public ArrayList<ArrayList<Integer> > photo_orientation = new ArrayList<>();// 每张图片的xyz偏转角度
     static public int photo_num;// 照片总数
     int capture_times;// TODO
 
     // 传感器
     SensorManager mSensorManager;
-    Sensor mAccelerator;// 加速度传感器
-    Sensor mMagnet;// 地磁传感器
-    Sensor mGame;// 游戏传感器
-    float[] accelerometerValue = new float[3];// 加速度传感器xyz
-    float[] magnetmeterValue = new float[3];// 地磁传感器xyz
-    float[] rotationValue = new float[4];// 游戏传感器xyz
-    float[] rotationMatrix = new float[9];// 旋转矩阵
-    float[] orientationValue = new float[3];// 旋转角度xyz
+    Sensor mRotation;// 旋转传感器
+    Sensor mGameRotation;// 游戏旋转传感器
+    float[] rotationValue = new float[4];// 旋转传感器xyz
+    float[] gameRotationValue = new float[4];// 游戏旋转传感器xyz
     long last_time;
 
     static public int dismiss_result = 0;// 0: 返回, 1: 拍照
@@ -109,56 +104,65 @@ public class CustomCamera2 extends DialogFragment {
     SensorEventListener mSensorEventListener = new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
-            if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-                // 加速度改变
-                System.arraycopy(sensorEvent.values, 0, accelerometerValue, 0, accelerometerValue.length);
-            } else if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-                // 磁场改变
-                System.arraycopy(sensorEvent.values, 0, magnetmeterValue, 0, magnetmeterValue.length);
+            if (sensorEvent.sensor.getType() == Sensor.TYPE_GAME_ROTATION_VECTOR) {
+                System.arraycopy(sensorEvent.values, 0, gameRotationValue, 0, gameRotationValue.length);
             } else if (sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
-                // TODO
                 System.arraycopy(sensorEvent.values, 0, rotationValue, 0, rotationValue.length);
             }
 
-            // 计算旋转角度
-            SensorManager.getRotationMatrix(rotationMatrix, null, accelerometerValue, magnetmeterValue);
-            SensorManager.getOrientation(rotationMatrix, orientationValue);
-//            infoLog("orientation: " + orientationValue[0] + ", " + orientationValue[1] + ", " + orientationValue[2]);
-
-            // 将四元数转换为欧拉角
-            int roll, pitch, yaw;
-            float quaternion_w = rotationValue[3];// cos(theta / 2)
-            float quaternion_x = rotationValue[0];
-            float quaternion_y = rotationValue[1];
-            float quaternion_z = rotationValue[2];
-            float sin_r = 2 * (quaternion_w * quaternion_x + quaternion_y * quaternion_z);
-            float cos_r = 1 - 2 * (quaternion_x * quaternion_x + quaternion_y * quaternion_y);
-            roll = (int) Math.toDegrees(Math.atan2(sin_r, cos_r));// 方位角
-            float sin_p = 2 * (quaternion_w * quaternion_y - quaternion_z * quaternion_x);
-            pitch = (int) Math.toDegrees(Math.asin(sin_p));
-            float sin_y = 2 * (quaternion_w * quaternion_z + quaternion_x * quaternion_y);
-            float cos_y = 1 - 2 * (quaternion_y * quaternion_y + quaternion_z * quaternion_z);
-            yaw = (int) Math.toDegrees(Math.atan2(sin_y, cos_y));
-            // 将四元数转换为轴角 axis angle
-            int theta = (int) Math.round(Math.toDegrees(Math.acos(quaternion_w))) * 2;
-            float sin_theta = (float) Math.sin(Math.acos(quaternion_w));// sin(theta / 2)
-            float axis_x = quaternion_x / sin_theta;
-            float axis_y = quaternion_y / sin_theta;
-            float axis_z = quaternion_z / sin_theta;
-
             long cur_time = System.currentTimeMillis();
             long time_interval = cur_time - last_time;
+
             if (time_interval > 500) {
-                // 更新UI
-                acceleratorX.setText("" + axis_x);
-                acceleratorY.setText("" + axis_y);
-                acceleratorZ.setText("" + axis_z);
+                // 获取四元数
+                float quaternion_w;
+                float quaternion_x;
+                float quaternion_y;
+                float quaternion_z;
+                int theta;
+                float sin_theta;
+                float axis_x, axis_y, axis_z;
+
+                // 将四元数转换为欧拉角
+//                int roll, pitch, yaw;
+//                float sin_r = 2 * (quaternion_w * quaternion_x + quaternion_y * quaternion_z);
+//                float cos_r = 1 - 2 * (quaternion_x * quaternion_x + quaternion_y * quaternion_y);
+//                roll = (int) Math.toDegrees(Math.atan2(sin_r, cos_r));// 方位角
+//                float sin_p = 2 * (quaternion_w * quaternion_y - quaternion_z * quaternion_x);
+//                pitch = (int) Math.toDegrees(Math.asin(sin_p));
+//                float sin_y = 2 * (quaternion_w * quaternion_z + quaternion_x * quaternion_y);
+//                float cos_y = 1 - 2 * (quaternion_y * quaternion_y + quaternion_z * quaternion_z);
+//                yaw = (int) Math.toDegrees(Math.atan2(sin_y, cos_y));
+
+                // 将四元数转换为轴角 axis angle
+                quaternion_w = rotationValue[3];// cos(theta / 2)
+                quaternion_x = rotationValue[0];
+                quaternion_y = rotationValue[1];
+                quaternion_z = rotationValue[2];
+                theta = (int) Math.round(Math.toDegrees(Math.acos(quaternion_w))) * 2;
+                sin_theta = (float) Math.sin(Math.acos(quaternion_w));// sin(theta / 2)
+                axis_x = quaternion_x / sin_theta;
+                axis_y = quaternion_y / sin_theta;
+                axis_z = quaternion_z / sin_theta;
+                rotationX.setText("" + axis_x);
+                rotationY.setText("" + axis_y);
+                rotationZ.setText("" + axis_z);
                 rotationTheta.setText("" + theta);
 
-                orientationX.setText("x: " + rotationValue[0]);
-                orientationY.setText("y: " + rotationValue[1]);
-                orientationZ.setText("z: " + rotationValue[2]);
-                last_time = cur_time;
+                // 将四元数转换为轴角 axis angle
+                quaternion_w = gameRotationValue[3];// cos(theta / 2)
+                quaternion_x = gameRotationValue[0];
+                quaternion_y = gameRotationValue[1];
+                quaternion_z = gameRotationValue[2];
+                theta = (int) Math.round(Math.toDegrees(Math.acos(quaternion_w))) * 2;
+                sin_theta = (float) Math.sin(Math.acos(quaternion_w));// sin(theta / 2)
+                axis_x = quaternion_x / sin_theta;
+                axis_y = quaternion_y / sin_theta;
+                axis_z = quaternion_z / sin_theta;
+                gameRotationX.setText("" + axis_x);
+                gameRotationY.setText("" + axis_y);
+                gameRotationZ.setText("" + axis_z);
+                gameRotationTheta.setText("" + theta);
             }
 
             if (capture_times > 0) {
@@ -243,20 +247,17 @@ public class CustomCamera2 extends DialogFragment {
 
     void initCamera() {
         photo_name.clear();
-        photo_orientation.clear();
         photo_num = 0;
         capture_times = 0;
     }
 
     void initSensor() {
         mSensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);// 获得传感器manager
-        mAccelerator = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);// 获取加速度传感器
-        mMagnet = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);// 地磁传感器
-        mGame = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);// 游戏传感器
+        mRotation = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);// 旋转传感器
+        mGameRotation = mSensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);// 游戏旋转传感器
         // 注册监听
-        mSensorManager.registerListener(mSensorEventListener, mAccelerator, SensorManager.SENSOR_DELAY_UI);
-        mSensorManager.registerListener(mSensorEventListener, mMagnet, SensorManager.SENSOR_DELAY_UI);
-        mSensorManager.registerListener(mSensorEventListener, mGame, SensorManager.SENSOR_DELAY_UI);
+        mSensorManager.registerListener(mSensorEventListener, mRotation, SensorManager.SENSOR_DELAY_UI);
+        mSensorManager.registerListener(mSensorEventListener, mGameRotation, SensorManager.SENSOR_DELAY_UI);
     }
 
     void destroySensor() {
@@ -264,15 +265,16 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void initUI(View view) {
-        orientationX = view.findViewById(R.id.orientationX);
-        orientationY = view.findViewById(R.id.orientationY);
-        orientationZ = view.findViewById(R.id.orientationZ);
-        acceleratorX = view.findViewById(R.id.rotation_x);
-        acceleratorY = view.findViewById(R.id.rotation_y);
-        acceleratorZ = view.findViewById(R.id.rotation_z);
+        rotationX = view.findViewById(R.id.game_rotation_x);
+        rotationY = view.findViewById(R.id.game_rotation_y);
+        rotationZ = view.findViewById(R.id.game_rotation_z);
+        gameRotationX = view.findViewById(R.id.rotation_x);
+        gameRotationY = view.findViewById(R.id.rotation_y);
+        gameRotationZ = view.findViewById(R.id.rotation_z);
         rotationTheta = view.findViewById(R.id.rotation_theta);
-        photoNum = view.findViewById(R.id.photo_num);
-        photoNum.setText("photos: " + photo_num);
+        gameRotationTheta = view.findViewById(R.id.game_rotation_theta);
+//        photoNum = view.findViewById(R.id.game_rotation_theta);
+//        photoNum.setText("photos: " + photo_num);
 
         btnCapture = view.findViewById(R.id.capture);
         btnCapture.setOnTouchListener(new View.OnTouchListener() {
@@ -448,8 +450,8 @@ public class CustomCamera2 extends DialogFragment {
 //        infoLog(capture_times + "");
 //        if (capture_times % 15 != 1) return;
         photo_num ++;
-        photoNum.setText("photos: " + photo_num);
-        photo_orientation.add((ArrayList<Integer>) this_orientation.clone());// TODO 记录照片的角度
+//        photoNum.setText("photos: " + photo_num);
+        // TODO 记录照片的角度
         // TODO 保存到图片list
         String timeStamp = photo_num + ".jpg";
         file = new File(appPath, timeStamp);

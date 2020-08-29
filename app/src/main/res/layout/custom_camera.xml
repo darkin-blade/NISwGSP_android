@@ -101,7 +101,7 @@
                 android:shadowDy="0"
                 android:shadowRadius="5"
                 android:textColor="@color/white"
-                android:id="@+id/orientationX">
+                android:id="@+id/game_rotation_x">
             </TextView>
 
             <TextView
@@ -114,7 +114,7 @@
                 android:shadowDy="0"
                 android:shadowRadius="5"
                 android:textColor="@color/white"
-                android:id="@+id/orientationY">
+                android:id="@+id/game_rotation_y">
             </TextView>
 
             <TextView
@@ -127,20 +127,20 @@
                 android:shadowDy="0"
                 android:shadowRadius="5"
                 android:textColor="@color/white"
-                android:id="@+id/orientationZ">
+                android:id="@+id/game_rotation_z">
             </TextView>
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
+                android:layout_weight="1.1"
                 android:textAlignment="center"
                 android:shadowColor="@color/black"
                 android:shadowDx="0"
                 android:shadowDy="0"
                 android:shadowRadius="5"
                 android:textColor="@color/white"
-                android:id="@+id/photo_num">
+                android:id="@+id/game_rotation_theta">
             </TextView>
 
         </LinearLayout>
