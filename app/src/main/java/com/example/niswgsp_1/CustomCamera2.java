@@ -162,11 +162,17 @@ public class CustomCamera2 extends DialogFragment {
                     axis_x = quaternion_x / sin_theta;
                     axis_y = quaternion_y / sin_theta;
                     axis_z = quaternion_z / sin_theta;
-                    plane_theta = Math.atan(quaternion_y / quaternion_x) * 2;// TODO
+                    plane_theta = Math.atan(quaternion_y / quaternion_x) * 2 + gravity_theta;
+                    // TODO 水平角度调整
+                    if (plane_theta < - Math.PI) {
+                        plane_theta += 2 * Math.PI;
+                    } else if (plane_theta > Math.PI) {
+                        plane_theta -= 2 * Math.PI;
+                    }
                     text1_1.setText("" + axis_x);
                     text1_2.setText("" + axis_y);
                     text1_3.setText("" + axis_z);
-//                    text1_4.setText("" + plane_theta);
+                    text1_4.setText("" + (int) Math.toDegrees(plane_theta));
 
                     if (capture_times > 0) {
                         // 按下快门, TODO 拍摄条件判断
