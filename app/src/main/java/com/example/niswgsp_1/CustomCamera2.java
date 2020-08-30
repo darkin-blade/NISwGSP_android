@@ -73,9 +73,7 @@ public class CustomCamera2 extends DialogFragment {
 
     // 当前图片
     File file;// 图片文件
-    // TODO 当前偏转角度
-    float last_rotation_matrix[] = new float[16];
-    float this_rotation_matrix[] = new float[16];
+    double gravity_theta;// 重力的xy分量在xy平面上的偏转角度
 
     ImageReader mImageReader;
     Handler backgroundHandler;
@@ -110,10 +108,12 @@ public class CustomCamera2 extends DialogFragment {
                 if (time_interval > 500) {
                     last_time_1 = cur_time;
 
-                    text2_1.setText("" + sensorEvent.values[0]);
-                    text2_2.setText("" + sensorEvent.values[1]);
-                    text2_3.setText("" + sensorEvent.values[2]);
-                    text2_4.setText("");
+                    gravity_theta = Math.atan(sensorEvent.values[0] / sensorEvent.values[1]);// tan = x / y
+
+//                    text2_1.setText("" + sensorEvent.values[0]);
+//                    text2_2.setText("" + sensorEvent.values[1]);
+//                    text2_3.setText("" + sensorEvent.values[2]);
+                    text2_4.setText("" + (int) Math.toDegrees(gravity_theta));
                 }
             } else if (sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
 //                System.arraycopy(sensorEvent.values, 0, sensorValue, 0, sensorValue.length);
@@ -260,13 +260,13 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void initUI(View view) {
-        text1_1 = view.findViewById(R.id.text2_1);
-        text1_2 = view.findViewById(R.id.text2_2);
-        text1_3 = view.findViewById(R.id.text2_3);
-        text2_1 = view.findViewById(R.id.text1_1);
-        text2_2 = view.findViewById(R.id.text1_2);
-        text2_3 = view.findViewById(R.id.text1_3);
-        text1_4 = view.findViewById(R.id.rotation_theta);
+        text1_1 = view.findViewById(R.id.text1_1);
+        text1_2 = view.findViewById(R.id.text1_2);
+        text1_3 = view.findViewById(R.id.text1_3);
+        text1_4 = view.findViewById(R.id.text1_4);
+        text2_1 = view.findViewById(R.id.text2_1);
+        text2_2 = view.findViewById(R.id.text2_2);
+        text2_3 = view.findViewById(R.id.text2_3);
         text2_4 = view.findViewById(R.id.text2_4);
 //        photoNum = view.findViewById(R.id.game_rotation_theta);
 //        photoNum.setText("photos: " + photo_num);
