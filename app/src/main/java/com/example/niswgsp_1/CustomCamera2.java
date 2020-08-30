@@ -91,11 +91,11 @@ public class CustomCamera2 extends DialogFragment {
     double gravity_theta;// 手机在球面切面上的旋转角度
     double plane_theta;// 手机与球心的连线在水平面上投影, 相对于水平面上角度0的旋转角度
     double height_theta;// 手机与球心的连线, 与重力方向的平面上, 相对于重力方向的旋转角度(0, 180)
-    double acceleratorValue[] = new double[3];
-    double magnetValue[] = new double[3];
-    double rotationMatrix[] = new double[9];// 旋转矩阵
-    double orientationValue[] = new double[3];// 手机方向
-    long last_time_1, last_time_2, last_time_3, last_time_4;// 每个传感器的UI刷新时间
+    float acceleratorValue[] = new float[3];
+    float magnetValue[] = new float[3];
+    float rotationMatrix[] = new float[9];// 旋转矩阵
+    float orientationValue[] = new float[3];// 手机方向
+    long last_time_1, last_time_2, last_time_3;// 每个传感器的UI刷新时间
 
     static public int dismiss_result = 0;// 0: 返回, 1: 拍照
 
@@ -108,11 +108,30 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     SensorEventListener mSensorEventListener = new SensorEventListener() {
+        // TODO 拍照
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
-            // TODO 拍照
-            if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-                // 加速度
+            if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER
+            || sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+                if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                    // 加速度
+                    System.arraycopy(sensorEvent.values, 0, acceleratorValue, 0, acceleratorValue.length);
+                } else if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+                    // 地磁场
+                    System.arraycopy(sensorEvent.values, 0, magnetValue, 0, magnetValue.length);
+                }
+                // 更新手机方位角
+                SensorManager.getRotationMatrix(rotationMatrix, null, acceleratorValue, magnetValue);
+                SensorManager.getOrientation(rotationMatrix, orientationValue);
+
+                long cur_time = System.currentTimeMillis();
+                long time_interval = cur_time - last_time_1;
+                if (time_interval > 500) {
+                    last_time_1 = cur_time;
+                    text1_2.setText("" + (int) Math.toDegrees(orientationValue[0]));
+                    text1_3.setText("" + (int) Math.toDegrees(orientationValue[1]));
+                    text1_4.setText("" + (int) Math.toDegrees(orientationValue[2]));
+                }
             } else if (sensorEvent.sensor.getType() == Sensor.TYPE_GRAVITY) {
                 // 重力
                 double gravity = Math.sqrt(sensorEvent.values[0] * sensorEvent.values[0]
@@ -127,16 +146,14 @@ public class CustomCamera2 extends DialogFragment {
                 height_theta = Math.acos(sensorEvent.values[2] / gravity);// cos = z / g
 
                 long cur_time = System.currentTimeMillis();
-                long time_interval = cur_time - last_time_1;
+                long time_interval = cur_time - last_time_2;
                 if (time_interval > 500) {
-                    last_time_1 = cur_time;
+                    last_time_2 = cur_time;
 //                    text2_1.setText("" + sensorEvent.values[0]);
                     text2_2.setText("水平: " + (int) Math.toDegrees(plane_theta));
                     text2_3.setText("仰角: " + (int) Math.toDegrees(height_theta));
                     text2_4.setText("切面: " + (int) Math.toDegrees(gravity_theta));
                 }
-            } else if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-                // 地磁场
             } else if (sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
                 // 旋转
                 // 水平角度调整
