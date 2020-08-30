@@ -42,7 +42,7 @@
                 android:shadowDy="0"
                 android:shadowRadius="5"
                 android:textColor="@color/white"
-                android:id="@+id/rotation_x">
+                android:id="@+id/text1_1">
             </TextView>
 
             <TextView
@@ -55,7 +55,7 @@
                 android:shadowDy="0"
                 android:shadowRadius="5"
                 android:textColor="@color/white"
-                android:id="@+id/rotation_y">
+                android:id="@+id/text1_2">
             </TextView>
 
             <TextView
@@ -68,7 +68,7 @@
                 android:shadowDy="0"
                 android:shadowRadius="5"
                 android:textColor="@color/white"
-                android:id="@+id/rotation_z">
+                android:id="@+id/text1_3">
             </TextView>
 
             <TextView
@@ -81,7 +81,7 @@
                 android:shadowDy="0"
                 android:shadowRadius="5"
                 android:textColor="@color/white"
-                android:id="@+id/rotation_theta">
+                android:id="@+id/text1_4">
             </TextView>
         </LinearLayout>
 
@@ -101,7 +101,7 @@
                 android:shadowDy="0"
                 android:shadowRadius="5"
                 android:textColor="@color/white"
-                android:id="@+id/game_rotation_x">
+                android:id="@+id/text2_1">
             </TextView>
 
             <TextView
@@ -114,7 +114,7 @@
                 android:shadowDy="0"
                 android:shadowRadius="5"
                 android:textColor="@color/white"
-                android:id="@+id/game_rotation_y">
+                android:id="@+id/text2_2">
             </TextView>
 
             <TextView
@@ -127,7 +127,7 @@
                 android:shadowDy="0"
                 android:shadowRadius="5"
                 android:textColor="@color/white"
-                android:id="@+id/game_rotation_z">
+                android:id="@+id/text2_3">
             </TextView>
 
             <TextView
@@ -140,7 +140,7 @@
                 android:shadowDy="0"
                 android:shadowRadius="5"
                 android:textColor="@color/white"
-                android:id="@+id/game_rotation_theta">
+                android:id="@+id/text2_4">
             </TextView>
 
         </LinearLayout>

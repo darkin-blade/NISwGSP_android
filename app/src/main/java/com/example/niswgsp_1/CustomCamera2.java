@@ -60,9 +60,8 @@ public class CustomCamera2 extends DialogFragment {
     Button btnBack;
     Button btnDebug;
     TextureView cameraPreview;
-    TextView rotationX, rotationY, rotationZ;
-    TextView gameRotationX, gameRotationY, gameRotationZ;
-    TextView rotationTheta, gameRotationTheta;
+    TextView text1_1, text1_2, text1_3, text1_4;
+    TextView text2_1, text2_2, text2_3, text2_4;
 //    TextView photoNum;
 
     CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
@@ -74,9 +73,9 @@ public class CustomCamera2 extends DialogFragment {
 
     // 当前图片
     File file;// 图片文件
+    // TODO 当前偏转角度
     float last_rotation_matrix[] = new float[16];
     float this_rotation_matrix[] = new float[16];
-    // TODO 当前偏转角度
 
     ImageReader mImageReader;
     Handler backgroundHandler;
@@ -89,10 +88,8 @@ public class CustomCamera2 extends DialogFragment {
     // 传感器
     SensorManager mSensorManager;
     Sensor mRotation;// 旋转传感器
-    Sensor mGameRotation;// 游戏旋转传感器
-    float[] rotationValue = new float[4];// 旋转传感器xyz
-    float[] gameRotationValue = new float[4];// 游戏旋转传感器xyz
-    long last_time;
+    Sensor mGravity;// 游戏旋转传感器
+    long last_time_1, last_time_2;
 
     static public int dismiss_result = 0;// 0: 返回, 1: 拍照
 
@@ -107,29 +104,35 @@ public class CustomCamera2 extends DialogFragment {
     SensorEventListener mSensorEventListener = new SensorEventListener() {
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
-            if (sensorEvent.sensor.getType() == Sensor.TYPE_GAME_ROTATION_VECTOR) {
-                System.arraycopy(sensorEvent.values, 0, gameRotationValue, 0, gameRotationValue.length);
+            if (sensorEvent.sensor.getType() == Sensor.TYPE_GRAVITY) {
+                long cur_time = System.currentTimeMillis();
+                long time_interval = cur_time - last_time_1;
+                if (time_interval > 500) {
+                    last_time_1 = cur_time;
+
+                    text2_1.setText("" + sensorEvent.values[0]);
+                    text2_2.setText("" + sensorEvent.values[1]);
+                    text2_3.setText("" + sensorEvent.values[2]);
+                    text2_4.setText("");
+                }
             } else if (sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
-                System.arraycopy(sensorEvent.values, 0, rotationValue, 0, rotationValue.length);
-                SensorManager.getRotationMatrixFromVector(this_rotation_matrix, sensorEvent.values);
-            }
+//                System.arraycopy(sensorEvent.values, 0, sensorValue, 0, sensorValue.length);
+//                SensorManager.getRotationMatrixFromVector(this_rotation_matrix, sensorEvent.values);
+                long cur_time = System.currentTimeMillis();
+                long time_interval = cur_time - last_time_2;
+                if (time_interval > 500) {
+                    last_time_2 = cur_time;
 
-            long cur_time = System.currentTimeMillis();
-            long time_interval = cur_time - last_time;
+                    // 获取四元数
+                    float quaternion_w;
+                    float quaternion_x;
+                    float quaternion_y;
+                    float quaternion_z;
+                    float axis_x, axis_y, axis_z;
+                    int theta;
+                    float sin_theta;
 
-            if (time_interval > 500) {
-                last_time = cur_time;
-
-                // 获取四元数
-                float quaternion_w;
-                float quaternion_x;
-                float quaternion_y;
-                float quaternion_z;
-                int theta;
-                float sin_theta;
-                float axis_x, axis_y, axis_z;
-
-                // 将四元数转换为欧拉角
+                    // 将四元数转换为欧拉角
 //                int roll, pitch, yaw;
 //                float sin_r = 2 * (quaternion_w * quaternion_x + quaternion_y * quaternion_z);
 //                float cos_r = 1 - 2 * (quaternion_x * quaternion_x + quaternion_y * quaternion_y);
@@ -140,39 +143,25 @@ public class CustomCamera2 extends DialogFragment {
 //                float cos_y = 1 - 2 * (quaternion_y * quaternion_y + quaternion_z * quaternion_z);
 //                yaw = (int) Math.toDegrees(Math.atan2(sin_y, cos_y));
 
-                // 将四元数转换为轴角 axis angle
-                quaternion_w = rotationValue[3];// cos(theta / 2)
-                quaternion_x = rotationValue[0];
-                quaternion_y = rotationValue[1];
-                quaternion_z = rotationValue[2];
-                theta = (int) Math.round(Math.toDegrees(Math.acos(quaternion_w))) * 2;
-                sin_theta = (float) Math.sin(Math.acos(quaternion_w));// sin(theta / 2)
-                axis_x = quaternion_x / sin_theta;
-                axis_y = quaternion_y / sin_theta;
-                axis_z = quaternion_z / sin_theta;
-                rotationX.setText("" + axis_x);
-                rotationY.setText("" + axis_y);
-                rotationZ.setText("" + axis_z);
-                rotationTheta.setText("" + theta);
+                    // 将四元数转换为轴角 axis angle
+                    quaternion_w = sensorEvent.values[3];// cos(theta / 2)
+                    quaternion_x = sensorEvent.values[0];
+                    quaternion_y = sensorEvent.values[1];
+                    quaternion_z = sensorEvent.values[2];
+                    sin_theta = (float) Math.sin(Math.acos(quaternion_w));// sin(theta / 2)
+                    axis_x = quaternion_x / sin_theta;
+                    axis_y = quaternion_y / sin_theta;
+                    axis_z = quaternion_z / sin_theta;
+                    theta = (int) Math.toDegrees(Math.atan(quaternion_y / quaternion_x));
+                    text1_1.setText("" + axis_x);
+                    text1_2.setText("" + axis_y);
+                    text1_3.setText("" + axis_z);
+                    text1_4.setText("" + theta);
 
-                // 将四元数转换为轴角 axis angle
-//                quaternion_w = gameRotationValue[3];// cos(theta / 2)
-//                quaternion_x = gameRotationValue[0];
-//                quaternion_y = gameRotationValue[1];
-//                quaternion_z = gameRotationValue[2];
-//                theta = (int) Math.round(Math.toDegrees(Math.acos(quaternion_w))) * 2;
-//                sin_theta = (float) Math.sin(Math.acos(quaternion_w));// sin(theta / 2)
-//                axis_x = quaternion_x / sin_theta;
-//                axis_y = quaternion_y / sin_theta;
-//                axis_z = quaternion_z / sin_theta;
-//                gameRotationX.setText("" + axis_x);
-//                gameRotationY.setText("" + axis_y);
-//                gameRotationZ.setText("" + axis_z);
-//                gameRotationTheta.setText("" + theta);
-            }
-
-            if (capture_times > 0) {
-                // 按下快门, TODO 拍摄条件判断
+                    if (capture_times > 0) {
+                        // 按下快门, TODO 拍摄条件判断
+                    }
+                }
             }
         }
 
@@ -260,10 +249,10 @@ public class CustomCamera2 extends DialogFragment {
     void initSensor() {
         mSensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);// 获得传感器manager
         mRotation = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);// 旋转传感器
-        mGameRotation = mSensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);// 游戏旋转传感器
+        mGravity = mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);// 游戏旋转传感器
         // 注册监听
         mSensorManager.registerListener(mSensorEventListener, mRotation, SensorManager.SENSOR_DELAY_UI);
-        mSensorManager.registerListener(mSensorEventListener, mGameRotation, SensorManager.SENSOR_DELAY_UI);
+        mSensorManager.registerListener(mSensorEventListener, mGravity, SensorManager.SENSOR_DELAY_UI);
     }
 
     void destroySensor() {
@@ -271,14 +260,14 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void initUI(View view) {
-        rotationX = view.findViewById(R.id.game_rotation_x);
-        rotationY = view.findViewById(R.id.game_rotation_y);
-        rotationZ = view.findViewById(R.id.game_rotation_z);
-        gameRotationX = view.findViewById(R.id.rotation_x);
-        gameRotationY = view.findViewById(R.id.rotation_y);
-        gameRotationZ = view.findViewById(R.id.rotation_z);
-        rotationTheta = view.findViewById(R.id.rotation_theta);
-        gameRotationTheta = view.findViewById(R.id.game_rotation_theta);
+        text1_1 = view.findViewById(R.id.text2_1);
+        text1_2 = view.findViewById(R.id.text2_2);
+        text1_3 = view.findViewById(R.id.text2_3);
+        text2_1 = view.findViewById(R.id.text1_1);
+        text2_2 = view.findViewById(R.id.text1_2);
+        text2_3 = view.findViewById(R.id.text1_3);
+        text1_4 = view.findViewById(R.id.rotation_theta);
+        text2_4 = view.findViewById(R.id.text2_4);
 //        photoNum = view.findViewById(R.id.game_rotation_theta);
 //        photoNum.setText("photos: " + photo_num);
 
