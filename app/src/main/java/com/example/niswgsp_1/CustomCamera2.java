@@ -75,6 +75,7 @@ public class CustomCamera2 extends DialogFragment {
     File file;// 图片文件
     double gravity_theta;// 手机在球面切面上的旋转角度
     double plane_theta;// 手机与球心的连线在水平面上投影, 相对于水平面上角度0的旋转角度
+    double height_theta;// 手机与球心的连线, 与重力方向的平面上, 相对于重力方向的旋转角度(0, 180)
 
     ImageReader mImageReader;
     Handler backgroundHandler;
@@ -109,12 +110,21 @@ public class CustomCamera2 extends DialogFragment {
                 if (time_interval > 500) {
                     last_time_1 = cur_time;
 
+                    double gravity = Math.sqrt(sensorEvent.values[0] * sensorEvent.values[0]
+                                             + sensorEvent.values[1] * sensorEvent.values[1]
+                                             + sensorEvent.values[2] * sensorEvent.values[2]);
                     gravity_theta = Math.atan(sensorEvent.values[0] / sensorEvent.values[1]);// tan = x / y
+                    if (gravity_theta > 0 && sensorEvent.values[0] < 0) {
+                        gravity_theta -= Math.PI;
+                    } else if (gravity_theta < 0 && sensorEvent.values[0] > 0) {
+                        gravity_theta += Math.PI;
+                    }
+                    height_theta = Math.acos(sensorEvent.values[2] / gravity);// cos = z / g
 
-//                    text2_1.setText("" + sensorEvent.values[0]);
-//                    text2_2.setText("" + sensorEvent.values[1]);
-//                    text2_3.setText("" + sensorEvent.values[2]);
-                    text2_4.setText("" + (int) Math.toDegrees(gravity_theta));
+                    text2_1.setText("" + sensorEvent.values[0]);
+                    text2_2.setText("水平: " + (int) Math.toDegrees(plane_theta));
+                    text2_3.setText("仰角: " + (int) Math.toDegrees(height_theta));
+                    text2_4.setText("切面: " + (int) Math.toDegrees(gravity_theta));
                 }
             } else if (sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
 //                System.arraycopy(sensorEvent.values, 0, sensorValue, 0, sensorValue.length);
@@ -152,11 +162,11 @@ public class CustomCamera2 extends DialogFragment {
                     axis_x = quaternion_x / sin_theta;
                     axis_y = quaternion_y / sin_theta;
                     axis_z = quaternion_z / sin_theta;
-                    plane_theta = (int) Math.toDegrees(Math.atan(quaternion_y / quaternion_x));
-                    text1_1.setText("" + quaternion_x);
-                    text1_2.setText("" + quaternion_y);
-                    text1_3.setText("" + quaternion_z);
-                    text1_4.setText("" + plane_theta);
+                    plane_theta = Math.atan(quaternion_y / quaternion_x) * 2;// TODO
+                    text1_1.setText("" + axis_x);
+                    text1_2.setText("" + axis_y);
+                    text1_3.setText("" + axis_z);
+//                    text1_4.setText("" + plane_theta);
 
                     if (capture_times > 0) {
                         // 按下快门, TODO 拍摄条件判断
