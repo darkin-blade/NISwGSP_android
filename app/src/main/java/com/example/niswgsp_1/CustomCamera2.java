@@ -52,6 +52,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import static android.content.Context.ALARM_SERVICE;
 import static com.example.niswgsp_1.MainActivity.PERMISSION_CAMERA_REQUEST_CODE;
 import static com.example.niswgsp_1.MainActivity.appPath;
 
@@ -76,8 +77,9 @@ public class CustomCamera2 extends DialogFragment {
     HandlerThread backgroundThread;// TODO 用于保存照片的线程
 
     static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
+    static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
     static public int photo_num;// 照片总数
-    int capture_times;// TODO
+    int capture_times;
 
     // 传感器
     SensorManager mSensorManager;
@@ -241,8 +243,9 @@ public class CustomCamera2 extends DialogFragment {
 //        mSensorManager.unregisterListener(mSensorEventListener);
     }
 
-    void initCamera() {
+    void initCamera() {Integer
         photo_name.clear();
+        photo_rotation.clear();
         photo_num = 0;
         capture_times = 0;
     }
@@ -254,9 +257,9 @@ public class CustomCamera2 extends DialogFragment {
         mMagnet = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);// 地磁场
         mRotation = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);// 旋转
         // 注册监听
-        mSensorManager.registerListener(mSensorEventListener, mAccelerator, SensorManager.SENSOR_DELAY_UI);
+//        mSensorManager.registerListener(mSensorEventListener, mAccelerator, SensorManager.SENSOR_DELAY_UI);
         mSensorManager.registerListener(mSensorEventListener, mRotation, SensorManager.SENSOR_DELAY_UI);
-        mSensorManager.registerListener(mSensorEventListener, mMagnet, SensorManager.SENSOR_DELAY_UI);
+//        mSensorManager.registerListener(mSensorEventListener, mMagnet, SensorManager.SENSOR_DELAY_UI);
         mSensorManager.registerListener(mSensorEventListener, mGravity, SensorManager.SENSOR_DELAY_UI);
     }
 
@@ -455,15 +458,18 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void takePictures() {
-//        infoLog(capture_times + "");
-//        if (capture_times % 15 != 1) return;
         photo_num ++;
         photoNum.setText("photos: " + photo_num);
-        // TODO 记录照片的角度
         // 保存到图片list
         String timeStamp = photo_num + ".jpg";
         file = new File(appPath, timeStamp);
         photo_name.add(file.getAbsolutePath());
+        // TODO 记录照片的角度
+        ArrayList<Double> tmp_rotation = new ArrayList<>();
+        tmp_rotation.set(0, plane_theta);
+        tmp_rotation.set(1, height_theta);
+        tmp_rotation.set(2, gravity_theta);
+        photo_rotation.add(tmp_rotation);
 
         // 进行拍摄
         try {
