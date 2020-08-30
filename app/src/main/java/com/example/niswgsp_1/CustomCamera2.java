@@ -73,7 +73,8 @@ public class CustomCamera2 extends DialogFragment {
 
     // 当前图片
     File file;// 图片文件
-    double gravity_theta;// 重力的xy分量在xy平面上的偏转角度
+    double gravity_theta;// 手机在球面切面上的旋转角度
+    double plane_theta;// 手机与球心的连线在水平面上投影, 相对于水平面上角度0的旋转角度
 
     ImageReader mImageReader;
     Handler backgroundHandler;
@@ -129,7 +130,6 @@ public class CustomCamera2 extends DialogFragment {
                     float quaternion_y;
                     float quaternion_z;
                     float axis_x, axis_y, axis_z;
-                    int theta;
                     float sin_theta;
 
                     // 将四元数转换为欧拉角
@@ -152,11 +152,11 @@ public class CustomCamera2 extends DialogFragment {
                     axis_x = quaternion_x / sin_theta;
                     axis_y = quaternion_y / sin_theta;
                     axis_z = quaternion_z / sin_theta;
-                    theta = (int) Math.toDegrees(Math.atan(quaternion_y / quaternion_x));
-                    text1_1.setText("" + axis_x);
-                    text1_2.setText("" + axis_y);
-                    text1_3.setText("" + axis_z);
-                    text1_4.setText("" + theta);
+                    plane_theta = (int) Math.toDegrees(Math.atan(quaternion_y / quaternion_x));
+                    text1_1.setText("" + quaternion_x);
+                    text1_2.setText("" + quaternion_y);
+                    text1_3.setText("" + quaternion_z);
+                    text1_4.setText("" + plane_theta);
 
                     if (capture_times > 0) {
                         // 按下快门, TODO 拍摄条件判断
