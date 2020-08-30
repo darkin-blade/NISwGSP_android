@@ -52,7 +52,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import static android.content.Context.ALARM_SERVICE;
 import static com.example.niswgsp_1.MainActivity.PERMISSION_CAMERA_REQUEST_CODE;
 import static com.example.niswgsp_1.MainActivity.appPath;
 
@@ -91,13 +90,13 @@ public class CustomCamera2 extends DialogFragment {
     // 当前图片
     File file;// 图片文件
     double gravity_theta;// 手机在球面切面上的旋转角度
-    double plane_theta;// 手机与球心的连线在水平面上投影, 相对于水平面上角度0的旋转角度
-    double height_theta;// 手机与球心的连线, 与重力方向的平面上, 相对于重力方向的旋转角度(0, 180)
+    double this_longitude;// 经度
+    double this_latitude;// 纬度
     float acceleratorValue[] = new float[3];
     float magnetValue[] = new float[3];
     float rotationMatrix[] = new float[9];// 旋转矩阵
     float orientationValue[] = new float[3];// 手机方向
-    long last_time_1, last_time_2, last_time_3;// 每个传感器的UI刷新时间
+    long last_time_1, last_time_2, last_time_3, last_time_4;// 每个传感器的UI刷新时间
 
     static public int dismiss_result = 0;// 0: 返回, 1: 拍照
 
@@ -110,7 +109,6 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     SensorEventListener mSensorEventListener = new SensorEventListener() {
-        // TODO 拍照
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
             if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER
@@ -145,26 +143,45 @@ public class CustomCamera2 extends DialogFragment {
                 } else if (gravity_theta < 0 && sensorEvent.values[0] > 0) {
                     gravity_theta += Math.PI;
                 }
-                height_theta = Math.acos(sensorEvent.values[2] / gravity);// cos = z / g
+                this_latitude = Math.acos(sensorEvent.values[2] / gravity) - Math.PI / 2;// cos = z / g
 
                 long cur_time = System.currentTimeMillis();
                 long time_interval = cur_time - last_time_2;
                 if (time_interval > 500) {
                     last_time_2 = cur_time;
 //                    text2_1.setText("" + sensorEvent.values[0]);
-                    text2_2.setText("水平: " + (int) Math.toDegrees(plane_theta));
-                    text2_3.setText("仰角: " + (int) Math.toDegrees(height_theta));
+                    text2_2.setText("水平: " + (int) Math.toDegrees(this_longitude));
+                    text2_3.setText("仰角: " + (int) Math.toDegrees(this_latitude));
                     text2_4.setText("切面: " + (int) Math.toDegrees(gravity_theta));
                 }
             } else if (sensorEvent.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
                 // 旋转
                 // 水平角度调整
-                plane_theta = Math.atan(sensorEvent.values[1] / sensorEvent.values[0]) * 2 + gravity_theta;// tan = y / x
-                if (plane_theta < - Math.PI) {
-                    plane_theta += 2 * Math.PI;
-                } else if (plane_theta > Math.PI) {
-                    plane_theta -= 2 * Math.PI;
+                this_longitude = Math.atan(sensorEvent.values[1] / sensorEvent.values[0]) * 2 + gravity_theta;// tan = y / x
+                if (this_longitude < - Math.PI) {
+                    this_longitude += 2 * Math.PI;
+                } else if (this_longitude > Math.PI) {
+                    this_longitude -= 2 * Math.PI;
                 }
+            }
+            // 球面距离计算
+            long cur_time = System.currentTimeMillis();
+            long time_interval = cur_time - last_time_4;
+            if (time_interval > 300) {
+                last_time_4 = cur_time;
+                double last_longitude = 0;
+                double last_latitude = - Math.PI / 2;
+                if (photo_num != 0) {
+                    last_longitude = photo_rotation.get(photo_num - 1).get(0);
+                    last_latitude = photo_rotation.get(photo_num - 1).get(1);
+                }
+                double d_latitude = this_latitude - last_latitude;
+                double d_longitude = this_longitude - last_longitude;
+                double tmp_1 = Math.sin(d_latitude / 2) * Math.sin(d_latitude / 2) +
+                        Math.cos(last_latitude) * Math.cos(this_latitude) +
+                        Math.sin(d_longitude / 2) * Math.sin(d_longitude / 2);
+                double sphere_dis = 2 * Math.atan2(Math.sqrt(tmp_1), Math.sqrt(1 - tmp_1));
+                text2_1.setText("" + sphere_dis);
             }
         }
 
@@ -243,7 +260,7 @@ public class CustomCamera2 extends DialogFragment {
 //        mSensorManager.unregisterListener(mSensorEventListener);
     }
 
-    void initCamera() {Integer
+    void initCamera() {
         photo_name.clear();
         photo_rotation.clear();
         photo_num = 0;
@@ -466,8 +483,8 @@ public class CustomCamera2 extends DialogFragment {
         photo_name.add(file.getAbsolutePath());
         // TODO 记录照片的角度
         ArrayList<Double> tmp_rotation = new ArrayList<>();
-        tmp_rotation.set(0, plane_theta);
-        tmp_rotation.set(1, height_theta);
+        tmp_rotation.set(0, this_longitude);
+        tmp_rotation.set(1, this_latitude);
         tmp_rotation.set(2, gravity_theta);
         photo_rotation.add(tmp_rotation);
 
