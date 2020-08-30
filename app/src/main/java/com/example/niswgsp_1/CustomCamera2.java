@@ -44,6 +44,8 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 
+import org.opencv.core.Mat;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -175,13 +177,17 @@ public class CustomCamera2 extends DialogFragment {
                     last_longitude = photo_rotation.get(photo_num - 1).get(0);
                     last_latitude = photo_rotation.get(photo_num - 1).get(1);
                 }
-                double d_latitude = this_latitude - last_latitude;
-                double d_longitude = this_longitude - last_longitude;
-                double tmp_1 = Math.sin(d_latitude / 2) * Math.sin(d_latitude / 2) +
-                        Math.cos(last_latitude) * Math.cos(this_latitude) +
-                        Math.sin(d_longitude / 2) * Math.sin(d_longitude / 2);
-                double sphere_dis = 2 * Math.atan2(Math.sqrt(tmp_1), Math.sqrt(1 - tmp_1));
-                text2_1.setText("" + sphere_dis);
+                double sphere_dis = 1000 * Math.acos(Math.cos(last_latitude) * Math.cos(this_latitude) * Math.cos(this_longitude - last_longitude)
+                + Math.sin(last_latitude) * Math.sin(this_latitude));
+                text2_1.setText("" + (int) sphere_dis);
+
+                if (capture_times > 0) {
+                    // 按下快门
+                    if (photo_num == 0 || sphere_dis > 300) {
+                        // 拍摄照片
+                        takePictures();
+                    }
+                }
             }
         }
 
@@ -483,9 +489,9 @@ public class CustomCamera2 extends DialogFragment {
         photo_name.add(file.getAbsolutePath());
         // TODO 记录照片的角度
         ArrayList<Double> tmp_rotation = new ArrayList<>();
-        tmp_rotation.set(0, this_longitude);
-        tmp_rotation.set(1, this_latitude);
-        tmp_rotation.set(2, gravity_theta);
+        tmp_rotation.add(this_longitude);
+        tmp_rotation.add(this_latitude);
+        tmp_rotation.add(gravity_theta);
         photo_rotation.add(tmp_rotation);
 
         // 进行拍摄
