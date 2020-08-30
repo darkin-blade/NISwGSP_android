@@ -134,44 +134,16 @@ public class CustomCamera2 extends DialogFragment {
                 if (time_interval > 500) {
                     last_time_2 = cur_time;
 
-                    // 获取四元数
-                    float quaternion_w;
-                    float quaternion_x;
-                    float quaternion_y;
-                    float quaternion_z;
-                    float axis_x, axis_y, axis_z;
-                    float sin_theta;
-
-                    // 将四元数转换为欧拉角
-//                int roll, pitch, yaw;
-//                float sin_r = 2 * (quaternion_w * quaternion_x + quaternion_y * quaternion_z);
-//                float cos_r = 1 - 2 * (quaternion_x * quaternion_x + quaternion_y * quaternion_y);
-//                roll = (int) Math.toDegrees(Math.atan2(sin_r, cos_r));// 方位角
-//                float sin_p = 2 * (quaternion_w * quaternion_y - quaternion_z * quaternion_x);
-//                pitch = (int) Math.toDegrees(Math.asin(sin_p));
-//                float sin_y = 2 * (quaternion_w * quaternion_z + quaternion_x * quaternion_y);
-//                float cos_y = 1 - 2 * (quaternion_y * quaternion_y + quaternion_z * quaternion_z);
-//                yaw = (int) Math.toDegrees(Math.atan2(sin_y, cos_y));
-
-                    // 将四元数转换为轴角 axis angle
-                    quaternion_w = sensorEvent.values[3];// cos(theta / 2)
-                    quaternion_x = sensorEvent.values[0];
-                    quaternion_y = sensorEvent.values[1];
-                    quaternion_z = sensorEvent.values[2];
-                    sin_theta = (float) Math.sin(Math.acos(quaternion_w));// sin(theta / 2)
-                    axis_x = quaternion_x / sin_theta;
-                    axis_y = quaternion_y / sin_theta;
-                    axis_z = quaternion_z / sin_theta;
-                    plane_theta = Math.atan(quaternion_y / quaternion_x) * 2 + gravity_theta;
+                    plane_theta = Math.atan(sensorEvent.values[1] / sensorEvent.values[0]) * 2 + gravity_theta;// tan = y / x
                     // TODO 水平角度调整
                     if (plane_theta < - Math.PI) {
                         plane_theta += 2 * Math.PI;
                     } else if (plane_theta > Math.PI) {
                         plane_theta -= 2 * Math.PI;
                     }
-                    text1_1.setText("" + axis_x);
-                    text1_2.setText("" + axis_y);
-                    text1_3.setText("" + axis_z);
+//                    text1_1.setText("" + axis_x);
+//                    text1_2.setText("" + axis_y);
+//                    text1_3.setText("" + axis_z);
                     text1_4.setText("" + (int) Math.toDegrees(plane_theta));
 
                     if (capture_times > 0) {
