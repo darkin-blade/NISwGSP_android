@@ -62,7 +62,7 @@ public class CustomCamera2 extends DialogFragment {
     TextureView cameraPreview;
     TextView text1_1, text1_2, text1_3, text1_4;
     TextView text2_1, text2_2, text2_3, text2_4;
-//    TextView photoNum;
+    TextView photoNum;
 
     CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
     CameraCaptureSession mCameraCaptureSession;// 相机捕获会话,用于处理拍照和预览的工作
@@ -70,12 +70,6 @@ public class CustomCamera2 extends DialogFragment {
 
     Size previewSize;// 在textureView预览的尺寸
     Size captureSize;// 拍摄的尺寸
-
-    // 当前图片
-    File file;// 图片文件
-    double gravity_theta;// 手机在球面切面上的旋转角度
-    double plane_theta;// 手机与球心的连线在水平面上投影, 相对于水平面上角度0的旋转角度
-    double height_theta;// 手机与球心的连线, 与重力方向的平面上, 相对于重力方向的旋转角度(0, 180)
 
     ImageReader mImageReader;
     Handler backgroundHandler;
@@ -91,7 +85,17 @@ public class CustomCamera2 extends DialogFragment {
     Sensor mGravity;// 重力传感器
     Sensor mMagnet;// 地磁场传感器
     Sensor mRotation;// 旋转传感器
-    long last_time_1, last_time_2, last_time_3, last_time_4;
+
+    // 当前图片
+    File file;// 图片文件
+    double gravity_theta;// 手机在球面切面上的旋转角度
+    double plane_theta;// 手机与球心的连线在水平面上投影, 相对于水平面上角度0的旋转角度
+    double height_theta;// 手机与球心的连线, 与重力方向的平面上, 相对于重力方向的旋转角度(0, 180)
+    double acceleratorValue[] = new double[3];
+    double magnetValue[] = new double[3];
+    double rotationMatrix[] = new double[9];// 旋转矩阵
+    double orientationValue[] = new double[3];// 手机方向
+    long last_time_1, last_time_2, last_time_3, last_time_4;// 每个传感器的UI刷新时间
 
     static public int dismiss_result = 0;// 0: 返回, 1: 拍照
 
@@ -126,7 +130,7 @@ public class CustomCamera2 extends DialogFragment {
                 long time_interval = cur_time - last_time_1;
                 if (time_interval > 500) {
                     last_time_1 = cur_time;
-                    text2_1.setText("" + sensorEvent.values[0]);
+//                    text2_1.setText("" + sensorEvent.values[0]);
                     text2_2.setText("水平: " + (int) Math.toDegrees(plane_theta));
                     text2_3.setText("仰角: " + (int) Math.toDegrees(height_theta));
                     text2_4.setText("切面: " + (int) Math.toDegrees(gravity_theta));
@@ -141,12 +145,6 @@ public class CustomCamera2 extends DialogFragment {
                     plane_theta += 2 * Math.PI;
                 } else if (plane_theta > Math.PI) {
                     plane_theta -= 2 * Math.PI;
-                }
-
-                long cur_time = System.currentTimeMillis();
-                long time_interval = cur_time - last_time_2;
-                if (time_interval > 500) {
-                    last_time_2 = cur_time;
                 }
             }
         }
@@ -258,8 +256,8 @@ public class CustomCamera2 extends DialogFragment {
         text2_2 = view.findViewById(R.id.text2_2);
         text2_3 = view.findViewById(R.id.text2_3);
         text2_4 = view.findViewById(R.id.text2_4);
-//        photoNum = view.findViewById(R.id.game_rotation_theta);
-//        photoNum.setText("photos: " + photo_num);
+        photoNum = view.findViewById(R.id.text2_1);
+        photoNum.setText("photos: " + photo_num);
 
         btnCapture = view.findViewById(R.id.capture);
         btnCapture.setOnTouchListener(new View.OnTouchListener() {
@@ -443,7 +441,7 @@ public class CustomCamera2 extends DialogFragment {
 //        infoLog(capture_times + "");
 //        if (capture_times % 15 != 1) return;
         photo_num ++;
-//        photoNum.setText("photos: " + photo_num);
+        photoNum.setText("photos: " + photo_num);
         // TODO 记录照片的角度
         // 保存到图片list
         String timeStamp = photo_num + ".jpg";
