@@ -5,7 +5,11 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ImageFormat;
+import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.Sensor;
@@ -25,7 +29,6 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
@@ -36,6 +39,7 @@ import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -43,8 +47,6 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
-
-import org.opencv.core.Mat;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -67,6 +69,12 @@ public class CustomCamera2 extends DialogFragment {
     TextView text1_1, text1_2, text1_3, text1_4;
     TextView text2_1, text2_2, text2_3, text2_4;
     TextView photoNum;
+
+    // 实时镜头
+    ImageView myImageView;
+    Bitmap myBitmap;
+    Canvas myCanvas;
+    Paint myPaint;
 
     CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
     CameraCaptureSession mCameraCaptureSession;// 相机捕获会话,用于处理拍照和预览的工作
@@ -302,6 +310,7 @@ public class CustomCamera2 extends DialogFragment {
         text2_4 = view.findViewById(R.id.text2_4);
         photoNum = view.findViewById(R.id.text2_1);
         photoNum.setText("photos: " + photo_num);
+        myImageView = view.findViewById(R.id.my_canvas);
 
         btnCapture = view.findViewById(R.id.capture);
         btnCapture.setOnTouchListener(new View.OnTouchListener() {
@@ -341,7 +350,16 @@ public class CustomCamera2 extends DialogFragment {
         btnDebug.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // TODO 测试用
+                // 获取canvas
+                if (myBitmap == null) {
+                    myBitmap = Bitmap.createBitmap(myImageView.getWidth(), myImageView.getHeight(), Bitmap.Config.ARGB_8888);
+                    myCanvas = new Canvas(myBitmap);
+                    myPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                    myPaint.setStrokeWidth(5);
+                    myPaint.setColor(Color.WHITE);
+                }
+                myCanvas.drawCircle(200, 200, 50, myPaint);
+                myImageView.setImageBitmap(myBitmap);
             }
         });
 
@@ -536,13 +554,13 @@ public class CustomCamera2 extends DialogFragment {
                     point[0][0] = xy * Math.cos(tmp.get(0));// 经度计算x
                     point[0][1] = xy * Math.sin(tmp.get(0));// 经度计算y
                     // B
-                    tmp = photo_rotation.get(j - 1);
+                    tmp = photo_rotation.get(j);
                     point[1][2] = Math.sin(tmp.get(1));// 纬度计算z
                     xy = Math.sqrt(1 - point[1][2] * point[1][2]);// sqrt(x^2 + y^2)
                     point[1][0] = xy * Math.cos(tmp.get(0));// 经度计算x
                     point[1][1] = xy * Math.sin(tmp.get(0));// 经度计算y
                     // C
-                    tmp = photo_rotation.get(j);
+                    tmp = photo_rotation.get(j - 1);
                     point[2][2] = Math.sin(tmp.get(1));// 纬度计算z
                     xy = Math.sqrt(1 - point[2][2] * point[2][2]);// sqrt(x^2 + y^2)
                     point[2][0] = xy * Math.cos(tmp.get(0));// 经度计算x
@@ -568,8 +586,14 @@ public class CustomCamera2 extends DialogFragment {
                     point[3][0] = point[2][0] + 2 * delta_x;
                     point[3][1] = point[2][1] + 2 * delta_y;
                     point[3][2] = point[2][2] + 2 * delta_z;
-                    double rad_distance = distance(point[2], point[3])/2;
-                    infoLog("(" + i + ", " + (j - 1) + ", " + j + "): " + rad_distance);
+                    double distance_1 = distance(point[0], point[1]);// AB
+                    double distance_2 = distance(point[2], point[3])/2;// C to AB
+                    infoLog("(" + i + ", " + j + ", " + (j - 1) + "): [" + distance_1 + ", " + distance_2 + "]");
+                    if (distance_1 > 400) {
+                        // 距离过远,不做优化
+                    } else if (distance_2 < 100) {
+                        // 删掉C点
+                    }
                 }
             }
         }
