@@ -54,6 +54,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import Jama.Matrix;
+
 import static com.example.niswgsp_1.MainActivity.PERMISSION_CAMERA_REQUEST_CODE;
 import static com.example.niswgsp_1.MainActivity.appPath;
 
@@ -75,7 +77,7 @@ public class CustomCamera2 extends DialogFragment {
 
     ImageReader mImageReader;
     Handler backgroundHandler;
-    HandlerThread backgroundThread;// TODO 用于保存照片的线程
+//    HandlerThread backgroundThread;// TODO 用于保存照片的线程
 
     static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
     static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
@@ -339,7 +341,7 @@ public class CustomCamera2 extends DialogFragment {
         btnDebug.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // TODO 根据两个旋转矩阵, 计算3个方向的旋转角度
+                removeRepeat();// TODO 测试用
             }
         });
 
@@ -487,7 +489,7 @@ public class CustomCamera2 extends DialogFragment {
         String timeStamp = photo_num + ".jpg";
         file = new File(appPath, timeStamp);
         photo_name.add(file.getAbsolutePath());
-        // TODO 记录照片的角度
+        // 记录照片的角度
         ArrayList<Double> tmp_rotation = new ArrayList<>();
         tmp_rotation.add(this_longitude);
         tmp_rotation.add(this_latitude);
@@ -520,5 +522,17 @@ public class CustomCamera2 extends DialogFragment {
 
     void removeRepeat() {
         // 删除重复度较高的照片
+        double point[][] = new double[3][3];// A(x, y, z), B(x, y, z), C(x, y, z)
+        if (photo_num >= 3) {
+            // 计算3点的空间直角坐标(x与经度0的方向平行)
+            for (int i = 0; i < 3; i ++) {
+                ArrayList<Double> tmp = new ArrayList<>();
+                tmp = photo_rotation.get(i);
+                point[i][2] = 1000 - 1000 * Math.cos(tmp.get(1));// 纬度计算z
+                double xy = Math.sqrt(1000 * 1000 - point[i][2] * point[i][2]);// sqrt(x^2 + y^2)
+                point[i][0] = xy * Math.cos(tmp.get(0));// 经度计算x
+                point[i][1] = xy * Math.sin(tmp.get(0));// 经度计算y
+            }
+        }
     }
 }

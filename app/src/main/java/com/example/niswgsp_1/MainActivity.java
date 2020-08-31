@@ -95,7 +95,6 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
 
         appPath = getExternalFilesDir("").getAbsolutePath();
 
-//        stitch();
         initUI();
         initApp();
     }
@@ -160,12 +159,13 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             infoLog("add photo: " + customCamera2.photo_name.get(i));
         }
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                stitch();
-            }
-        }).start();
+        // TODO 新建线程拼接
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                stitch();
+//            }
+//        }).start();
     }
 
     void initUI() {
