@@ -245,7 +245,6 @@ public class CustomCamera2 extends DialogFragment {
 
     @Override
     public void onDismiss(final DialogInterface dialogInterface) {
-        infoLog((getActivity() == null) + " is null");
         super.onDismiss(dialogInterface);
 
         destroySensor();// 取消注册传感器
@@ -525,35 +524,54 @@ public class CustomCamera2 extends DialogFragment {
         // 删除重复度较高的照片
         double point[][] = new double[4][3];// A(x, y, z), B(x, y, z), C(x, y, z), C'(x, y, z)
         if (photo_num >= 3) {
-            // 计算3点的空间直角坐标(x与经度0的方向平行)(右手系)
-            for (int i = 0; i < 3; i ++) {
-                ArrayList<Double> tmp = new ArrayList<>();
-                tmp = photo_rotation.get(i);
-                point[i][2] = Math.sin(tmp.get(1));// 纬度计算z
-                double xy = Math.sqrt(1 - point[i][2] * point[i][2]);// sqrt(x^2 + y^2)
-                point[i][0] = xy * Math.cos(tmp.get(0));// 经度计算x
-                point[i][1] = xy * Math.sin(tmp.get(0));// 经度计算y
-                infoLog("point[" + i + "]: " + point[i][0] + "," + point[i][1] + "," + point[i][2]);
+            for (int i = 0; i < photo_num; i ++) {
+                for (int j = i + 2; j < photo_num; j ++) {
+                    // 计算3点的空间直角坐标(x与经度0的方向平行)(右手系)
+                    ArrayList<Double> tmp;
+                    double xy;// sqrt(x^2 + y^2)
+                    // A
+                    tmp = photo_rotation.get(i);
+                    point[0][2] = Math.sin(tmp.get(1));// 纬度计算z
+                    xy = Math.sqrt(1 - point[0][2] * point[0][2]);
+                    point[0][0] = xy * Math.cos(tmp.get(0));// 经度计算x
+                    point[0][1] = xy * Math.sin(tmp.get(0));// 经度计算y
+                    // B
+                    tmp = photo_rotation.get(j - 1);
+                    point[1][2] = Math.sin(tmp.get(1));// 纬度计算z
+                    xy = Math.sqrt(1 - point[1][2] * point[1][2]);// sqrt(x^2 + y^2)
+                    point[1][0] = xy * Math.cos(tmp.get(0));// 经度计算x
+                    point[1][1] = xy * Math.sin(tmp.get(0));// 经度计算y
+                    // C
+                    tmp = photo_rotation.get(j);
+                    point[2][2] = Math.sin(tmp.get(1));// 纬度计算z
+                    xy = Math.sqrt(1 - point[2][2] * point[2][2]);// sqrt(x^2 + y^2)
+                    point[2][0] = xy * Math.cos(tmp.get(0));// 经度计算x
+                    point[2][1] = xy * Math.sin(tmp.get(0));// 经度计算y
+
+                    // 计算C在OAB上的垂足D
+                    Matrix A = new Matrix(new double[][]{
+                            {point[0][0]*point[0][0] + point[0][1]*point[0][1] + point[0][2]*point[0][2],
+                                    point[0][0]*point[1][0] + point[0][1]*point[1][1] + point[0][2]*point[1][2]},
+                            {point[0][0]*point[1][0] + point[0][1]*point[1][1] + point[0][2]*point[1][2],
+                                    point[1][0]*point[1][0] + point[1][1]*point[1][1] + point[1][2]*point[1][2]}
+                    });
+                    Matrix b = new Matrix(new double[][]{
+                            {point[0][0]*point[2][0] + point[0][1]*point[2][1] + point[0][2]*point[2][2]},
+                            {point[1][0]*point[2][0] + point[1][1]*point[2][1] + point[1][2]*point[2][2]},
+                    });
+                    Matrix x = A.solve(b);
+
+                    // 计算C到关于D的对称点C'的弧长
+                    double delta_x = x.get(0, 0) * point[0][0] + x.get(1, 0) * point[1][0] - point[2][0];// dx - cx
+                    double delta_y = x.get(0, 0) * point[0][1] + x.get(1, 0) * point[1][1] - point[2][1];// dy - cy
+                    double delta_z = x.get(0, 0) * point[0][2] + x.get(1, 0) * point[1][2] - point[2][2];// dz - cz
+                    point[3][0] = point[2][0] + 2 * delta_x;
+                    point[3][1] = point[2][1] + 2 * delta_y;
+                    point[3][2] = point[2][2] + 2 * delta_z;
+                    double rad_distance = distance(point[2], point[3])/2;
+                    infoLog("(" + i + ", " + (j - 1) + ", " + j + "): " + rad_distance);
+                }
             }
-            // 计算OAB平面过C的法向量
-            Matrix A = new Matrix(new double[][]{
-                    {point[0][0]*point[0][0] + point[0][1]*point[0][1] + point[0][2]*point[0][2],
-                     point[0][0]*point[1][0] + point[0][1]*point[1][1] + point[0][2]*point[1][2]},
-                    {point[0][0]*point[1][0] + point[0][1]*point[1][1] + point[0][2]*point[1][2],
-                     point[1][0]*point[1][0] + point[1][1]*point[1][1] + point[1][2]*point[1][2]}
-            });
-            Matrix b = new Matrix(new double[][]{
-                    {point[0][0]*point[2][0] + point[0][1]*point[2][1] + point[0][2]*point[2][2]},
-                    {point[1][0]*point[2][0] + point[1][1]*point[2][1] + point[1][2]*point[2][2]},
-            });
-            Matrix x = A.solve(b);
-            double delta_x = x.get(0, 0) * point[0][0] + x.get(1, 0) * point[1][0] - point[2][0];// dx - cx
-            double delta_y = x.get(0, 0) * point[0][1] + x.get(1, 0) * point[1][1] - point[2][1];// dy - cy
-            double delta_z = x.get(0, 0) * point[0][2] + x.get(1, 0) * point[1][2] - point[2][2];// dz - cz
-            point[3][0] = point[2][0] + 2 * delta_x;
-            point[3][1] = point[2][1] + 2 * delta_y;
-            point[3][2] = point[2][2] + 2 * delta_z;
-            infoLog("distance: " + (distance(point[2], point[3])/2));
         }
 
     }
