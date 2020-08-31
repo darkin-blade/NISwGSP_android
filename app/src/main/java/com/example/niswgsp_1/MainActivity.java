@@ -163,7 +163,6 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         new Thread(new Runnable() {
             @Override
             public void run() {
-//                removeRepeat(customCamera2.photo_name);
                 stitch();
             }
         }).start();
@@ -306,10 +305,6 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             double similarity = Imgproc.compareHist(hist_1, hist_2, Imgproc.CV_COMP_CORREL);
             return similarity;
         }
-    }
-
-    void removeRepeat(ArrayList<String> path_list) {
-        // TODO 删除重复度较高的图片
     }
 
     void savePhoto() {

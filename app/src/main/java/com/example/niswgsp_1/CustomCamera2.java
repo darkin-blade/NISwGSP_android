@@ -517,4 +517,8 @@ public class CustomCamera2 extends DialogFragment {
             e.printStackTrace();
         }
     }
+
+    void removeRepeat() {
+        // 删除重复度较高的照片
+    }
 }
