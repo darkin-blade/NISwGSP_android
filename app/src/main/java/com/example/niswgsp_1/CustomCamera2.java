@@ -795,6 +795,7 @@ public class CustomCamera2 extends DialogFragment {
             positionQ[0] = photo_rotation.get(i).get(0);// 经度
             positionQ[1] = photo_rotation.get(i).get(1);// 纬度
             sphereConvert(positionP, positionQ, positionQ_);
+            infoLog("distance: " + (int) Math.toDegrees(positionQ_[1]));
             if (positionQ_[1] < Math.PI / 3) {
                 // TODO 纬度与北极相差60以内
                 // 球面坐标->极坐标, 0经度线显示为竖直向上, 并且以顺时针为正方向(TODO 即球面坐标系中的正西方向)
@@ -818,12 +819,13 @@ public class CustomCamera2 extends DialogFragment {
                 int coordinateX, coordinateY;
                 coordinateX = (int) (  Math.cos(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 3))  );
                 coordinateY = (int) (  Math.sin(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 3))  );
+//                infoLog(i + ": " + coordinateX + ", " + coordinateY + "(" + halfW + ", " + halfH + ")");
+//                infoLog((int) Math.toDegrees(positionQ_[0]) + ", " + (int) Math.toDegrees(positionQ_[1]));
                 coordinateX = halfW - coordinateX;
                 coordinateY = halfH - coordinateY;
 
                 // 绘制拍照点
                 myCanvas.drawCircle(coordinateX, coordinateY, 50, myPaint);
-                infoLog(i + ": " + coordinateX + ", " + coordinateY + "(" + halfW + ", " + halfH + ")");
             }
         }
 
