@@ -561,26 +561,20 @@ public class CustomCamera2 extends DialogFragment {
         double distance_2;// CC' / 2
         if (photo_num >= 3) {
             // 计算3点的空间直角坐标(x与经度0的方向平行)(右手系)
-            ArrayList<Double> tmp;
+            double tmp[] = new double[2];
             double xy;// sqrt(x^2 + y^2)
             // A
-            tmp = photo_rotation.get(photo_num - 3);
-            point[0][2] = Math.sin(tmp.get(1));// 纬度计算z
-            xy = Math.sqrt(1 - point[0][2] * point[0][2]);
-            point[0][0] = xy * Math.cos(tmp.get(0));// 经度计算x
-            point[0][1] = xy * Math.sin(tmp.get(0));// 经度计算y
+            tmp[0] = photo_rotation.get(photo_num - 3).get(0);
+            tmp[1] = photo_rotation.get(photo_num - 3).get(1);
+            sphere2Coordinate(tmp, point[0]);
             // B
-            tmp = photo_rotation.get(photo_num - 2);
-            point[1][2] = Math.sin(tmp.get(1));// 纬度计算z
-            xy = Math.sqrt(1 - point[1][2] * point[1][2]);// sqrt(x^2 + y^2)
-            point[1][0] = xy * Math.cos(tmp.get(0));// 经度计算x
-            point[1][1] = xy * Math.sin(tmp.get(0));// 经度计算y
+            tmp[0] = photo_rotation.get(photo_num - 2).get(0);
+            tmp[1] = photo_rotation.get(photo_num - 2).get(1);
+            sphere2Coordinate(tmp, point[1]);
             // C
-            tmp = photo_rotation.get(photo_num - 1);
-            point[2][2] = Math.sin(tmp.get(1));// 纬度计算z
-            xy = Math.sqrt(1 - point[2][2] * point[2][2]);// sqrt(x^2 + y^2)
-            point[2][0] = xy * Math.cos(tmp.get(0));// 经度计算x
-            point[2][1] = xy * Math.sin(tmp.get(0));// 经度计算y
+            tmp[0] = photo_rotation.get(photo_num - 1).get(0);
+            tmp[1] = photo_rotation.get(photo_num - 1).get(1);
+            sphere2Coordinate(tmp, point[2]);
 
             // 计算弧AB长度
             distance_1 = distance(point[0], point[1]);// AB
@@ -659,5 +653,12 @@ public class CustomCamera2 extends DialogFragment {
             }
 
         }
+    }
+
+    void sphere2Coordinate(double sphere[], double coordinate[]) {
+        coordinate[2] = Math.sin(sphere[1]);// 纬度计算z
+        double xy = Math.sqrt(1 - coordinate[2] * coordinate[2]);// sqrt(x^2 + y^2)
+        coordinate[0] = xy * Math.cos(sphere[0]);// 经度计算x
+        coordinate[1] = xy * Math.sin(sphere[0]);// 经度计算y
     }
 }
