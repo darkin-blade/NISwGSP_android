@@ -703,10 +703,8 @@ public class CustomCamera2 extends DialogFragment {
         vectorEB[0] = pointC[0] - b * pointB[0];
         vectorEB[1] = pointC[1] - b * pointB[1];
         vectorEB[2] = pointC[2] - b * pointB[2];
-        double delta_x = vectorDA[0] - vectorEB[0];
-        double delta_y = vectorDA[1] - vectorEB[1];
-        double delta_z = vectorDA[2] - vectorEB[2];
-        double cos_theta = (vectorDA[0]*vectorEB[0] + vectorDA[1]*vectorEB[1] + vectorDA[2]*vectorEB[2]) / Math.sqrt(delta_x*delta_x + delta_y*delta_y + delta_z*delta_z);
+        double cos_theta = (vectorDA[0]*vectorEB[0] + vectorDA[1]*vectorEB[1] + vectorDA[2]*vectorEB[2]) /
+                (Math.sqrt(vectorDA[0]*vectorDA[0] + vectorDA[1]*vectorDA[1] + vectorDA[2]*vectorDA[2]) * Math.sqrt(vectorEB[0]*vectorEB[0] + vectorEB[1]*vectorEB[1] + vectorEB[2]*vectorEB[2]));
         return Math.acos(cos_theta);
     }
 
@@ -761,6 +759,7 @@ public class CustomCamera2 extends DialogFragment {
         sphere2Coordinate(positionV, pointV);// V
         sphere2Coordinate(positionW, pointW);// W
         double new_longitude = planeAngle(pointQ, pointP, pointW);// 使用OQ, OP, OW计算新的经度(绝对值)
+        infoLog("764: " + (int) Math.toDegrees(new_longitude));
         double new_latitude = sphereDistance(pointP, pointQ);// PQ的长度即为弧度, 结果为纬度 + 90
 
         // 判断Q在W的东侧还是西侧, TODO W的东边是V, W的西边是U
