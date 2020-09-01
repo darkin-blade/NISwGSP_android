@@ -92,6 +92,7 @@ public class CustomCamera2 extends DialogFragment {
     static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
     static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
     static public int photo_num;// 照片总数
+    static public int photo_index;// 用于照片命名
     int capture_times;
 
     // 传感器
@@ -284,6 +285,7 @@ public class CustomCamera2 extends DialogFragment {
         photo_name.clear();
         photo_rotation.clear();
         photo_num = 0;
+        photo_index = 0;
         capture_times = 0;
     }
 
@@ -504,9 +506,10 @@ public class CustomCamera2 extends DialogFragment {
 
     void takePictures() {
         photo_num ++;
+        photo_index ++;
         photoNum.setText("photos: " + photo_num);
         // 保存到图片list
-        String timeStamp = photo_num + ".jpg";
+        String timeStamp = photo_index + ".jpg";
         file = new File(appPath, timeStamp);
         photo_name.add(file.getAbsolutePath());
         // 记录照片的角度
@@ -598,13 +601,16 @@ public class CustomCamera2 extends DialogFragment {
 
             // 计算C到AB的距离
             distance_2 = distance(point[2], point[3])/2;// C to AB
-            infoLog("(" + photo_num + "): [" + distance_1 + ", " + distance_2 + "]");
+//            infoLog("(" + photo_num + "): [" + distance_1 + ", " + distance_2 + "]");
             if (distance_2 <= 80) {// TODO 阈值
                 // 删除B点
                 photo_name.remove(photo_num - 2);
                 photo_rotation.remove(photo_num - 2);
                 photo_num --;
                 infoLog("photo num: " + photo_name.size());
+                for (int i = 0; i < photo_name.size(); i ++) {
+                    infoLog((i + 1) + "/" + photo_name.size() + ": " + photo_name.get(i));
+                }
             }
         }
 
