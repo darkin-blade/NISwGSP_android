@@ -181,7 +181,8 @@ public class CustomCamera2 extends DialogFragment {
                     this_longitude -= 2 * Math.PI;
                 }
             }
-            // 球面距离计算
+
+            // 拍照, 球面距离计算
             long cur_time = System.currentTimeMillis();
             long time_interval = cur_time - last_time_4;
             if (time_interval > 300) {
@@ -577,13 +578,13 @@ public class CustomCamera2 extends DialogFragment {
             sphere2Coordinate(tmp, point[2]);
 
             // 计算弧AB长度
-            distance_1 = sphereDistance(point[0], point[1]);// AB
+            distance_1 = 1000 * sphereDistance(point[0], point[1]);// AB
             if (distance_1 >= 300) {
                 // 保留B点
                 return;
             }
 
-            distance_2 = point2Line(point[0], point[1], point[2]);
+            distance_2 = 1000 * point2Line(point[0], point[1], point[2]);
 //            infoLog("(" + photo_num + "): [" + distance_1 + ", " + distance_2 + "]");
             if (distance_2 <= 80) {// TODO 阈值
                 // 删除B点
@@ -599,14 +600,15 @@ public class CustomCamera2 extends DialogFragment {
 
     }
 
-    double sphereDistance(double point_1[], double point_2[]) {
+    double sphereDistance(double pointA[], double pointB[]) {
+        // 计算球面上AB的距离
         double longitude_1, latitude_1;
         double longitude_2, latitude_2;
-        longitude_1 = Math.atan(point_1[1] / point_1[0]);// tan = y / x
-        latitude_1 = Math.asin(point_1[2]);// sin = z
-        longitude_2 = Math.atan(point_2[1] / point_2[0]);// tan = y / x
-        latitude_2 = Math.asin(point_2[2]);// sin = z
-        double sphere_dis = 1000 * Math.acos(Math.cos(latitude_1) * Math.cos(latitude_2) * Math.cos(longitude_2 - longitude_1)
+        longitude_1 = Math.atan(pointA[1] / pointA[0]);// tan = y / x
+        latitude_1 = Math.asin(pointA[2]);// sin = z
+        longitude_2 = Math.atan(pointB[1] / pointB[0]);// tan = y / x
+        latitude_2 = Math.asin(pointB[2]);// sin = z
+        double sphere_dis = Math.acos(Math.cos(latitude_1) * Math.cos(latitude_2) * Math.cos(longitude_2 - longitude_1)
                 + Math.sin(latitude_1) * Math.sin(latitude_2));
         return sphere_dis;
     }
@@ -647,109 +649,131 @@ public class CustomCamera2 extends DialogFragment {
         sphere[0] = Math.atan(coordinate[1] / coordinate[0]);// TODO tan = y / x
     }
 
-    double point2Line(final double point_1[], final double point_2[], final double point_3[]) {
-        // 点到球面直线距离
-        double point_4[] = new double[3];
+    double point2Line(final double pointA[], final double pointB[], final double pointC[]) {
+        // 点到球面直线距离, 输入为: 弧AB, 点C
+        double pointC_[] = new double[3];
 
         // 计算C在OAB上的垂足D
         Matrix A = new Matrix(new double[][]{
-                {point_1[0]*point_1[0] + point_1[1]*point_1[1] + point_1[2]*point_1[2],
-                        point_1[0]*point_2[0] + point_1[1]*point_2[1] + point_1[2]*point_2[2]},
-                {point_1[0]*point_2[0] + point_1[1]*point_2[1] + point_1[2]*point_2[2],
-                        point_2[0]*point_2[0] + point_2[1]*point_2[1] + point_2[2]*point_2[2]}
+                {pointA[0]*pointA[0] + pointA[1]*pointA[1] + pointA[2]*pointA[2],
+                        pointA[0]*pointB[0] + pointA[1]*pointB[1] + pointA[2]*pointB[2]},
+                {pointA[0]*pointB[0] + pointA[1]*pointB[1] + pointA[2]*pointB[2],
+                        pointB[0]*pointB[0] + pointB[1]*pointB[1] + pointB[2]*pointB[2]}
         });
         Matrix b = new Matrix(new double[][]{
-                {point_1[0]*point_3[0] + point_1[1]*point_3[1] + point_1[2]*point_3[2]},
-                {point_2[0]*point_3[0] + point_2[1]*point_3[1] + point_2[2]*point_3[2]},
+                {pointA[0]*pointC[0] + pointA[1]*pointC[1] + pointA[2]*pointC[2]},
+                {pointB[0]*pointC[0] + pointB[1]*pointC[1] + pointB[2]*pointC[2]},
         });
         Matrix x = A.solve(b);
 
         // 计算C到关于D的对称点C'的弧长
-        double delta_x = x.get(0, 0) * point_1[0] + x.get(1, 0) * point_2[0] - point_3[0];// dx - cx
-        double delta_y = x.get(0, 0) * point_1[1] + x.get(1, 0) * point_2[1] - point_3[1];// dy - cy
-        double delta_z = x.get(0, 0) * point_1[2] + x.get(1, 0) * point_2[2] - point_3[2];// dz - cz
-        point_4[0] = point_3[0] + 2 * delta_x;
-        point_4[1] = point_3[1] + 2 * delta_y;
-        point_4[2] = point_3[2] + 2 * delta_z;
+        double delta_x = x.get(0, 0) * pointA[0] + x.get(1, 0) * pointB[0] - pointC[0];// dx - cx
+        double delta_y = x.get(0, 0) * pointA[1] + x.get(1, 0) * pointB[1] - pointC[1];// dy - cy
+        double delta_z = x.get(0, 0) * pointA[2] + x.get(1, 0) * pointB[2] - pointC[2];// dz - cz
+        pointC_[0] = pointC[0] + 2 * delta_x;
+        pointC_[1] = pointC[1] + 2 * delta_y;
+        pointC_[2] = pointC[2] + 2 * delta_z;
 
         // 计算C到AB的距离
-        return sphereDistance(point_3, point_4)/2;// CC' / 2
+        return sphereDistance(pointC, pointC_)/2;// CC' / 2
     }
 
-    double planeAngle(final double point_1[], final double point_2[], final double point_3[]) {
+    double planeAngle(final double pointA[], final double pointB[], final double pointC[]) {
         // 计算2个平面之间的夹角(绝对值), 输入为(平面1某一向量, 公共边, 平面2某一向量), 设为(OA, OB, OC)
         // 计算OA在OB上的垂足D, OD = a(OB)
-        double a = (point_1[0]*point_2[0] + point_1[1]*point_2[1] + point_1[2]*point_2[2])/(point_2[0]*point_2[0] + point_2[1]*point_2[1] + point_2[2]*point_2[2]);
+        double a = (pointA[0]*pointB[0] + pointA[1]*pointB[1] + pointA[2]*pointB[2])/(pointB[0]*pointB[0] + pointB[1]*pointB[1] + pointB[2]*pointB[2]);
         // 计算OC在OB上的垂足E, OE = b(OB)
-        double b = (point_3[0]*point_2[0] + point_3[1]*point_2[1] + point_3[2]*point_2[2])/(point_2[0]*point_2[0] + point_2[1]*point_2[1] + point_2[2]*point_2[2]);
+        double b = (pointC[0]*pointB[0] + pointC[1]*pointB[1] + pointC[2]*pointB[2])/(pointB[0]*pointB[0] + pointB[1]*pointB[1] + pointB[2]*pointB[2]);
 
         // 计算DA, EB夹角的绝对值
-        double vector_1[] = new double[3];// DA
-        double vector_2[] = new double[3];// EB
-        vector_1[0] = point_1[0] - a * point_2[0];
-        vector_1[1] = point_1[1] - a * point_2[1];
-        vector_1[2] = point_1[2] - a * point_2[2];
-        vector_2[0] = point_3[0] - b * point_2[0];
-        vector_2[1] = point_3[1] - b * point_2[1];
-        vector_2[2] = point_3[2] - b * point_2[2];
-        double delta_x = vector_1[0] - vector_2[0];
-        double delta_y = vector_1[1] - vector_2[1];
-        double delta_z = vector_1[2] - vector_2[2];
-        double cos_theta = (vector_1[0]*vector_2[0] + vector_1[1]*vector_2[1] + vector_1[2]*vector_2[2]) / Math.sqrt(delta_x*delta_x + delta_y*delta_y + delta_z*delta_z);
+        double vectorDA[] = new double[3];// DA
+        double vectorEB[] = new double[3];// EB
+        vectorDA[0] = pointA[0] - a * pointB[0];
+        vectorDA[1] = pointA[1] - a * pointB[1];
+        vectorDA[2] = pointA[2] - a * pointB[2];
+        vectorEB[0] = pointC[0] - b * pointB[0];
+        vectorEB[1] = pointC[1] - b * pointB[1];
+        vectorEB[2] = pointC[2] - b * pointB[2];
+        double delta_x = vectorDA[0] - vectorEB[0];
+        double delta_y = vectorDA[1] - vectorEB[1];
+        double delta_z = vectorDA[2] - vectorEB[2];
+        double cos_theta = (vectorDA[0]*vectorEB[0] + vectorDA[1]*vectorEB[1] + vectorDA[2]*vectorEB[2]) / Math.sqrt(delta_x*delta_x + delta_y*delta_y + delta_z*delta_z);
         return Math.acos(cos_theta);
     }
 
-    void sphereConvert(final double position_1[], final double position_2[], double position_3[]) {
+    void sphereConvert(final double positionP[], final double positionQ[], double positionR[]) {
         // 球面坐标系的坐标变换, 输入为(新的北极点, 待变换的点), 设为(P, Q), 坐标为地理坐标(经度, 纬度)
         // 第3个参数用于返回(经度, 纬度)
-        // 在新的坐标系中, 0经度方向为原地理坐标系中OP的方向
 
         // 计算3个点:
         // U: 新坐标系中P沿着0经度往南90纬度
         // V: 新坐标系中P沿着180经度往南90纬度
-        // W: 原坐标系中在赤道上, 且与P点经度相差90(即新赤道面与旧赤道面的交点, 随便选一个)
-        double position_4[] = new double[2];// U
-        double position_5[] = new double[2];// V
-        double position_6[] = new double[2];// W
-        position_4[0] = position_1[0];// U的经度
-        position_4[1] = position_1[1] - Math.PI / 2;// U的纬度
-        if (position_4[1] < -Math.PI) {
+        // W: 原坐标系中在赤道上, 且与P点经度相差90(即新赤道面与旧赤道面的交点, TODO 取U东边的)
+        // TODO 在新的坐标系中, 0经度方向为PW的方向
+        double positionU[] = new double[2];// U
+        double positionV[] = new double[2];// V
+        double positionW[] = new double[2];// W
+        positionU[0] = positionP[0];// U的经度
+        positionU[1] = positionP[1] - Math.PI / 2;// U的纬度
+        if (positionU[1] < -Math.PI) {
             // 越过了南极, 取相反的经度
-            if (position_4[0] < 0) {
-                position_4[0] += Math.PI;
+            if (positionU[0] < 0) {
+                positionU[0] += Math.PI;
             } else {
-                position_4[0] -= Math.PI;
+                positionU[0] -= Math.PI;
             }
         }
-        position_5[0] = position_1[0];// V的经度
-        position_5[1] = position_1[1] + Math.PI / 2;// V的纬度
-        if (position_5[1] > Math.PI) {
+        positionV[0] = positionP[0];// V的经度
+        positionV[1] = positionP[1] + Math.PI / 2;// V的纬度
+        if (positionV[1] > Math.PI) {
             // 越过了北极, 取相反的经度
-            if (position_5[0] < 0) {
-                position_5[0] += Math.PI;
+            if (positionV[0] < 0) {
+                positionV[0] += Math.PI;
             } else {
-                position_5[0] -= Math.PI;
+                positionV[0] -= Math.PI;
             }
         }
-        position_6[0] = position_1[0] - Math.PI / 2;// W的经度
-        position_6[1] = 0;// W的纬度(在赤道上)
-        if (position_6[0] < -Math.PI) {
+        positionW[0] = positionP[0] + Math.PI / 2;// W的经度, TODO 往东90经度
+        positionW[1] = 0;// W的纬度(在赤道上)
+        if (positionW[0] > Math.PI) {
             // 越过了180经度线
-            position_6[0] += 2 * Math.PI;
+            positionW[0] -= 2 * Math.PI;
         }
 
         // 计算Q在以P为北极的坐标系中的坐标
-        double point_1[] = new double[3];// P
-        double point_2[] = new double[3];// Q
-        double point_4[] = new double[3];// U
-        double point_5[] = new double[3];// V
-        double point_6[] = new double[3];// W
-        sphere2Coordinate(position_1, point_1);
-        sphere2Coordinate(position_2, point_2);
-        sphere2Coordinate(position_4, point_4);
-        sphere2Coordinate(position_5, point_5);
-        sphere2Coordinate(position_6, point_6);
-        double new_longitude;
-        double new_latitude;
+        double pointP[] = new double[3];// P
+        double pointQ[] = new double[3];// Q
+        double pointU[] = new double[3];// U
+        double pointV[] = new double[3];// V
+        double pointW[] = new double[3];// W
+        sphere2Coordinate(positionP, pointP);// P
+        sphere2Coordinate(positionQ, pointQ);// Q
+        sphere2Coordinate(positionU, pointU);// U
+        sphere2Coordinate(positionV, pointV);// V
+        sphere2Coordinate(positionW, pointW);// W
+        double new_longitude = planeAngle(pointQ, pointP, pointW);// 使用OQ, OP, OW计算新的经度(绝对值)
+        double new_latitude = sphereDistance(pointP, pointQ);// PQ的长度即为弧度, 结果为纬度 + 90
+
+        // 判断Q在W的东侧还是西侧, TODO W的东边是V, W的西边是U
+        double qu = sphereDistance(pointQ, pointU);
+        double qv = sphereDistance(pointQ, pointU);
+        if (qu > qv) {
+            // Q在W西侧
+            new_longitude = -new_longitude;
+        }
+
+        // 返回结果
+        positionR[0] = new_longitude;// Q的经度
+        positionR[1] = new_latitude;// Q的纬度
+    }
+
+    void panoramaGuide() {
+        double positionP[] = new double[2];// P
+        double positionQ[] = new double[2];// Q
+        positionP[0] = this_longitude;
+        positionP[1] = this_latitude;
+        for (int i = 0; i < photo_num; i ++) {
+            ;
+        }
     }
 }
