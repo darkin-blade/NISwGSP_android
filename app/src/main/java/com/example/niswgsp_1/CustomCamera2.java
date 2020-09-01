@@ -766,6 +766,9 @@ public class CustomCamera2 extends DialogFragment {
 
     void panoramaGuide() {
         // 辅助拍摄
+        if (myImageView == null || myImageView.getWidth() <= 0) {
+            return;
+        }
 
         // 获取canvas
         if (myCanvas == null) {
