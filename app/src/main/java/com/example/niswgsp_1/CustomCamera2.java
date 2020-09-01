@@ -669,4 +669,37 @@ public class CustomCamera2 extends DialogFragment {
         // 计算C到AB的距离
         return sphereDistance(point_3, point_4)/2;// CC' / 2
     }
+
+    double planeAngle(final double point_1[], final double point_2[], final double point_3[]) {
+        // 计算2个平面之间的夹角(绝对值), 输入为(平面1某一向量, 公共边, 平面2某一向量), 设为(OA, OB, OC)
+        // 计算OA在OB上的垂足D, OD = a(OB)
+        double a = (point_1[0]*point_2[0] + point_1[1]*point_2[1] + point_1[2]*point_2[2])/(point_2[0]*point_2[0] + point_2[1]*point_2[1] + point_2[2]*point_2[2]);
+        // 计算OC在OB上的垂足E, OE = b(OB)
+        double b = (point_3[0]*point_2[0] + point_3[1]*point_2[1] + point_3[2]*point_2[2])/(point_2[0]*point_2[0] + point_2[1]*point_2[1] + point_2[2]*point_2[2]);
+
+        // 计算DA, EB夹角的绝对值
+        double vector_1[] = new double[3];// DA
+        double vector_2[] = new double[3];// EB
+        vector_1[0] = point_1[0] - a * point_2[0];
+        vector_1[1] = point_1[1] - a * point_2[1];
+        vector_1[2] = point_1[2] - a * point_2[2];
+        vector_2[0] = point_3[0] - b * point_2[0];
+        vector_2[1] = point_3[1] - b * point_2[1];
+        vector_2[2] = point_3[2] - b * point_2[2];
+        double delta_x = vector_1[0] - vector_2[0];
+        double delta_y = vector_1[1] - vector_2[1];
+        double delta_z = vector_1[2] - vector_2[2];
+        double cos_theta = (vector_1[0]*vector_2[0] + vector_1[1]*vector_2[1] + vector_1[2]*vector_2[2]) / Math.sqrt(delta_x*delta_x + delta_y*delta_y + delta_z*delta_z);
+        return Math.acos(cos_theta);
+    }
+
+    double sphereConvert(final double point_1[], final double point_2) {
+        // 球面坐标系的坐标变换, 输入为(新的北极点, 待变换的点), 设为(P, Q)
+        // 在新的坐标系中, 0经度方向为原地理坐标系中OP的方向
+        // 计算3个点:
+        // U: 新坐标系中P沿着0经度往南90纬度
+        // V: 新坐标系中P沿着180经度往南90纬度
+        // W: 原坐标系中在赤道上, 且与P点经度相差90(即新赤道面与旧赤道面的交点, 随便选一个)
+        return 0;
+    }
 }
