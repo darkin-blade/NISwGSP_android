@@ -705,7 +705,7 @@ public class CustomCamera2 extends DialogFragment {
         vectorEB[2] = pointC[2] - b * pointB[2];
         double cos_theta = (vectorDA[0]*vectorEB[0] + vectorDA[1]*vectorEB[1] + vectorDA[2]*vectorEB[2]) /
                 (Math.sqrt(vectorDA[0]*vectorDA[0] + vectorDA[1]*vectorDA[1] + vectorDA[2]*vectorDA[2]) * Math.sqrt(vectorEB[0]*vectorEB[0] + vectorEB[1]*vectorEB[1] + vectorEB[2]*vectorEB[2]));
-        return Math.acos(cos_theta);
+        return Math.acos(cos_theta);// 这里不是求的法向量夹角, 所以不需要计算补角
     }
 
     void sphereConvert(final double positionP[], final double positionQ[], double positionR[]) {
@@ -713,38 +713,35 @@ public class CustomCamera2 extends DialogFragment {
         // 第3个参数用于返回(经度, 纬度)
 
         // 计算3个点:
-        // U: 新坐标系中P沿着0经度往南90纬度
-        // V: 新坐标系中P沿着180经度往南90纬度
-        // W: 原坐标系中在赤道上, 且与P点经度相差90(即新赤道面与旧赤道面的交点, TODO 取U东边的)
-        // TODO 在新的坐标系中, 0经度方向为PW的方向
+        // U: 新旧坐标系中的(-90, 0), W往西90
+        // V: 新旧坐标系中的(90, 0), W往东90
+        // W: 新坐标系中P沿着0经度往南90纬度, TODO 在新的坐标系中, 0经度方向为PW的方向
         double positionU[] = new double[2];// U
         double positionV[] = new double[2];// V
         double positionW[] = new double[2];// W
-        positionU[0] = positionP[0];// U的经度
-        positionU[1] = positionP[1] - Math.PI / 2;// U的纬度
-        if (positionU[1] < -Math.PI) {
+        positionU[0] = positionP[0] - Math.PI / 2;// U的经度
+        positionU[1] = 0;
+        if (positionU[0] < -Math.PI) {
+            // 超过了180经度线
+            positionU[0] += 2 * Math.PI;
+        }
+        positionV[0] = positionP[0] + Math.PI / 2;// U的经度
+        positionV[1] = 0;
+        if (positionV[0] > Math.PI) {
+            // 超过了180经度线
+            positionV[0] -= 2 * Math.PI;
+        }
+        positionW[0] = positionP[0];// U的经度
+        positionW[1] = positionP[1] - Math.PI / 2;// U的纬度
+        if (positionW[1] < -Math.PI) {
             // 越过了南极, 取相反的经度
-            if (positionU[0] < 0) {
-                positionU[0] += Math.PI;
+            if (positionW[0] < 0) {
+                // 原坐标系西半球
+                positionW[0] += Math.PI;
             } else {
-                positionU[0] -= Math.PI;
+                // 原坐标系东半球
+                positionW[0] -= Math.PI;
             }
-        }
-        positionV[0] = positionP[0];// V的经度
-        positionV[1] = positionP[1] + Math.PI / 2;// V的纬度
-        if (positionV[1] > Math.PI) {
-            // 越过了北极, 取相反的经度
-            if (positionV[0] < 0) {
-                positionV[0] += Math.PI;
-            } else {
-                positionV[0] -= Math.PI;
-            }
-        }
-        positionW[0] = positionP[0] + Math.PI / 2;// W的经度, TODO 往东90经度
-        positionW[1] = 0;// W的纬度(在赤道上)
-        if (positionW[0] > Math.PI) {
-            // 越过了180经度线
-            positionW[0] -= 2 * Math.PI;
         }
 
         // 计算Q在以P为北极的坐标系中的坐标
@@ -759,13 +756,12 @@ public class CustomCamera2 extends DialogFragment {
         sphere2Coordinate(positionV, pointV);// V
         sphere2Coordinate(positionW, pointW);// W
         double new_longitude = planeAngle(pointQ, pointP, pointW);// 使用OQ, OP, OW计算新的经度(绝对值)
-        infoLog("764: " + (int) Math.toDegrees(new_longitude));
         double new_latitude = sphereDistance(pointP, pointQ);// PQ的长度即为弧度, 结果为纬度 + 90
 
         // 判断Q在W的东侧还是西侧, TODO W的东边是V, W的西边是U
         double qu = sphereDistance(pointQ, pointU);
         double qv = sphereDistance(pointQ, pointV);
-        if (qu > qv) {
+        if (qu < qv) {
             // Q在W西侧
             new_longitude = -new_longitude;
         }
@@ -773,6 +769,7 @@ public class CustomCamera2 extends DialogFragment {
         // 返回结果
         positionR[0] = new_longitude;// Q的经度
         positionR[1] = new_latitude;// Q的纬度
+        infoLog("772: " + (int) Math.toDegrees(new_longitude));
     }
 
     void panoramaGuide() {
