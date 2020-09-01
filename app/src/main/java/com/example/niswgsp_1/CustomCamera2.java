@@ -742,7 +742,8 @@ public class CustomCamera2 extends DialogFragment {
         }
         positionW[0] = positionP[0];// U的经度
         positionW[1] = positionP[1] - Math.PI / 2;// U的纬度
-        if (positionW[1] < -Math.PI) {
+//        infoLog("south: " + positionW[1]);
+        if (positionW[1] < -Math.PI / 2) {
             // 越过了南极, 取相反的经度
             if (positionW[0] < 0) {
                 // 原坐标系西半球
