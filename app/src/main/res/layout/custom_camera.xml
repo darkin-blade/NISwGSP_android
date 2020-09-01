@@ -160,6 +160,14 @@
 
             <Button
                 style="@style/button_1"
+                android:id="@+id/stitch"
+                android:layout_marginLeft="5dp"
+                android:layout_marginRight="5dp"
+                android:text="stitch">
+            </Button>
+
+            <Button
+                style="@style/button_1"
                 android:id="@+id/back"
                 android:layout_marginLeft="5dp"
                 android:layout_marginRight="5dp"

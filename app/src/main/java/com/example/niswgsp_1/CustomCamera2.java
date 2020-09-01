@@ -65,6 +65,7 @@ import static com.example.niswgsp_1.MainActivity.appPath;
 
 public class CustomCamera2 extends DialogFragment {
     Button btnCapture;
+    Button btnStitch;
     Button btnBack;
     Button btnDebug;
     TextureView cameraPreview;
@@ -93,6 +94,7 @@ public class CustomCamera2 extends DialogFragment {
     static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
     static public int photo_num;// 照片总数
     static public int photo_index;// 用于照片命名
+    static public int photo_var;// 信号量
     int capture_times;
 
     // 传感器
@@ -286,6 +288,7 @@ public class CustomCamera2 extends DialogFragment {
         photo_rotation.clear();
         photo_num = 0;
         photo_index = 0;
+        photo_var = 0;
         capture_times = 0;
     }
 
@@ -330,15 +333,18 @@ public class CustomCamera2 extends DialogFragment {
         btnCapture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                dismiss_result = 1;
-                capture_times = 0;
+                // TODO
+            }
+        });
 
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+        btnStitch = view.findViewById(R.id.stitch);
+        btnStitch.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (photo_var == 0) {
+                    dismiss_result = 1;
+                    dismiss();
                 }
-                dismiss();
             }
         });
 
@@ -475,19 +481,20 @@ public class CustomCamera2 extends DialogFragment {
                     buffer.get(bytes);
 
                     // 新建线程保存图片
-//                    new Thread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            try {
-//                                OutputStream outputStream = new FileOutputStream(file);
-//                                outputStream.write(bytes);
-//
-//                                infoLog("save photo " + file);
-//                            } catch (IOException e) {
-//                                e.printStackTrace();
-//                            }
-//                        }
-//                    }).start();
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                OutputStream outputStream = new FileOutputStream(file);
+                                outputStream.write(bytes);
+
+                                infoLog("save photo " + file);
+                                photo_var ++;
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }).start();
                     if (backgroundThread == null) {
                         backgroundThread = new HandlerThread("camera background");
                         backgroundThread.start();
@@ -507,6 +514,7 @@ public class CustomCamera2 extends DialogFragment {
     void takePictures() {
         photo_num ++;
         photo_index ++;
+        photo_var --;
         photoNum.setText("photos: " + photo_num);
         // 保存到图片list
         String timeStamp = photo_index + ".jpg";
