@@ -784,6 +784,23 @@ public class CustomCamera2 extends DialogFragment {
             sphereConvert(positionP, positionQ, positionQ_);
             if (positionQ_[1] < Math.PI / 3) {
                 // TODO 纬度与北极相差60以内
+                // 球面坐标->极坐标, 0经度线显示为竖直向上, 并且以顺时针为正方向(TODO 即球面坐标系中的正西方向)
+                if (positionQ_[0] < 0) {
+                    // 西经
+                    positionQ_[0] = -positionQ_[0];
+                } else {
+                    // 东经
+                    positionQ_[0] = 2 * Math.PI - positionQ_[0];
+                }
+
+                // TODO 处理手机角度偏移, 极坐标角度必须在[0, 360]内
+                positionQ_[0] += gravity_theta;
+                if (positionQ_[0] > 2 * Math.PI) {
+                    positionQ_[0] -= 2 * Math.PI;
+                } else if (positionQ_[0] < 0) {
+                    positionQ_[0] += 2 * Math.PI;
+                }
+
                 // 绘制拍照点
                 myCanvas.drawCircle(200, 200, 50, myPaint);
             }
