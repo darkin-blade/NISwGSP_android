@@ -764,12 +764,12 @@ public class CustomCamera2 extends DialogFragment {
         double new_latitude = sphereDistance(pointP, pointQ);// PQ的长度即为弧度, 结果为纬度 + 90
 
         // 判断Q在W的东侧还是西侧, TODO W的东边是V, W的西边是U
-//        double qu = sphereDistance(pointQ, pointU);
-//        double qv = sphereDistance(pointQ, pointV);
-//        if (qu > qv) {
-//            // Q在W西侧
-//            new_longitude = -new_longitude;
-//        }
+        double qu = sphereDistance(pointQ, pointU);
+        double qv = sphereDistance(pointQ, pointV);
+        if (qu > qv) {
+            // Q在W西侧
+            new_longitude = -new_longitude;
+        }
 
         // 返回结果
         positionR[0] = new_longitude;// Q的经度
