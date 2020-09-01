@@ -251,7 +251,7 @@ public class CustomCamera2 extends DialogFragment {
         View view = inflater.inflate(R.layout.custom_camera, container);
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(0x00000000));// 背景透明
 
-        initCamera();// 初始化变量
+//        initCamera();// 初始化变量
         initSensor();// 初始化传感器
         initUI(view);// 初始化按钮
 
@@ -326,6 +326,9 @@ public class CustomCamera2 extends DialogFragment {
         btnCapture.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
+                if (capture_times == 0) {
+                    initCamera();// TODO 重复拍摄的功能
+                }
                 capture_times ++;
                 return false;
             }
@@ -333,7 +336,7 @@ public class CustomCamera2 extends DialogFragment {
         btnCapture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // TODO
+                capture_times = 0;
             }
         });
 
