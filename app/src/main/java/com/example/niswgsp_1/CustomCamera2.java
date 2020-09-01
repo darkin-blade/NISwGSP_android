@@ -29,6 +29,7 @@ import android.media.Image;
 import android.media.ImageReader;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
@@ -49,6 +50,7 @@ import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -85,7 +87,7 @@ public class CustomCamera2 extends DialogFragment {
 
     ImageReader mImageReader;
     Handler backgroundHandler;
-//    HandlerThread backgroundThread;// TODO 用于保存照片的线程
+    HandlerThread backgroundThread;// TODO 用于保存照片的线程
 
     static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
     static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
@@ -193,9 +195,11 @@ public class CustomCamera2 extends DialogFragment {
 
                 if (capture_times > 0) {
                     // 按下快门
-                    if (photo_num == 0 || sphere_dis > 300) {
+                    if (photo_num == 0 || sphere_dis > 100) {
                         // 拍摄照片
                         takePictures();
+                        // 照片去重
+                        removeRepeat();
                     }
                 }
             }
@@ -276,6 +280,7 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void initCamera() {
+        dismiss_result = 0;
         photo_name.clear();
         photo_rotation.clear();
         photo_num = 0;
@@ -325,14 +330,12 @@ public class CustomCamera2 extends DialogFragment {
             public void onClick(View view) {
                 dismiss_result = 1;
                 capture_times = 0;
-                takePictures();// 无条件拍摄最后一张
 
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                removeRepeat();
                 dismiss();
             }
         });
@@ -463,7 +466,6 @@ public class CustomCamera2 extends DialogFragment {
             public void onImageAvailable(ImageReader reader) {
                 // 有新的照片
                 Image image = reader.acquireLatestImage();
-//                String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date()) + ".jpg";
                 try {
                     // 将帧数据转成字节数组,类似回调的预览数据
                     ByteBuffer buffer = image.getPlanes()[0].getBuffer();
@@ -471,25 +473,25 @@ public class CustomCamera2 extends DialogFragment {
                     buffer.get(bytes);
 
                     // 新建线程保存图片
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                OutputStream outputStream = new FileOutputStream(file);
-                                outputStream.write(bytes);
-
-                                infoLog("save photo " + file);
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }).start();
-//                    if (backgroundThread == null) {
-//                        backgroundThread = new HandlerThread("camera background");
-//                        backgroundThread.start();
-//                        backgroundHandler = new Handler(backgroundThread.getLooper());
-//                    }
-//                    backgroundHandler.post(new ImageSaver(bytes));
+//                    new Thread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            try {
+//                                OutputStream outputStream = new FileOutputStream(file);
+//                                outputStream.write(bytes);
+//
+//                                infoLog("save photo " + file);
+//                            } catch (IOException e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                    }).start();
+                    if (backgroundThread == null) {
+                        backgroundThread = new HandlerThread("camera background");
+                        backgroundThread.start();
+                        backgroundHandler = new Handler(backgroundThread.getLooper());
+                    }
+                    backgroundHandler.post(new ImageSaver(bytes));
                 } finally {
                     if (image != null) {
                         image.close();// 画面会卡住
@@ -541,60 +543,68 @@ public class CustomCamera2 extends DialogFragment {
     void removeRepeat() {
         // 删除重复度较高的照片
         double point[][] = new double[4][3];// A(x, y, z), B(x, y, z), C(x, y, z), C'(x, y, z)
+        double distance_1;// AB
+        double distance_2;// CC' / 2
         if (photo_num >= 3) {
-            for (int i = 0; i < photo_num; i ++) {
-                for (int j = i + 2; j < photo_num; j ++) {
-                    // 计算3点的空间直角坐标(x与经度0的方向平行)(右手系)
-                    ArrayList<Double> tmp;
-                    double xy;// sqrt(x^2 + y^2)
-                    // A
-                    tmp = photo_rotation.get(i);
-                    point[0][2] = Math.sin(tmp.get(1));// 纬度计算z
-                    xy = Math.sqrt(1 - point[0][2] * point[0][2]);
-                    point[0][0] = xy * Math.cos(tmp.get(0));// 经度计算x
-                    point[0][1] = xy * Math.sin(tmp.get(0));// 经度计算y
-                    // B
-                    tmp = photo_rotation.get(j);
-                    point[1][2] = Math.sin(tmp.get(1));// 纬度计算z
-                    xy = Math.sqrt(1 - point[1][2] * point[1][2]);// sqrt(x^2 + y^2)
-                    point[1][0] = xy * Math.cos(tmp.get(0));// 经度计算x
-                    point[1][1] = xy * Math.sin(tmp.get(0));// 经度计算y
-                    // C
-                    tmp = photo_rotation.get(j - 1);
-                    point[2][2] = Math.sin(tmp.get(1));// 纬度计算z
-                    xy = Math.sqrt(1 - point[2][2] * point[2][2]);// sqrt(x^2 + y^2)
-                    point[2][0] = xy * Math.cos(tmp.get(0));// 经度计算x
-                    point[2][1] = xy * Math.sin(tmp.get(0));// 经度计算y
+            // 计算3点的空间直角坐标(x与经度0的方向平行)(右手系)
+            ArrayList<Double> tmp;
+            double xy;// sqrt(x^2 + y^2)
+            // A
+            tmp = photo_rotation.get(photo_num - 3);
+            point[0][2] = Math.sin(tmp.get(1));// 纬度计算z
+            xy = Math.sqrt(1 - point[0][2] * point[0][2]);
+            point[0][0] = xy * Math.cos(tmp.get(0));// 经度计算x
+            point[0][1] = xy * Math.sin(tmp.get(0));// 经度计算y
+            // B
+            tmp = photo_rotation.get(photo_num - 2);
+            point[1][2] = Math.sin(tmp.get(1));// 纬度计算z
+            xy = Math.sqrt(1 - point[1][2] * point[1][2]);// sqrt(x^2 + y^2)
+            point[1][0] = xy * Math.cos(tmp.get(0));// 经度计算x
+            point[1][1] = xy * Math.sin(tmp.get(0));// 经度计算y
+            // C
+            tmp = photo_rotation.get(photo_num - 1);
+            point[2][2] = Math.sin(tmp.get(1));// 纬度计算z
+            xy = Math.sqrt(1 - point[2][2] * point[2][2]);// sqrt(x^2 + y^2)
+            point[2][0] = xy * Math.cos(tmp.get(0));// 经度计算x
+            point[2][1] = xy * Math.sin(tmp.get(0));// 经度计算y
 
-                    // 计算C在OAB上的垂足D
-                    Matrix A = new Matrix(new double[][]{
-                            {point[0][0]*point[0][0] + point[0][1]*point[0][1] + point[0][2]*point[0][2],
-                                    point[0][0]*point[1][0] + point[0][1]*point[1][1] + point[0][2]*point[1][2]},
-                            {point[0][0]*point[1][0] + point[0][1]*point[1][1] + point[0][2]*point[1][2],
-                                    point[1][0]*point[1][0] + point[1][1]*point[1][1] + point[1][2]*point[1][2]}
-                    });
-                    Matrix b = new Matrix(new double[][]{
-                            {point[0][0]*point[2][0] + point[0][1]*point[2][1] + point[0][2]*point[2][2]},
-                            {point[1][0]*point[2][0] + point[1][1]*point[2][1] + point[1][2]*point[2][2]},
-                    });
-                    Matrix x = A.solve(b);
+            // 计算弧AB长度
+            distance_1 = distance(point[0], point[1]);// AB
+            if (distance_1 >= 300) {
+                // 保留B点
+                return;
+            }
 
-                    // 计算C到关于D的对称点C'的弧长
-                    double delta_x = x.get(0, 0) * point[0][0] + x.get(1, 0) * point[1][0] - point[2][0];// dx - cx
-                    double delta_y = x.get(0, 0) * point[0][1] + x.get(1, 0) * point[1][1] - point[2][1];// dy - cy
-                    double delta_z = x.get(0, 0) * point[0][2] + x.get(1, 0) * point[1][2] - point[2][2];// dz - cz
-                    point[3][0] = point[2][0] + 2 * delta_x;
-                    point[3][1] = point[2][1] + 2 * delta_y;
-                    point[3][2] = point[2][2] + 2 * delta_z;
-                    double distance_1 = distance(point[0], point[1]);// AB
-                    double distance_2 = distance(point[2], point[3])/2;// C to AB
-                    infoLog("(" + i + ", " + j + ", " + (j - 1) + "): [" + distance_1 + ", " + distance_2 + "]");
-                    if (distance_1 > 400) {
-                        // 距离过远,不做优化
-                    } else if (distance_2 < 100) {
-                        // 删掉C点
-                    }
-                }
+            // 计算C在OAB上的垂足D
+            Matrix A = new Matrix(new double[][]{
+                    {point[0][0]*point[0][0] + point[0][1]*point[0][1] + point[0][2]*point[0][2],
+                            point[0][0]*point[1][0] + point[0][1]*point[1][1] + point[0][2]*point[1][2]},
+                    {point[0][0]*point[1][0] + point[0][1]*point[1][1] + point[0][2]*point[1][2],
+                            point[1][0]*point[1][0] + point[1][1]*point[1][1] + point[1][2]*point[1][2]}
+            });
+            Matrix b = new Matrix(new double[][]{
+                    {point[0][0]*point[2][0] + point[0][1]*point[2][1] + point[0][2]*point[2][2]},
+                    {point[1][0]*point[2][0] + point[1][1]*point[2][1] + point[1][2]*point[2][2]},
+            });
+            Matrix x = A.solve(b);
+
+            // 计算C到关于D的对称点C'的弧长
+            double delta_x = x.get(0, 0) * point[0][0] + x.get(1, 0) * point[1][0] - point[2][0];// dx - cx
+            double delta_y = x.get(0, 0) * point[0][1] + x.get(1, 0) * point[1][1] - point[2][1];// dy - cy
+            double delta_z = x.get(0, 0) * point[0][2] + x.get(1, 0) * point[1][2] - point[2][2];// dz - cz
+            point[3][0] = point[2][0] + 2 * delta_x;
+            point[3][1] = point[2][1] + 2 * delta_y;
+            point[3][2] = point[2][2] + 2 * delta_z;
+
+            // 计算C到AB的距离
+            distance_2 = distance(point[2], point[3])/2;// C to AB
+            infoLog("(" + photo_num + "): [" + distance_1 + ", " + distance_2 + "]");
+            if (distance_2 <= 80) {// TODO 阈值
+                // 删除B点
+                photo_name.remove(photo_num - 2);
+                photo_rotation.remove(photo_num - 2);
+                photo_num --;
+                infoLog("photo num: " + photo_name.size());
             }
         }
 
@@ -610,5 +620,27 @@ public class CustomCamera2 extends DialogFragment {
         double sphere_dis = 1000 * Math.acos(Math.cos(latitude_1) * Math.cos(latitude_2) * Math.cos(longitude_2 - longitude_1)
                 + Math.sin(latitude_1) * Math.sin(latitude_2));
         return sphere_dis;
+    }
+
+    class ImageSaver implements Runnable {
+        byte[] bytes;
+        public ImageSaver(byte[] b) {
+            bytes = b;
+        }
+
+        @Override
+        public void run() {
+            OutputStream outputStream = null;
+            try {
+                outputStream = new FileOutputStream(file);
+                outputStream.write(bytes);
+                infoLog("save photo " + file);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
     }
 }
