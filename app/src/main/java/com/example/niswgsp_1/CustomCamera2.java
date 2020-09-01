@@ -365,16 +365,7 @@ public class CustomCamera2 extends DialogFragment {
         btnDebug.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // 获取canvas
-                if (myBitmap == null) {
-                    myBitmap = Bitmap.createBitmap(myImageView.getWidth(), myImageView.getHeight(), Bitmap.Config.ARGB_8888);
-                    myCanvas = new Canvas(myBitmap);
-                    myPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                    myPaint.setStrokeWidth(5);
-                    myPaint.setColor(Color.WHITE);
-                }
-                myCanvas.drawCircle(200, 200, 50, myPaint);
-                myImageView.setImageBitmap(myBitmap);
+                panoramaGuide();
             }
         });
 
@@ -768,12 +759,34 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void panoramaGuide() {
+        // 辅助拍摄
+
+        // 获取canvas
+        if (myBitmap == null) {
+            myBitmap = Bitmap.createBitmap(myImageView.getWidth(), myImageView.getHeight(), Bitmap.Config.ARGB_8888);
+            myCanvas = new Canvas(myBitmap);
+            myPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            myPaint.setStrokeWidth(5);
+            myPaint.setColor(Color.WHITE);
+        }
+        myImageView.setImageBitmap(myBitmap);
+
         double positionP[] = new double[2];// P
         double positionQ[] = new double[2];// Q
+        double positionQ_[] = new double[2];// Q变换后的坐标
         positionP[0] = this_longitude;
         positionP[1] = this_latitude;
+
         for (int i = 0; i < photo_num; i ++) {
-            ;
+            // 计算所有拍照点的坐标变换
+            positionQ[0] = photo_rotation.get(i).get(0);// 经度
+            positionQ[1] = photo_rotation.get(i).get(1);// 纬度
+            sphereConvert(positionP, positionQ, positionQ_);
+            if (positionQ_[1] < Math.PI / 3) {
+                // TODO 纬度与北极相差60以内
+                // 绘制拍照点
+                myCanvas.drawCircle(200, 200, 50, myPaint);
+            }
         }
     }
 }
