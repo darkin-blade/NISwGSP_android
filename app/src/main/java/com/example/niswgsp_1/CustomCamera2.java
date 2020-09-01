@@ -10,6 +10,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.Sensor;
@@ -79,7 +81,7 @@ public class CustomCamera2 extends DialogFragment {
     Canvas myCanvas;
     Paint myPaint;
     double myRadius;// 屏幕尺寸
-    double halfW, halfH;// 屏幕的一半宽/高
+    int halfW, halfH;// 屏幕的一半宽/高
 
     CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
     CameraCaptureSession mCameraCaptureSession;// 相机捕获会话,用于处理拍照和预览的工作
@@ -764,18 +766,17 @@ public class CustomCamera2 extends DialogFragment {
         // 辅助拍摄
 
         // 获取canvas
-        if (myBitmap == null) {
+        if (myCanvas == null) {
             myBitmap = Bitmap.createBitmap(myImageView.getWidth(), myImageView.getHeight(), Bitmap.Config.ARGB_8888);
-            myCanvas = new Canvas(myBitmap);
+            myCanvas = new Canvas();
             myPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             myPaint.setStrokeWidth(5);
             myPaint.setColor(Color.WHITE);
             // 屏幕尺寸信息
-            halfW = myImageView.getWidth();
-            halfH = myImageView.getHeight();
-            myRadius = Math.sqrt(halfW*halfW + halfH*halfH) / 2;// 半径为屏幕对角线长度 / 2
+            halfW = myImageView.getWidth() / 2;
+            halfH = myImageView.getHeight() / 2;
+            myRadius = Math.sqrt(halfW*halfW + halfH*halfH);// 半径为屏幕对角线长度 / 2
         }
-        myImageView.setImageBitmap(myBitmap);
 
         double positionP[] = new double[2];// P
         double positionQ[] = new double[2];// Q
@@ -808,15 +809,19 @@ public class CustomCamera2 extends DialogFragment {
                 }
 
                 // 极坐标->直角坐标
-                double coordinateX, coordinateY;
-                coordinateX = Math.cos(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 3));
-                coordinateY = Math.sin(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 3));
+                int coordinateX, coordinateY;
+                coordinateX = (int) (  Math.cos(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 3))  );
+                coordinateY = (int) (  Math.sin(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 3))  );
                 coordinateX = halfW - coordinateX;
                 coordinateY = halfH - coordinateY;
 
                 // 绘制拍照点
-                myCanvas.drawCircle((int) coordinateX, (int) coordinateY, 50, myPaint);
+                myCanvas.drawCircle(coordinateX, coordinateY, 50, myPaint);
+                infoLog(i + ": " + coordinateX + ", " + coordinateY + "(" + halfW + ", " + halfH + ")");
             }
         }
+
+        // TODO 清空并绘制
+        myImageView.setImageBitmap(myBitmap);
     }
 }
