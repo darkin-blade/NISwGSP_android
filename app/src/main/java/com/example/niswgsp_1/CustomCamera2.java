@@ -211,6 +211,8 @@ public class CustomCamera2 extends DialogFragment {
                     }
                 }
             }
+
+            panoramaGuide();
         }
 
         @Override
@@ -369,7 +371,7 @@ public class CustomCamera2 extends DialogFragment {
         btnDebug.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                panoramaGuide();
+//                panoramaGuide();
             }
         });
 
@@ -768,7 +770,7 @@ public class CustomCamera2 extends DialogFragment {
         // 获取canvas
         if (myCanvas == null) {
             myBitmap = Bitmap.createBitmap(myImageView.getWidth(), myImageView.getHeight(), Bitmap.Config.ARGB_8888);
-            myCanvas = new Canvas();
+            myCanvas = new Canvas(myBitmap);
             myPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             myPaint.setStrokeWidth(5);
             myPaint.setColor(Color.WHITE);
@@ -777,6 +779,7 @@ public class CustomCamera2 extends DialogFragment {
             halfH = myImageView.getHeight() / 2;
             myRadius = Math.sqrt(halfW*halfW + halfH*halfH);// 半径为屏幕对角线长度 / 2
         }
+        myBitmap.eraseColor(Color.TRANSPARENT);
 
         double positionP[] = new double[2];// P
         double positionQ[] = new double[2];// Q
@@ -821,7 +824,6 @@ public class CustomCamera2 extends DialogFragment {
             }
         }
 
-        // TODO 清空并绘制
         myImageView.setImageBitmap(myBitmap);
     }
 }
