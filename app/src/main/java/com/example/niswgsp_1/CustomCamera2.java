@@ -10,8 +10,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.ImageFormat;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.ColorDrawable;
 import android.hardware.Sensor;
@@ -82,6 +80,7 @@ public class CustomCamera2 extends DialogFragment {
     Paint myPaint;
     double myRadius;// 屏幕尺寸
     int halfW, halfH;// 屏幕的一半宽/高
+    int switchGuide = 1;// 开启辅助功能
 
     CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
     CameraCaptureSession mCameraCaptureSession;// 相机捕获会话,用于处理拍照和预览的工作
@@ -212,7 +211,7 @@ public class CustomCamera2 extends DialogFragment {
                 }
             }
 
-//            panoramaGuide();
+            panoramaGuide();
         }
 
         @Override
@@ -371,7 +370,7 @@ public class CustomCamera2 extends DialogFragment {
         btnDebug.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                panoramaGuide();
+                switchGuide = 1 - switchGuide;
             }
         });
 
@@ -481,26 +480,26 @@ public class CustomCamera2 extends DialogFragment {
                     buffer.get(bytes);
 
                     // 新建线程保存图片
-//                    new Thread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            try {
-//                                OutputStream outputStream = new FileOutputStream(file);
-//                                outputStream.write(bytes);
-//
-//                                infoLog("save photo " + file);
-//                                photo_var ++;
-//                            } catch (IOException e) {
-//                                e.printStackTrace();
-//                            }
-//                        }
-//                    }).start();
-                    if (backgroundThread == null) {
-                        backgroundThread = new HandlerThread("camera background");
-                        backgroundThread.start();
-                        backgroundHandler = new Handler(backgroundThread.getLooper());
-                    }
-                    backgroundHandler.post(new ImageSaver(bytes));
+                    new Thread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                OutputStream outputStream = new FileOutputStream(file);
+                                outputStream.write(bytes);
+
+                                infoLog("save photo " + file);
+                                photo_var ++;
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }).start();
+//                    if (backgroundThread == null) {
+//                        backgroundThread = new HandlerThread("camera background");
+//                        backgroundThread.start();
+//                        backgroundHandler = new Handler(backgroundThread.getLooper());
+//                    }
+//                    backgroundHandler.post(new ImageSaver(bytes));
                 } finally {
                     if (image != null) {
                         image.close();// 画面会卡住
@@ -711,6 +710,9 @@ public class CustomCamera2 extends DialogFragment {
     void sphereConvert(final double positionP[], final double positionQ[], double positionR[]) {
         // 球面坐标系的坐标变换, 输入为(新的北极点, 待变换的点), 设为(P, Q), 坐标为地理坐标(经度, 纬度)
         // 第3个参数用于返回(经度, 纬度)
+        if (switchGuide == 0) {
+            return;
+        }
 
         // 计算3个点:
         // U: 新旧坐标系中的(-90, 0), W往西90
@@ -769,7 +771,6 @@ public class CustomCamera2 extends DialogFragment {
         // 返回结果
         positionR[0] = new_longitude;// Q的经度
         positionR[1] = new_latitude;// Q的纬度
-        infoLog("772: " + (int) Math.toDegrees(new_longitude));
     }
 
     void panoramaGuide() {
@@ -806,13 +807,7 @@ public class CustomCamera2 extends DialogFragment {
             if (positionQ_[1] < Math.PI / 3) {
                 // TODO 纬度与北极相差60以内
                 // 球面坐标->极坐标, 0经度线显示为竖直向上, 并且以顺时针为正方向(TODO 即球面坐标系中的正西方向)
-                if (positionQ_[0] < 0) {
-                    // 西经
-                    positionQ_[0] = -positionQ_[0];
-                } else {
-                    // 东经
-                    positionQ_[0] = 2 * Math.PI - positionQ_[0];
-                }
+                positionQ_[0] += Math.PI;
 
                 // TODO 处理手机角度偏移, 极坐标角度必须在[0, 360]内
                 positionQ_[0] += gravity_theta;
@@ -823,11 +818,10 @@ public class CustomCamera2 extends DialogFragment {
                 }
 
                 // 极坐标->直角坐标
-                int coordinateX, coordinateY;
-                coordinateX = (int) (  Math.cos(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 3))  );
-                coordinateY = (int) (  Math.sin(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 3))  );
-                coordinateX = halfW - coordinateX;
-                coordinateY = halfH - coordinateY;
+                int tmpX = (int) (  Math.cos(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 5))  );
+                int tmpY = (int) (  Math.sin(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 5))  );
+                int coordinateX = halfW + tmpY;
+                int coordinateY = halfH - tmpX;
 
                 // 绘制拍照点
                 myCanvas.drawCircle(coordinateX, coordinateY, 50, myPaint);
