@@ -577,35 +577,13 @@ public class CustomCamera2 extends DialogFragment {
             sphere2Coordinate(tmp, point[2]);
 
             // 计算弧AB长度
-            distance_1 = distance(point[0], point[1]);// AB
+            distance_1 = sphereDistance(point[0], point[1]);// AB
             if (distance_1 >= 300) {
                 // 保留B点
                 return;
             }
 
-            // 计算C在OAB上的垂足D
-            Matrix A = new Matrix(new double[][]{
-                    {point[0][0]*point[0][0] + point[0][1]*point[0][1] + point[0][2]*point[0][2],
-                            point[0][0]*point[1][0] + point[0][1]*point[1][1] + point[0][2]*point[1][2]},
-                    {point[0][0]*point[1][0] + point[0][1]*point[1][1] + point[0][2]*point[1][2],
-                            point[1][0]*point[1][0] + point[1][1]*point[1][1] + point[1][2]*point[1][2]}
-            });
-            Matrix b = new Matrix(new double[][]{
-                    {point[0][0]*point[2][0] + point[0][1]*point[2][1] + point[0][2]*point[2][2]},
-                    {point[1][0]*point[2][0] + point[1][1]*point[2][1] + point[1][2]*point[2][2]},
-            });
-            Matrix x = A.solve(b);
-
-            // 计算C到关于D的对称点C'的弧长
-            double delta_x = x.get(0, 0) * point[0][0] + x.get(1, 0) * point[1][0] - point[2][0];// dx - cx
-            double delta_y = x.get(0, 0) * point[0][1] + x.get(1, 0) * point[1][1] - point[2][1];// dy - cy
-            double delta_z = x.get(0, 0) * point[0][2] + x.get(1, 0) * point[1][2] - point[2][2];// dz - cz
-            point[3][0] = point[2][0] + 2 * delta_x;
-            point[3][1] = point[2][1] + 2 * delta_y;
-            point[3][2] = point[2][2] + 2 * delta_z;
-
-            // 计算C到AB的距离
-            distance_2 = distance(point[2], point[3])/2;// C to AB
+            distance_2 = point2Line(point[0], point[1], point[2]);
 //            infoLog("(" + photo_num + "): [" + distance_1 + ", " + distance_2 + "]");
             if (distance_2 <= 80) {// TODO 阈值
                 // 删除B点
@@ -621,7 +599,7 @@ public class CustomCamera2 extends DialogFragment {
 
     }
 
-    double distance(double point_1[], double point_2[]) {
+    double sphereDistance(double point_1[], double point_2[]) {
         double longitude_1, latitude_1;
         double longitude_2, latitude_2;
         longitude_1 = Math.atan(point_1[1] / point_1[0]);// tan = y / x
@@ -656,9 +634,39 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void sphere2Coordinate(double sphere[], double coordinate[]) {
+        // 地理坐标系转空间直角坐标系
         coordinate[2] = Math.sin(sphere[1]);// 纬度计算z
         double xy = Math.sqrt(1 - coordinate[2] * coordinate[2]);// sqrt(x^2 + y^2)
         coordinate[0] = xy * Math.cos(sphere[0]);// 经度计算x
         coordinate[1] = xy * Math.sin(sphere[0]);// 经度计算y
+    }
+
+    double point2Line(final double point_1[], final double point_2[], final double point_3[]) {
+        // 点到球面直线距离
+        double point_4[] = new double[3];
+
+        // 计算C在OAB上的垂足D
+        Matrix A = new Matrix(new double[][]{
+                {point_1[0]*point_1[0] + point_1[1]*point_1[1] + point_1[2]*point_1[2],
+                        point_1[0]*point_2[0] + point_1[1]*point_2[1] + point_1[2]*point_2[2]},
+                {point_1[0]*point_2[0] + point_1[1]*point_2[1] + point_1[2]*point_2[2],
+                        point_2[0]*point_2[0] + point_2[1]*point_2[1] + point_2[2]*point_2[2]}
+        });
+        Matrix b = new Matrix(new double[][]{
+                {point_1[0]*point_3[0] + point_1[1]*point_3[1] + point_1[2]*point_3[2]},
+                {point_2[0]*point_3[0] + point_2[1]*point_3[1] + point_2[2]*point_3[2]},
+        });
+        Matrix x = A.solve(b);
+
+        // 计算C到关于D的对称点C'的弧长
+        double delta_x = x.get(0, 0) * point_1[0] + x.get(1, 0) * point_2[0] - point_3[0];// dx - cx
+        double delta_y = x.get(0, 0) * point_1[1] + x.get(1, 0) * point_2[1] - point_3[1];// dy - cy
+        double delta_z = x.get(0, 0) * point_1[2] + x.get(1, 0) * point_2[2] - point_3[2];// dz - cz
+        point_4[0] = point_3[0] + 2 * delta_x;
+        point_4[1] = point_3[1] + 2 * delta_y;
+        point_4[2] = point_3[2] + 2 * delta_z;
+
+        // 计算C到AB的距离
+        return sphereDistance(point_3, point_4)/2;// CC' / 2
     }
 }
