@@ -257,7 +257,7 @@ public class CustomCamera2 extends DialogFragment {
         View view = inflater.inflate(R.layout.custom_camera, container);
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(0x00000000));// 背景透明
 
-//        initCamera();// 初始化变量
+        initCamera();// 初始化变量
         initSensor();// 初始化传感器
         initUI(view);// 初始化按钮
 
@@ -326,7 +326,14 @@ public class CustomCamera2 extends DialogFragment {
         text2_4 = view.findViewById(R.id.text2_4);
         photoNum = view.findViewById(R.id.text2_1);
         photoNum.setText("photos: " + photo_num);
+
         myImageView = view.findViewById(R.id.my_canvas);
+        infoLog("is null: " + (myBitmap == null));
+        if (myBitmap != null) {
+            // 清空画布
+            myBitmap.eraseColor(Color.TRANSPARENT);
+            myImageView.setImageBitmap(myBitmap);
+        }
 
         btnCapture = view.findViewById(R.id.capture);
         btnCapture.setOnTouchListener(new View.OnTouchListener() {
@@ -780,7 +787,7 @@ public class CustomCamera2 extends DialogFragment {
         }
 
         // 获取canvas
-        if (myCanvas == null) {
+        if (myBitmap == null) {
             myBitmap = Bitmap.createBitmap(myImageView.getWidth(), myImageView.getHeight(), Bitmap.Config.ARGB_8888);
             myCanvas = new Canvas(myBitmap);
             myPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
