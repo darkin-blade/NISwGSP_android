@@ -551,6 +551,28 @@ public class CustomCamera2 extends DialogFragment {
         }
     }
 
+    class ImageSaver implements Runnable {
+        byte[] bytes;
+        public ImageSaver(byte[] b) {
+            bytes = b;
+        }
+
+        @Override
+        public void run() {
+            OutputStream outputStream = null;
+            try {
+                outputStream = new FileOutputStream(file);
+                outputStream.write(bytes);
+                infoLog("save photo " + file);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+    }
+
     void removeRepeat() {
         // 删除重复度较高的照片
         double point[][] = new double[4][3];// A(x, y, z), B(x, y, z), C(x, y, z), C'(x, y, z)
@@ -604,32 +626,22 @@ public class CustomCamera2 extends DialogFragment {
         latitude_1 = Math.asin(pointA[2]);// sin = z
         longitude_2 = Math.atan(pointB[1] / pointB[0]);// tan = y / x
         latitude_2 = Math.asin(pointB[2]);// sin = z
-        infoLog(longitude_1 + ", " + longitude_2 + ", ");
+
+        // 经度调整
+        if (pointA[1] > 0 && longitude_1 < 0) {
+            longitude_1 += Math.PI;
+        } else if (pointA[1] < 0 && longitude_1 > 0) {
+            longitude_1 -= Math.PI;
+        }
+        if (pointB[1] > 0 && longitude_2 < 0) {
+            longitude_2 += Math.PI;
+        } else if (pointB[1] < 0 && longitude_2 > 0) {
+            longitude_2 -= Math.PI;
+        }
+
         double sphere_dis = Math.acos(Math.cos(latitude_1) * Math.cos(latitude_2) * Math.cos(longitude_2 - longitude_1)
                 + Math.sin(latitude_1) * Math.sin(latitude_2));
         return sphere_dis;
-    }
-
-    class ImageSaver implements Runnable {
-        byte[] bytes;
-        public ImageSaver(byte[] b) {
-            bytes = b;
-        }
-
-        @Override
-        public void run() {
-            OutputStream outputStream = null;
-            try {
-                outputStream = new FileOutputStream(file);
-                outputStream.write(bytes);
-                infoLog("save photo " + file);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        }
     }
 
     void sphere2Coordinate(final double sphere[], double coordinate[]) {
