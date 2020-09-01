@@ -78,6 +78,8 @@ public class CustomCamera2 extends DialogFragment {
     Bitmap myBitmap;
     Canvas myCanvas;
     Paint myPaint;
+    double myRadius;// 屏幕尺寸
+    double halfW, halfH;// 屏幕的一半宽/高
 
     CameraDevice mCameraDevice;// 摄像头设备,(参数:预览尺寸,拍照尺寸等)
     CameraCaptureSession mCameraCaptureSession;// 相机捕获会话,用于处理拍照和预览的工作
@@ -768,6 +770,10 @@ public class CustomCamera2 extends DialogFragment {
             myPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             myPaint.setStrokeWidth(5);
             myPaint.setColor(Color.WHITE);
+            // 屏幕尺寸信息
+            halfW = myImageView.getWidth();
+            halfH = myImageView.getHeight();
+            myRadius = Math.sqrt(halfW*halfW + halfH*halfH) / 2;// 半径为屏幕对角线长度 / 2
         }
         myImageView.setImageBitmap(myBitmap);
 
@@ -801,8 +807,15 @@ public class CustomCamera2 extends DialogFragment {
                     positionQ_[0] += 2 * Math.PI;
                 }
 
+                // 极坐标->直角坐标
+                double coordinateX, coordinateY;
+                coordinateX = Math.cos(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 3));
+                coordinateY = Math.sin(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 3));
+                coordinateX = halfW - coordinateX;
+                coordinateY = halfH - coordinateY;
+
                 // 绘制拍照点
-                myCanvas.drawCircle(200, 200, 50, myPaint);
+                myCanvas.drawCircle((int) coordinateX, (int) coordinateY, 50, myPaint);
             }
         }
     }
