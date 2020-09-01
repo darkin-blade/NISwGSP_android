@@ -633,12 +633,18 @@ public class CustomCamera2 extends DialogFragment {
         }
     }
 
-    void sphere2Coordinate(double sphere[], double coordinate[]) {
-        // 地理坐标系转空间直角坐标系
+    void sphere2Coordinate(final double sphere[], double coordinate[]) {
+        // 球面坐标系转空间直角坐标系
         coordinate[2] = Math.sin(sphere[1]);// 纬度计算z
         double xy = Math.sqrt(1 - coordinate[2] * coordinate[2]);// sqrt(x^2 + y^2)
         coordinate[0] = xy * Math.cos(sphere[0]);// 经度计算x
         coordinate[1] = xy * Math.sin(sphere[0]);// 经度计算y
+    }
+
+    void coordinate2sphere(final double coordinate[], double sphere[]) {
+        // 空间直角坐标系转球面坐标系
+        sphere[1] = Math.acos(coordinate[2]);
+        sphere[0] = Math.atan(coordinate[1] / coordinate[0]);// TODO tan = y / x
     }
 
     double point2Line(final double point_1[], final double point_2[], final double point_3[]) {
@@ -693,13 +699,57 @@ public class CustomCamera2 extends DialogFragment {
         return Math.acos(cos_theta);
     }
 
-    double sphereConvert(final double point_1[], final double point_2) {
-        // 球面坐标系的坐标变换, 输入为(新的北极点, 待变换的点), 设为(P, Q)
+    void sphereConvert(final double position_1[], final double position_2[], double position_3[]) {
+        // 球面坐标系的坐标变换, 输入为(新的北极点, 待变换的点), 设为(P, Q), 坐标为地理坐标(经度, 纬度)
+        // 第3个参数用于返回(经度, 纬度)
         // 在新的坐标系中, 0经度方向为原地理坐标系中OP的方向
+
         // 计算3个点:
         // U: 新坐标系中P沿着0经度往南90纬度
         // V: 新坐标系中P沿着180经度往南90纬度
         // W: 原坐标系中在赤道上, 且与P点经度相差90(即新赤道面与旧赤道面的交点, 随便选一个)
-        return 0;
+        double position_4[] = new double[2];// U
+        double position_5[] = new double[2];// V
+        double position_6[] = new double[2];// W
+        position_4[0] = position_1[0];// U的经度
+        position_4[1] = position_1[1] - Math.PI / 2;// U的纬度
+        if (position_4[1] < -Math.PI) {
+            // 越过了南极, 取相反的经度
+            if (position_4[0] < 0) {
+                position_4[0] += Math.PI;
+            } else {
+                position_4[0] -= Math.PI;
+            }
+        }
+        position_5[0] = position_1[0];// V的经度
+        position_5[1] = position_1[1] + Math.PI / 2;// V的纬度
+        if (position_5[1] > Math.PI) {
+            // 越过了北极, 取相反的经度
+            if (position_5[0] < 0) {
+                position_5[0] += Math.PI;
+            } else {
+                position_5[0] -= Math.PI;
+            }
+        }
+        position_6[0] = position_1[0] - Math.PI / 2;// W的经度
+        position_6[1] = 0;// W的纬度(在赤道上)
+        if (position_6[0] < -Math.PI) {
+            // 越过了180经度线
+            position_6[0] += 2 * Math.PI;
+        }
+
+        // 计算Q在以P为北极的坐标系中的坐标
+        double point_1[] = new double[3];// P
+        double point_2[] = new double[3];// Q
+        double point_4[] = new double[3];// U
+        double point_5[] = new double[3];// V
+        double point_6[] = new double[3];// W
+        sphere2Coordinate(position_1, point_1);
+        sphere2Coordinate(position_2, point_2);
+        sphere2Coordinate(position_4, point_4);
+        sphere2Coordinate(position_5, point_5);
+        sphere2Coordinate(position_6, point_6);
+        double new_longitude;
+        double new_latitude;
     }
 }
