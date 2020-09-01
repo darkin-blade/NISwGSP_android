@@ -792,7 +792,6 @@ public class CustomCamera2 extends DialogFragment {
             myCanvas = new Canvas(myBitmap);
             myPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             myPaint.setStrokeWidth(5);
-            myPaint.setColor(Color.WHITE);
             // 屏幕尺寸信息
             halfW = myImageView.getWidth() / 2;
             halfH = myImageView.getHeight() / 2;
@@ -831,7 +830,12 @@ public class CustomCamera2 extends DialogFragment {
                 int coordinateY = halfH - tmpX;
 
                 // 绘制拍照点
-                myCanvas.drawCircle(coordinateX, coordinateY, 50, myPaint);
+                if (i != 0 && i == photo_num - 1) {
+                    myPaint.setColor(0x99ffffff);
+                } else {
+                    myPaint.setColor(0xffffffff);
+                }
+                myCanvas.drawCircle(coordinateX, coordinateY, 30, myPaint);
             }
         }
 
