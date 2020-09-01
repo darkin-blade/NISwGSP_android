@@ -212,7 +212,7 @@ public class CustomCamera2 extends DialogFragment {
                 }
             }
 
-            panoramaGuide();
+//            panoramaGuide();
         }
 
         @Override
@@ -371,7 +371,7 @@ public class CustomCamera2 extends DialogFragment {
         btnDebug.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                panoramaGuide();
+                panoramaGuide();
             }
         });
 
@@ -404,7 +404,6 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     void openCamera() {
-        infoLog("open camera");
         CameraManager cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         try {
             String camera_id = cameraManager.getCameraIdList()[CameraCharacteristics.LENS_FACING_FRONT];// 后置摄像头
@@ -482,20 +481,20 @@ public class CustomCamera2 extends DialogFragment {
                     buffer.get(bytes);
 
                     // 新建线程保存图片
-                    new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                OutputStream outputStream = new FileOutputStream(file);
-                                outputStream.write(bytes);
-
-                                infoLog("save photo " + file);
-                                photo_var ++;
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }).start();
+//                    new Thread(new Runnable() {
+//                        @Override
+//                        public void run() {
+//                            try {
+//                                OutputStream outputStream = new FileOutputStream(file);
+//                                outputStream.write(bytes);
+//
+//                                infoLog("save photo " + file);
+//                                photo_var ++;
+//                            } catch (IOException e) {
+//                                e.printStackTrace();
+//                            }
+//                        }
+//                    }).start();
                     if (backgroundThread == null) {
                         backgroundThread = new HandlerThread("camera background");
                         backgroundThread.start();
@@ -598,13 +597,14 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     double sphereDistance(double pointA[], double pointB[]) {
-        // 计算球面上AB的距离
+        // TODO 计算球面上AB的距离
         double longitude_1, latitude_1;
         double longitude_2, latitude_2;
         longitude_1 = Math.atan(pointA[1] / pointA[0]);// tan = y / x
         latitude_1 = Math.asin(pointA[2]);// sin = z
         longitude_2 = Math.atan(pointB[1] / pointB[0]);// tan = y / x
         latitude_2 = Math.asin(pointB[2]);// sin = z
+        infoLog(longitude_1 + ", " + longitude_2 + ", ");
         double sphere_dis = Math.acos(Math.cos(latitude_1) * Math.cos(latitude_2) * Math.cos(longitude_2 - longitude_1)
                 + Math.sin(latitude_1) * Math.sin(latitude_2));
         return sphere_dis;
@@ -752,12 +752,12 @@ public class CustomCamera2 extends DialogFragment {
         double new_latitude = sphereDistance(pointP, pointQ);// PQ的长度即为弧度, 结果为纬度 + 90
 
         // 判断Q在W的东侧还是西侧, TODO W的东边是V, W的西边是U
-        double qu = sphereDistance(pointQ, pointU);
-        double qv = sphereDistance(pointQ, pointU);
-        if (qu > qv) {
-            // Q在W西侧
-            new_longitude = -new_longitude;
-        }
+//        double qu = sphereDistance(pointQ, pointU);
+//        double qv = sphereDistance(pointQ, pointV);
+//        if (qu > qv) {
+//            // Q在W西侧
+//            new_longitude = -new_longitude;
+//        }
 
         // 返回结果
         positionR[0] = new_longitude;// Q的经度
@@ -795,7 +795,6 @@ public class CustomCamera2 extends DialogFragment {
             positionQ[0] = photo_rotation.get(i).get(0);// 经度
             positionQ[1] = photo_rotation.get(i).get(1);// 纬度
             sphereConvert(positionP, positionQ, positionQ_);
-            infoLog("distance: " + (int) Math.toDegrees(positionQ_[1]));
             if (positionQ_[1] < Math.PI / 3) {
                 // TODO 纬度与北极相差60以内
                 // 球面坐标->极坐标, 0经度线显示为竖直向上, 并且以顺时针为正方向(TODO 即球面坐标系中的正西方向)
@@ -819,8 +818,6 @@ public class CustomCamera2 extends DialogFragment {
                 int coordinateX, coordinateY;
                 coordinateX = (int) (  Math.cos(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 3))  );
                 coordinateY = (int) (  Math.sin(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 3))  );
-//                infoLog(i + ": " + coordinateX + ", " + coordinateY + "(" + halfW + ", " + halfH + ")");
-//                infoLog((int) Math.toDegrees(positionQ_[0]) + ", " + (int) Math.toDegrees(positionQ_[1]));
                 coordinateX = halfW - coordinateX;
                 coordinateY = halfH - coordinateY;
 
