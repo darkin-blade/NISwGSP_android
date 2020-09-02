@@ -9,13 +9,13 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="301px"
+        android:layout_height="150dp"
         app:layout_constraintTop_toTopOf="parent"
         android:orientation="vertical">
 
         <HorizontalScrollView
             android:layout_width="match_parent"
-            android:layout_height="300px">
+            android:layout_height="150dp">
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
@@ -23,13 +23,13 @@
                 android:id="@+id/photos">
                 
                 <LinearLayout
-                    android:layout_width="300px"
-                    android:layout_height="300px"
+                    android:layout_width="150dp"
+                    android:layout_height="150dp"
                     android:background="@color/greyE">
                     <ImageView
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:layout_margin="20px"
+                        android:layout_margin="10dp"
                         android:background="@color/black">
                     </ImageView>
                 </LinearLayout>
@@ -44,21 +44,21 @@
         android:id="@+id/photo_result"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="300px"
-        android:layout_marginBottom="105px"
+        android:layout_marginTop="150dp"
+        android:layout_marginBottom="52dp"
         app:layout_constraintTop_toTopOf="parent">
     </ImageView>
 
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="105px"
+        android:layout_height="52dp"
         app:layout_constraintBottom_toBottomOf="parent"
         android:orientation="vertical">
 
         <ProgressBar
             android:layout_width="match_parent"
-            android:layout_height="5px"
+            android:layout_height="2dp"
             style="@style/Widget.AppCompat.ProgressBar.Horizontal"
             android:id="@+id/stitch_progress">
         </ProgressBar>
@@ -82,13 +82,13 @@
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="100px"
+            android:layout_height="50dp"
             app:layout_constraintBottom_toBottomOf="parent">
 
             <Button
                 android:layout_width="match_parent"
                 android:layout_weight="1"
-                android:layout_height="100px"
+                android:layout_height="50dp"
                 android:text="clear"
                 android:textSize="10dp"
                 android:id="@+id/clear_button">
@@ -97,7 +97,7 @@
             <Button
                 android:layout_width="match_parent"
                 android:layout_weight="1"
-                android:layout_height="100px"
+                android:layout_height="50dp"
                 android:text="camera"
                 android:textSize="10dp"
                 android:id="@+id/camera_button">
@@ -106,7 +106,7 @@
             <Button
                 android:layout_width="match_parent"
                 android:layout_weight="1"
-                android:layout_height="100px"
+                android:layout_height="50dp"
                 android:text="delete"
                 android:textSize="10dp"
                 android:id="@+id/delete_button">
@@ -115,7 +115,7 @@
             <Button
                 android:layout_width="match_parent"
                 android:layout_weight="1"
-                android:layout_height="100px"
+                android:layout_height="50dp"
                 android:text="stitch"
                 android:textSize="10dp"
                 android:id="@+id/stitch_button">
@@ -124,7 +124,7 @@
             <Button
                 android:layout_width="match_parent"
                 android:layout_weight="1"
-                android:layout_height="100px"
+                android:layout_height="50dp"
                 android:text="save"
                 android:textSize="10dp"
                 android:id="@+id/save_button">
