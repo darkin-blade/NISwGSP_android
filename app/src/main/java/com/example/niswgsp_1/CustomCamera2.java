@@ -212,6 +212,7 @@ public class CustomCamera2 extends DialogFragment {
                 if (capture_times > 0) {
                     // 按下快门
                     if (photo_num == 0 || sphere_dis > 100) {
+                        infoLog("rotation: " + gravity_theta);
                         // 拍摄照片
                         takePictures();
                         // 照片去重
@@ -336,7 +337,6 @@ public class CustomCamera2 extends DialogFragment {
         photoNum.setText("photos: " + photo_num);
 
         myImageView = view.findViewById(R.id.my_canvas);
-        infoLog("is null: " + (myBitmap == null));
         if (myBitmap != null) {
             // 清空画布
             myBitmap.eraseColor(Color.TRANSPARENT);

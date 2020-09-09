@@ -62,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
 
     ArrayList<Bitmap> photo_list = new ArrayList<>();// 图片list
     ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
+    ArrayList<Double> photo_rotation = new ArrayList<>();// 图片旋转角度
     ArrayList<Integer> photo_selected = new ArrayList<>();
     Bitmap bmp_result = null;// 拼接结果
 
@@ -155,11 +156,17 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
 
         infoLog("photo num: " + customCamera2.photo_name.size() + "/" + customCamera2.photo_num);
         for (int i = 0; i < customCamera2.photo_name.size(); i ++) {
-            infoLog("add photo: " + customCamera2.photo_name.get(i));
+//            infoLog("add photo: " + customCamera2.photo_name.get(i));
             addPhoto(customCamera2.photo_name.get(i));
         }
+        // 获取相机旋转角度
+        photo_rotation.clear();// 先清空
+        for (int i = 0; i < customCamera2.photo_rotation.size(); i ++) {
+            double tmp_rotation = customCamera2.photo_rotation.get(i).get(2);// 获取屏幕角度
+            photo_rotation.add(tmp_rotation);
+        }
 
-        // TODO 新建线程拼接
+        // 新建线程拼接
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -427,13 +434,16 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             public void run() {
                 int photo_num = photo_list.size();
                 String[] imgPaths = new String[photo_num];
+                double[] imgRotations = new double[photo_num];
                 for (int i = 0; i < photo_num; i ++) {
                     imgPaths[i] = photo_name.get(i);
+                    imgRotations[i] = photo_rotation.get(i);
                 }
                 Mat matBGR = new Mat();
 
                 int result = main_test(
                         imgPaths,
+                        imgRotations,
                         matBGR.getNativeObjAddr()
                 );
 
@@ -515,7 +525,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    public native int main_test(String[] imgPaths, long matBGR);
+    public native int main_test(String[] imgPaths, double[] imgRotations, long matBGR);
 
     static public void infoLog(String log) {
         Log.i("fuck", log);
