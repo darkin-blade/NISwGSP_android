@@ -90,7 +90,7 @@
                 android:layout_weight="1"
                 android:layout_height="50dp"
                 android:text="clear"
-                android:textSize="10dp"
+                android:textSize="10sp"
                 android:id="@+id/clear_button">
             </Button>
 
@@ -99,7 +99,7 @@
                 android:layout_weight="1"
                 android:layout_height="50dp"
                 android:text="camera"
-                android:textSize="10dp"
+                android:textSize="10sp"
                 android:id="@+id/camera_button">
             </Button>
 
@@ -108,7 +108,7 @@
                 android:layout_weight="1"
                 android:layout_height="50dp"
                 android:text="delete"
-                android:textSize="10dp"
+                android:textSize="10sp"
                 android:id="@+id/delete_button">
             </Button>
 
@@ -117,7 +117,7 @@
                 android:layout_weight="1"
                 android:layout_height="50dp"
                 android:text="stitch"
-                android:textSize="10dp"
+                android:textSize="10sp"
                 android:id="@+id/stitch_button">
             </Button>
 

@@ -155,17 +155,17 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
 
         infoLog("photo num: " + customCamera2.photo_name.size() + "/" + customCamera2.photo_num);
         for (int i = 0; i < customCamera2.photo_name.size(); i ++) {
+            infoLog("add photo: " + customCamera2.photo_name.get(i));
             addPhoto(customCamera2.photo_name.get(i));
-//            infoLog("add photo: " + customCamera2.photo_name.get(i));
         }
 
         // TODO 新建线程拼接
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                stitch();
-//            }
-//        }).start();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                stitch();
+            }
+        }).start();
     }
 
     void initUI() {
@@ -355,7 +355,6 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         photo_list.add(bitmap);
         photo_selected.add(0);
         photo_name.add(path);// TODO 添加图片路径
-
 
         // 压缩图片并显示
         Matrix matrix = new Matrix();

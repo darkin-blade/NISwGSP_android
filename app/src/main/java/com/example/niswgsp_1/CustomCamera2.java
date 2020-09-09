@@ -57,6 +57,8 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import Jama.Matrix;
 
@@ -97,8 +99,10 @@ public class CustomCamera2 extends DialogFragment {
     static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
     static public int photo_num;// 照片总数
     static public int photo_index;// 用于照片命名
-    static public int photo_var;// 信号量
     int capture_times;
+
+    // 解决多线程问题
+    Queue<File> file_queue = new LinkedList<>();// 文件名
 
     // 传感器
     SensorManager mSensorManager;
@@ -108,7 +112,6 @@ public class CustomCamera2 extends DialogFragment {
     Sensor mRotation;// 旋转传感器
 
     // 当前图片
-    File file;// 图片文件
     double gravity_theta;// 手机在球面切面上的旋转角度
     double this_longitude;// 经度
     double this_latitude;// 纬度
@@ -133,6 +136,7 @@ public class CustomCamera2 extends DialogFragment {
         public void onSensorChanged(SensorEvent sensorEvent) {
             if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER
             || sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+                // TODO 没用
                 if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
                     // 加速度
                     System.arraycopy(sensorEvent.values, 0, acceleratorValue, 0, acceleratorValue.length);
@@ -183,6 +187,11 @@ public class CustomCamera2 extends DialogFragment {
                 } else if (this_longitude > Math.PI) {
                     this_longitude -= 2 * Math.PI;
                 }
+
+//                double theta = Math.acos(sensorEvent.values[3]);
+//                double x = sensorEvent.values[0] / Math.sin(theta);
+//                double y = sensorEvent.values[1] / Math.sin(theta);
+//                double z = sensorEvent.values[2] / Math.sin(theta);
             }
 
             // 拍照, 球面距离计算
@@ -294,7 +303,6 @@ public class CustomCamera2 extends DialogFragment {
         photo_rotation.clear();
         photo_num = 0;
         photo_index = 0;
-        photo_var = 0;
         capture_times = 0;
     }
 
@@ -357,7 +365,7 @@ public class CustomCamera2 extends DialogFragment {
         btnStitch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (photo_var == 0) {
+                if (file_queue.size() == 0) {// 等待其他线程把照片存完
                     dismiss_result = 1;
                     dismiss();
                 }
@@ -377,6 +385,20 @@ public class CustomCamera2 extends DialogFragment {
         btnDebug.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Matrix A = new Matrix(new double[][]{
+                        {21, 29, 77},
+                        {6, 30, 85},
+                        {-55, 19, -62}
+                });
+                Matrix b = new Matrix(new double[][] {
+                        {-1},
+                        {-7},
+                        {-54}
+                });
+                Matrix x = A.solve(b);
+                for (int i = 0; i < x.getRowDimension(); i ++) {
+                    infoLog(i + ": " + x.get(i, 0));
+                }
                 switchGuide = 1 - switchGuide;
             }
         });
@@ -491,16 +513,38 @@ public class CustomCamera2 extends DialogFragment {
                         @Override
                         public void run() {
                             try {
-                                OutputStream outputStream = new FileOutputStream(file);
+                                File tmp_file = file_queue.poll();// 获取并从队列删除第一个元素
+                                OutputStream outputStream = new FileOutputStream(tmp_file);
                                 outputStream.write(bytes);
 
-                                infoLog("save photo " + file);
-                                photo_var ++;
+                                infoLog("save photo " + tmp_file);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
                         }
                     }).start();
+//                    class ImageSaver implements Runnable {
+//                        byte[] bytes;
+//                        public ImageSaver(byte[] b) {
+//                            bytes = b;
+//                        }
+//
+//                        @Override
+//                        public void run() {
+//                            OutputStream outputStream = null;
+//                            try {
+//                                File tmp_file = file_queue.poll();// 获取第一个元素并删除
+//                                outputStream = new FileOutputStream(tmp_file);
+//                                outputStream.write(bytes);
+//                                infoLog("save photo " + tmp_file);
+//                            } catch (FileNotFoundException e) {
+//                                e.printStackTrace();
+//                            } catch (IOException e) {
+//                                e.printStackTrace();
+//                            }
+//
+//                        }
+//                    }
 //                    if (backgroundThread == null) {
 //                        backgroundThread = new HandlerThread("camera background");
 //                        backgroundThread.start();
@@ -520,12 +564,12 @@ public class CustomCamera2 extends DialogFragment {
     void takePictures() {
         photo_num ++;
         photo_index ++;
-        photo_var --;
         photoNum.setText("photos: " + photo_num);
         // 保存到图片list
         String timeStamp = photo_index + ".jpg";
-        file = new File(appPath, timeStamp);
-        photo_name.add(file.getAbsolutePath());
+        File tmp_file = new File(appPath, timeStamp);
+        file_queue.offer(tmp_file);
+        photo_name.add(tmp_file.getAbsolutePath());// 此时file_queue中的文件不一定处理完了
         // 记录照片的角度
         ArrayList<Double> tmp_rotation = new ArrayList<>();
         tmp_rotation.add(this_longitude);
@@ -554,28 +598,6 @@ public class CustomCamera2 extends DialogFragment {
             }, null);
         } catch (CameraAccessException e) {
             e.printStackTrace();
-        }
-    }
-
-    class ImageSaver implements Runnable {
-        byte[] bytes;
-        public ImageSaver(byte[] b) {
-            bytes = b;
-        }
-
-        @Override
-        public void run() {
-            OutputStream outputStream = null;
-            try {
-                outputStream = new FileOutputStream(file);
-                outputStream.write(bytes);
-                infoLog("save photo " + file);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
         }
     }
 
@@ -612,10 +634,10 @@ public class CustomCamera2 extends DialogFragment {
 //            infoLog("(" + photo_num + "): [" + distance_1 + ", " + distance_2 + "]");
             if (distance_2 <= 80) {// TODO 阈值
                 // 删除B点
+                infoLog("remove " + photo_name.get(photo_num - 2));
                 photo_name.remove(photo_num - 2);
                 photo_rotation.remove(photo_num - 2);
                 photo_num --;
-                infoLog("photo num: " + photo_name.size());
                 for (int i = 0; i < photo_name.size(); i ++) {
                     infoLog((i + 1) + "/" + photo_name.size() + ": " + photo_name.get(i));
                 }
