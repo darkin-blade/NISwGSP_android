@@ -167,12 +167,12 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         }
 
         // 新建线程拼接
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                stitch();
-            }
-        }).start();
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                stitch();
+//            }
+//        }).start();
     }
 
     void initUI() {
@@ -438,6 +438,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                 for (int i = 0; i < photo_num; i ++) {
                     imgPaths[i] = photo_name.get(i);
                     imgRotations[i] = photo_rotation.get(i);
+                    infoLog(imgPaths[i] + ": " + imgRotations[i]);
                 }
                 Mat matBGR = new Mat();
 

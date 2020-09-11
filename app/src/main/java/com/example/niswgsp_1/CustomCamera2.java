@@ -34,7 +34,6 @@ import android.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
@@ -99,7 +98,8 @@ public class CustomCamera2 extends DialogFragment {
     static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
     static public int photo_num;// 照片总数
     static public int photo_index;// 用于照片命名
-    int capture_times;
+    double[] photo_center = new double[2];
+    boolean is_taking_picture;
 
     // 解决多线程问题
     Queue<File> file_queue = new LinkedList<>();// 文件名
@@ -209,10 +209,9 @@ public class CustomCamera2 extends DialogFragment {
                 + Math.sin(last_latitude) * Math.sin(this_latitude));
                 text2_1.setText("" + (int) sphere_dis);
 
-                if (capture_times > 0) {
+                if (is_taking_picture) {
                     // 按下快门
                     if (photo_num == 0 || sphere_dis > 100) {
-                        infoLog("rotation: " + gravity_theta);
                         // 拍摄照片
                         takePictures();
                         // 照片去重
@@ -304,7 +303,9 @@ public class CustomCamera2 extends DialogFragment {
         photo_rotation.clear();
         photo_num = 0;
         photo_index = 0;
-        capture_times = 0;
+        is_taking_picture = false;
+        photo_center[0] = 0;
+        photo_center[1] = 0;
     }
 
     void initSensor() {
@@ -344,20 +345,20 @@ public class CustomCamera2 extends DialogFragment {
         }
 
         btnCapture = view.findViewById(R.id.capture);
-        btnCapture.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                if (capture_times == 0) {
-                    initCamera();// TODO 重复拍摄的功能
-                }
-                capture_times ++;
-                return false;
-            }
-        });
         btnCapture.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                capture_times = 0;
+                 if (is_taking_picture) {
+                     // 正在拍照 => 停止拍照
+                     is_taking_picture = false;
+                     btnCapture.setText("capture");
+                     setNewCenter();// 计算中心位置
+                 } else {
+                     // 没有拍照 => 开始拍照
+                     initCamera();
+                     is_taking_picture = true;
+                     btnCapture.setText("finish");
+                 }
             }
         });
 
@@ -365,7 +366,7 @@ public class CustomCamera2 extends DialogFragment {
         btnStitch.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (file_queue.size() == 0) {// 等待其他线程把照片存完
+                if (is_taking_picture == false && file_queue.size() == 0) {// 等待其他线程把照片存完
                     dismiss_result = 1;
                     dismiss();
                 }
@@ -376,8 +377,10 @@ public class CustomCamera2 extends DialogFragment {
         btnBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                dismiss_result = 0;
-                dismiss();
+                if (is_taking_picture == false) {
+                    dismiss_result = 0;
+                    dismiss();
+                }
             }
         });
 
@@ -601,6 +604,32 @@ public class CustomCamera2 extends DialogFragment {
         }
     }
 
+    void setNewCenter() {
+        // 计算照片的平均经度和纬度
+        // 把所有点转换成球面向量并求解向量和
+        double[] tmp_sphere = new double[2];
+        double[] tmp_coordinate = new double[3];
+        double sumX = 0;
+        double sumY = 0;
+        double sumZ = 0;
+        for (int i = 0; i < photo_rotation.size(); i ++) {
+            ArrayList<Double> tmp_rotation = photo_rotation.get(i);
+            tmp_sphere[0] = tmp_rotation.get(0);// 经度
+            tmp_sphere[1] = tmp_rotation.get(1);
+            sphere2Coordinate(tmp_sphere, tmp_coordinate);
+            sumX += tmp_coordinate[0];
+            sumY += tmp_coordinate[1];
+            sumZ += tmp_coordinate[2];
+            infoLog(i + ": " + tmp_coordinate[0] + ", " + tmp_coordinate[1] + ", " + tmp_coordinate[2]);
+        }
+        // 计算中心位置
+        tmp_coordinate[0] = sumX / photo_num;
+        tmp_coordinate[1] = sumY / photo_num;
+        tmp_coordinate[2] = sumZ / photo_num;
+        coordinate2sphere(tmp_coordinate, photo_center);
+        infoLog("center: " + (int) Math.toDegrees(photo_center[0]) + "," + (int) Math.toDegrees(photo_center[1]));
+    }
+
     void removeRepeat() {
         // 删除重复度较高的照片
         double point[][] = new double[4][3];// A(x, y, z), B(x, y, z), C(x, y, z), C'(x, y, z)
@@ -682,8 +711,14 @@ public class CustomCamera2 extends DialogFragment {
 
     void coordinate2sphere(final double coordinate[], double sphere[]) {
         // 空间直角坐标系转球面坐标系
-        sphere[1] = Math.acos(coordinate[2]);
         sphere[0] = Math.atan(coordinate[1] / coordinate[0]);// TODO tan = y / x
+        sphere[1] = Math.asin(coordinate[2]);
+        if (coordinate[1] > 0 && sphere[0] < 0) {
+            sphere[0] += Math.PI;
+        } else if (coordinate[1] < 0 && sphere[0] > 0) {
+            sphere[0] -= Math.PI;
+        }
+        infoLog(sphere[0] + ": " + coordinate[0] + ", " + coordinate[1]);
     }
 
     double point2Line(final double pointA[], final double pointB[], final double pointC[]) {
@@ -739,9 +774,6 @@ public class CustomCamera2 extends DialogFragment {
     void sphereConvert(final double positionP[], final double positionQ[], double positionR[]) {
         // 球面坐标系的坐标变换, 输入为(新的北极点, 待变换的点), 设为(P, Q), 坐标为地理坐标(经度, 纬度)
         // 第3个参数用于返回(经度, 纬度)
-        if (switchGuide == 0) {
-            return;
-        }
 
         // 计算3个点:
         // U: 新旧坐标系中的(-90, 0), W往西90
@@ -804,6 +836,9 @@ public class CustomCamera2 extends DialogFragment {
 
     void panoramaGuide() {
         // 辅助拍摄
+        if (switchGuide == 0) {
+            return;
+        }
         if (myImageView == null || myImageView.getWidth() <= 0) {
             return;
         }
@@ -857,6 +892,33 @@ public class CustomCamera2 extends DialogFragment {
                 } else {
                     myPaint.setColor(0xffffffff);
                 }
+                myCanvas.drawCircle(coordinateX, coordinateY, 30, myPaint);
+            }
+        }
+
+        if (!is_taking_picture) {
+            sphereConvert(positionP, photo_center, positionQ_);
+            if (positionQ_[1] < Math.PI / 3) {
+                // TODO 纬度与北极相差60以内
+                // 球面坐标->极坐标, 0经度线显示为竖直向上, 并且以顺时针为正方向(TODO 即球面坐标系中的正西方向)
+                positionQ_[0] += Math.PI;
+
+                // TODO 处理手机角度偏移, 极坐标角度必须在[0, 360]内
+                positionQ_[0] += gravity_theta;
+                if (positionQ_[0] > 2 * Math.PI) {
+                    positionQ_[0] -= 2 * Math.PI;
+                } else if (positionQ_[0] < 0) {
+                    positionQ_[0] += 2 * Math.PI;
+                }
+
+                // 极坐标->直角坐标
+                int tmpX = (int) (  Math.cos(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 5))  );
+                int tmpY = (int) (  Math.sin(positionQ_[0]) * myRadius * (positionQ_[1] / (Math.PI / 5))  );
+                int coordinateX = halfW + tmpY;
+                int coordinateY = halfH - tmpX;
+
+                // 绘制拍照点
+                myPaint.setColor(0xff00ffff);
                 myCanvas.drawCircle(coordinateX, coordinateY, 30, myPaint);
             }
         }
