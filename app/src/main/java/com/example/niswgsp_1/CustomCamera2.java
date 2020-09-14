@@ -58,6 +58,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
+import java.util.SortedSet;
 
 import Jama.Matrix;
 
@@ -121,6 +123,7 @@ public class CustomCamera2 extends DialogFragment {
     float orientationValue[] = new float[3];// 手机方向
     long last_time_1, last_time_2, last_time_3, last_time_4;// 每个传感器的UI刷新时间
 
+    static boolean enable_repeat = true;// 允许重复拍摄同一个地方
     static public int dismiss_result = 0;// 0: 返回, 1: 拍照
 
     static final SparseArray<Integer> ORIENTATIONS = new SparseArray<>();
@@ -283,18 +286,6 @@ public class CustomCamera2 extends DialogFragment {
         if (activity instanceof DialogInterface.OnDismissListener) {
             ((DialogInterface.OnDismissListener) activity).onDismiss(dialogInterface);
         }
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-//        mSensorManager.registerListener(mSensorEventListener, mAccelerator, SensorManager.SENSOR_DELAY_UI);// 最慢,适合普通用户界面UI变化的频率
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-//        mSensorManager.unregisterListener(mSensorEventListener);
     }
 
     void initCamera() {
@@ -526,40 +517,11 @@ public class CustomCamera2 extends DialogFragment {
                             }
                         }
                     }).start();
-//                    class ImageSaver implements Runnable {
-//                        byte[] bytes;
-//                        public ImageSaver(byte[] b) {
-//                            bytes = b;
-//                        }
-//
-//                        @Override
-//                        public void run() {
-//                            OutputStream outputStream = null;
-//                            try {
-//                                File tmp_file = file_queue.poll();// 获取第一个元素并删除
-//                                outputStream = new FileOutputStream(tmp_file);
-//                                outputStream.write(bytes);
-//                                infoLog("save photo " + tmp_file);
-//                            } catch (FileNotFoundException e) {
-//                                e.printStackTrace();
-//                            } catch (IOException e) {
-//                                e.printStackTrace();
-//                            }
-//
-//                        }
-//                    }
-//                    if (backgroundThread == null) {
-//                        backgroundThread = new HandlerThread("camera background");
-//                        backgroundThread.start();
-//                        backgroundHandler = new Handler(backgroundThread.getLooper());
-//                    }
-//                    backgroundHandler.post(new ImageSaver(bytes));
                 } finally {
                     if (image != null) {
                         image.close();// 画面会卡住
                     }
                 }
-
             }
         }, backgroundHandler);
     }
@@ -626,53 +588,140 @@ public class CustomCamera2 extends DialogFragment {
         tmp_coordinate[0] = sumX / photo_num;
         tmp_coordinate[1] = sumY / photo_num;
         tmp_coordinate[2] = sumZ / photo_num;
-        coordinate2sphere(tmp_coordinate, photo_center);
-        infoLog("center: " + (int) Math.toDegrees(photo_center[0]) + "," + (int) Math.toDegrees(photo_center[1]));
+        coordinate2sphere(tmp_coordinate, tmp_sphere);
+        photo_center[0] = tmp_sphere[0];
+        photo_center[1] = tmp_sphere[1];
+
+        // 重新计算所有点的屏幕旋转角度
+        double[] new_port = new double[2];// 新的北极点
     }
 
     void removeRepeat() {
         // 删除重复度较高的照片
-        double point[][] = new double[4][3];// A(x, y, z), B(x, y, z), C(x, y, z), C'(x, y, z)
-        double distance_1;// AB
-        double distance_2;// CC' / 2
-        if (photo_num >= 3) {
-            // 计算3点的空间直角坐标(x与经度0的方向平行)(右手系)
-            double tmp[] = new double[2];
-            double xy;// sqrt(x^2 + y^2)
-            // A
-            tmp[0] = photo_rotation.get(photo_num - 3).get(0);
-            tmp[1] = photo_rotation.get(photo_num - 3).get(1);
-            sphere2Coordinate(tmp, point[0]);
-            // B
-            tmp[0] = photo_rotation.get(photo_num - 2).get(0);
-            tmp[1] = photo_rotation.get(photo_num - 2).get(1);
-            sphere2Coordinate(tmp, point[1]);
+        if (enable_repeat) {
+            double point[][] = new double[3][3];// A(x, y, z), B(x, y, z), C(x, y, z)
+            double distance_1;// AB
+            double distance_2;// AC
+            double distance_3;// BC
+            double distance_4;// CC' / 2
+
+            // 计算当前位置
+            double[] tmp_c = new double[2];
             // C
-            tmp[0] = photo_rotation.get(photo_num - 1).get(0);
-            tmp[1] = photo_rotation.get(photo_num - 1).get(1);
-            sphere2Coordinate(tmp, point[2]);
-
-            // 计算弧AB长度
-            distance_1 = 1000 * sphereDistance(point[0], point[1]);// AB
-            if (distance_1 >= 300) {
-                // 保留B点
-                return;
+            tmp_c[0] = photo_rotation.get(photo_num - 1).get(0);
+            tmp_c[1] = photo_rotation.get(photo_num - 1).get(1);
+            sphere2Coordinate(tmp_c, point[2]);
+            ArrayList<Integer> adjacentIndex = new ArrayList<>();
+            // 找出所有相邻的点
+            for (int i = 0; i < photo_num - 1; i ++) {
+                // 当前拍摄的是最后一张, 不进行考虑
+                double tmp[] = new double[2];
+                // A
+                tmp[0] = photo_rotation.get(i).get(0);
+                tmp[1] = photo_rotation.get(i).get(1);
+                sphere2Coordinate(tmp, point[0]);
+                // AC
+                distance_2 = 1000 * sphereDistance(point[0], point[2]);
+                if (distance_2 < 350) {
+                    adjacentIndex.add(i);// 保存照片的索引
+                    infoLog("adjacent index: " + i + ", " + distance_2);
+                }
             }
+            int adjacentCount = adjacentIndex.size();
+            infoLog("adjacent count: " + adjacentCount);
+            if (adjacentCount >= 2) {
+                // 暴力搜索共线的点
+                int removeIndex[] = new int[photo_num];
+                for (int i = 0; i < adjacentCount; i ++) {
+                    for (int j = i + 1; j < adjacentCount; j ++) {
+                        double tmp[] = new double[2];
+                        int indexA = adjacentIndex.get(i);
+                        int indexB = adjacentIndex.get(j);
+                        // A
+                        tmp[0] = photo_rotation.get(indexA).get(0);
+                        tmp[1] = photo_rotation.get(indexA).get(1);
+                        sphere2Coordinate(tmp, point[0]);
+                        // B
+                        tmp[0] = photo_rotation.get(indexB).get(0);
+                        tmp[1] = photo_rotation.get(indexB).get(1);
+                        sphere2Coordinate(tmp, point[1]);
+                        // 计算C到AB距离
+                        distance_4 = 1000 * point2Line(point[0], point[1], point[2]);
+//                        infoLog(indexA + ", " + indexB + ": " + distance_4);
+                        if (distance_4 <= 80) {
+                            // 在保证C不在AB之间的前提下, 删掉离C更近的那个点
+                            // AB
+                            distance_1 = sphereDistance(point[0], point[1]);
+                            // AC
+                            distance_2 = sphereDistance(point[0], point[2]);
+                            // BC
+                            distance_3 = sphereDistance(point[1], point[2]);
+                            infoLog(indexA + "-" + indexB + " ab:" + distance_1 + " ac:" + distance_2 + " bc:" + distance_3);
+                            if (distance_3 > distance_2 && distance_3 > distance_1) {// B - A - C
+                                // 删除A点
+                                infoLog("remove " + indexA);
+                                removeIndex[indexA] = 1;
+                            } else if (distance_2 > distance_3 && distance_2 > distance_1) {// A - B - C
+                                // 删除B点
+                                infoLog("remove " + indexB);
+                                removeIndex[indexB] = 1;
+                            }
+                        }
+                    }
+                }
+                for (int i = photo_num - 1; i >= 0; i --) {
+                    // 从后往前删除
+                    if (removeIndex[i] == 1) {
+                        // 删掉第i张照片
+                        infoLog("remove " + photo_name.get(i));
+                        photo_name.remove(i);
+                        photo_rotation.remove(i);
+                        photo_num --;
+                    }
+                }
+            }
+        } else {
+            double point[][] = new double[3][3];// A(x, y, z), B(x, y, z), C(x, y, z)
+            double distance_1;// AB
+            double distance_2;// CC' / 2
+            if (photo_num >= 3) {
+                // 计算3点的空间直角坐标(x与经度0的方向平行)(右手系)
+                double tmp[] = new double[2];
+                // A
+                tmp[0] = photo_rotation.get(photo_num - 3).get(0);
+                tmp[1] = photo_rotation.get(photo_num - 3).get(1);
+                sphere2Coordinate(tmp, point[0]);
+                // B
+                tmp[0] = photo_rotation.get(photo_num - 2).get(0);
+                tmp[1] = photo_rotation.get(photo_num - 2).get(1);
+                sphere2Coordinate(tmp, point[1]);
+                // C
+                tmp[0] = photo_rotation.get(photo_num - 1).get(0);
+                tmp[1] = photo_rotation.get(photo_num - 1).get(1);
+                sphere2Coordinate(tmp, point[2]);
 
-            distance_2 = 1000 * point2Line(point[0], point[1], point[2]);
-//            infoLog("(" + photo_num + "): [" + distance_1 + ", " + distance_2 + "]");
-            if (distance_2 <= 80) {// TODO 阈值
-                // 删除B点
-                infoLog("remove " + photo_name.get(photo_num - 2));
-                photo_name.remove(photo_num - 2);
-                photo_rotation.remove(photo_num - 2);
-                photo_num --;
-                for (int i = 0; i < photo_name.size(); i ++) {
-                    infoLog((i + 1) + "/" + photo_name.size() + ": " + photo_name.get(i));
+                // 计算弧AB长度
+                distance_1 = 1000 * sphereDistance(point[0], point[1]);// AB
+                if (distance_1 >= 300) {
+                    // 保留B点
+                    return;
+                }
+
+                // 计算C到AB距离
+                distance_2 = 1000 * point2Line(point[0], point[1], point[2]);
+    //            infoLog("(" + photo_num + "): [" + distance_1 + ", " + distance_2 + "]");
+                if (distance_2 <= 80) {// TODO 阈值
+                    // 删除B点
+                    infoLog("remove " + photo_name.get(photo_num - 2));
+                    photo_name.remove(photo_num - 2);
+                    photo_rotation.remove(photo_num - 2);
+                    photo_num --;
+                    for (int i = 0; i < photo_name.size(); i ++) {
+                        infoLog((i + 1) + "/" + photo_name.size() + ": " + photo_name.get(i));
+                    }
                 }
             }
         }
-
     }
 
     double sphereDistance(double pointA[], double pointB[]) {

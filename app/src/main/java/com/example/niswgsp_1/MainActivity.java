@@ -167,12 +167,12 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         }
 
         // 新建线程拼接
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                stitch();
-//            }
-//        }).start();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                stitch();
+            }
+        }).start();
     }
 
     void initUI() {
