@@ -100,7 +100,7 @@ public class CustomCamera2 extends DialogFragment {
     static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
     static public int photo_num;// 照片总数
     static public int photo_index;// 用于照片命名
-    double[] photo_center = new double[2];
+    double[] photo_center = new double[2];// 所有照片的中心
     boolean is_taking_picture;
 
     // 解决多线程问题
@@ -574,7 +574,7 @@ public class CustomCamera2 extends DialogFragment {
         double sumX = 0;
         double sumY = 0;
         double sumZ = 0;
-        for (int i = 0; i < photo_rotation.size(); i ++) {
+        for (int i = 0; i < photo_num; i ++) {
             ArrayList<Double> tmp_rotation = photo_rotation.get(i);
             tmp_sphere[0] = tmp_rotation.get(0);// 经度
             tmp_sphere[1] = tmp_rotation.get(1);
@@ -582,18 +582,87 @@ public class CustomCamera2 extends DialogFragment {
             sumX += tmp_coordinate[0];
             sumY += tmp_coordinate[1];
             sumZ += tmp_coordinate[2];
-            infoLog(i + ": " + tmp_coordinate[0] + ", " + tmp_coordinate[1] + ", " + tmp_coordinate[2]);
+            infoLog(i + ": " + tmp_coordinate[0] + ", " + tmp_coordinate[1] + ", " + tmp_coordinate[2] + ": "
+            + (tmp_coordinate[0]*tmp_coordinate[0] + tmp_coordinate[1]*tmp_coordinate[1] + tmp_coordinate[2]*tmp_coordinate[2]));
         }
         // 计算中心位置
         tmp_coordinate[0] = sumX / photo_num;
         tmp_coordinate[1] = sumY / photo_num;
         tmp_coordinate[2] = sumZ / photo_num;
+        // 归一化
+        double rate = Math.sqrt(1 / (tmp_coordinate[0]*tmp_coordinate[0] + tmp_coordinate[1]*tmp_coordinate[1] + tmp_coordinate[2]*tmp_coordinate[2]));
+        tmp_coordinate[0] *= rate;
+        tmp_coordinate[1] *= rate;
+        tmp_coordinate[2] *= rate;
         coordinate2sphere(tmp_coordinate, tmp_sphere);
+        // 照片中心
         photo_center[0] = tmp_sphere[0];
         photo_center[1] = tmp_sphere[1];
-
+        infoLog(photo_center[0] + ", " + photo_center[1]);
+        // 计算新的北极点(只可能在北半球)
+        double[] sphereN_ = new double[2];
+        sphereN_[1] = photo_center[1] + Math.PI / 2;// 纬度
+        if (sphereN_[1] > Math.PI / 2) {
+            // 越过了北极点
+            sphereN_[1] = Math.PI - sphereN_[1];
+            // 计算经度
+            if (photo_center[0] > 0) {
+                sphereN_[0] = photo_center[0] - Math.PI;
+            } else {
+                sphereN_[0] = photo_center[0] + Math.PI;
+            }
+        } else {
+            sphereN_[0] = photo_center[0];// 经度
+        }
+        // 换算成直角坐标系坐标
+        double[] pointN = new double[]{ 0, 0, 1 };
+        double[] pointN_ = new double[3];
+        sphere2Coordinate(sphereN_, pointN_);
         // 重新计算所有点的屏幕旋转角度
-        double[] new_port = new double[2];// 新的北极点
+        double plane_theta;// 记录平面夹角
+        for (int i = 0; i < photo_num; i ++) {
+            // 将B点转换成直角坐标系坐标
+            ArrayList<Double> tmp_rotation = photo_rotation.get(i);
+            tmp_sphere[0] = tmp_rotation.get(0);
+            tmp_sphere[1] = tmp_rotation.get(1);
+            double new_rotation = tmp_rotation.get(2);
+            sphere2Coordinate(tmp_sphere, tmp_coordinate);
+            // 计算两个北极点之间的夹角
+            plane_theta = planeAngle(pointN, tmp_coordinate, pointN_);
+            // 计算参考点
+            double[] sphereE = new double[]{ tmp_sphere[0] + Math.PI / 2, 0 };// 东边
+            double[] sphereW = new double[]{ tmp_sphere[0] - Math.PI / 2, 0 };// 西边
+            if (sphereE[0] > Math.PI) {
+                sphereE[0] -= Math.PI * 2;
+            } else if (sphereE[0] < -Math.PI) {
+                sphereE[0] += Math.PI * 2;
+            }
+            if (sphereW[0] > Math.PI) {
+                sphereW[0] -= Math.PI * 2;
+            } else if (sphereW[0] < -Math.PI) {
+                sphereW[0] += Math.PI * 2;
+            }
+            double[] pointE = new double[3];
+            double[] pointW = new double[3];
+            sphere2Coordinate(sphereE, pointE);
+            sphere2Coordinate(sphereW, pointW);
+            // 判断角度的增减
+            double distanceE = sphereDistance(pointE, tmp_coordinate);
+            double distanceW = sphereDistance(pointW, tmp_coordinate);
+            if (distanceE < distanceW) {
+                new_rotation -= plane_theta;
+            } else {
+                new_rotation += plane_theta;
+            }
+            // 角度矫正
+            if (new_rotation > Math.PI) {
+                new_rotation -= Math.PI * 2;
+            } else if (new_rotation < -Math.PI) {
+                new_rotation += Math.PI * 2;
+            }
+            tmp_rotation.set(2, new_rotation);
+            photo_rotation.set(i, tmp_rotation);
+        }
     }
 
     void removeRepeat() {
@@ -624,11 +693,10 @@ public class CustomCamera2 extends DialogFragment {
                 distance_2 = 1000 * sphereDistance(point[0], point[2]);
                 if (distance_2 < 350) {
                     adjacentIndex.add(i);// 保存照片的索引
-                    infoLog("adjacent index: " + i + ", " + distance_2);
                 }
             }
             int adjacentCount = adjacentIndex.size();
-            infoLog("adjacent count: " + adjacentCount);
+//            infoLog("adjacent count: " + adjacentCount);
             if (adjacentCount >= 2) {
                 // 暴力搜索共线的点
                 int removeIndex[] = new int[photo_num];
@@ -656,14 +724,11 @@ public class CustomCamera2 extends DialogFragment {
                             distance_2 = sphereDistance(point[0], point[2]);
                             // BC
                             distance_3 = sphereDistance(point[1], point[2]);
-                            infoLog(indexA + "-" + indexB + " ab:" + distance_1 + " ac:" + distance_2 + " bc:" + distance_3);
                             if (distance_3 > distance_2 && distance_3 > distance_1) {// B - A - C
                                 // 删除A点
-                                infoLog("remove " + indexA);
                                 removeIndex[indexA] = 1;
                             } else if (distance_2 > distance_3 && distance_2 > distance_1) {// A - B - C
                                 // 删除B点
-                                infoLog("remove " + indexB);
                                 removeIndex[indexB] = 1;
                             }
                         }
@@ -725,7 +790,7 @@ public class CustomCamera2 extends DialogFragment {
     }
 
     double sphereDistance(double pointA[], double pointB[]) {
-        // TODO 计算球面上AB的距离
+        // 计算球面上AB的距离
         double longitude_1, latitude_1;
         double longitude_2, latitude_2;
         longitude_1 = Math.atan(pointA[1] / pointA[0]);// tan = y / x
@@ -767,7 +832,6 @@ public class CustomCamera2 extends DialogFragment {
         } else if (coordinate[1] < 0 && sphere[0] > 0) {
             sphere[0] -= Math.PI;
         }
-        infoLog(sphere[0] + ": " + coordinate[0] + ", " + coordinate[1]);
     }
 
     double point2Line(final double pointA[], final double pointB[], final double pointC[]) {
@@ -946,6 +1010,7 @@ public class CustomCamera2 extends DialogFragment {
         }
 
         if (!is_taking_picture) {
+            // 显示照片中心的位置
             sphereConvert(positionP, photo_center, positionQ_);
             if (positionQ_[1] < Math.PI / 3) {
                 // TODO 纬度与北极相差60以内
