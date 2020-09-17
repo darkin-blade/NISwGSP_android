@@ -214,7 +214,7 @@ public class CustomCamera2 extends DialogFragment {
 
                 if (is_taking_picture) {
                     // 按下快门
-                    if (photo_num == 0 || sphere_dis > 100) {
+                    if (photo_num == 0 || sphere_dis > 90) {
                         // 拍摄照片
                         takePictures();
                         // 照片去重
@@ -691,7 +691,7 @@ public class CustomCamera2 extends DialogFragment {
                 sphere2Coordinate(tmp, point[0]);
                 // AC
                 distance_2 = 1000 * sphereDistance(point[0], point[2]);
-                if (distance_2 < 350) {
+                if (distance_2 < 450) {
                     adjacentIndex.add(i);// 保存照片的索引
                 }
             }

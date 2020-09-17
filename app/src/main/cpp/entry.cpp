@@ -53,7 +53,8 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
     jobject thiz,
     jobjectArray imgPaths,
     jdoubleArray imgRotations,
-    jlong matBGR) {
+    jlong matBGR,
+    jint mode) {// mode: 0 for niswgsp, 1 for opencv
   total_env = env;
 //  if (total_env != NULL) {
 //    jclass clazz = total_env->FindClass("com.example.niswgsp_1/MainActivity");
@@ -89,23 +90,24 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
   clock_t begin_time, end_time;
   begin_time = clock();
 
-  Mat result;
-  if (1) {
-      result = method_NISwGSP(img_paths, img_rotations);
+  Mat result_img;
+  int result = 0;
+  if (mode == 0) {
+      result_img = method_NISwGSP(img_paths, img_rotations);
   } else {
-      result = method_openCV(img_paths);
-      LOG("opencv result %d %d", result.cols, result.rows);
-      if (result.cols <= 1) {
-          result = method_NISwGSP(img_paths, img_rotations);
-      }
+      result_img = method_openCV(img_paths);
+  }
+  if (result_img.cols <= 1 || result_img.rows <= 1) {
+      // 拼接失败
+      result = -1;
   }
 
   end_time = clock();
   LOG("totoal time %f", (double)(end_time - begin_time)/CLOCKS_PER_SEC);
 
-  *(Mat *)matBGR = result.clone();// 图像拼接
+  *(Mat *)matBGR = result_img.clone();// 图像拼接
 
-  return 0;
+  return result;
 }
 
 Mat method_NISwGSP(vector<string> img_paths, vector<double> img_rotations) {
@@ -144,17 +146,19 @@ Mat method_openCV(vector<string> img_paths) {
         Mat img = imread(img_path);
         imgs.push_back(img);
     }
-    set_progress(5);
 
     Mat pano;
     Ptr<Stitcher> stitcher = Stitcher::create();
-    Stitcher::Status status = stitcher->stitch(imgs, pano);
-
-    if (status != Stitcher::OK) {
-        // 如果拼接失败返回空
+    try {
+        Stitcher::Status status = stitcher->stitch(imgs, pano);
+        if (status != Stitcher::OK) {
+            // 如果拼接失败返回空
+            return Mat::zeros(1, 1, CV_8UC3);
+        }
+    } catch (Exception e) {
+        LOG("error %s", e.what());
         return Mat::zeros(1, 1, CV_8UC3);
     }
-    set_progress(100);
 
     return pano;
 }
