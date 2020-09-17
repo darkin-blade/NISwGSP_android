@@ -328,7 +328,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         if (opencv_bmp != null) {
             File file;
             for (int i = 0; i < 1000; i ++) {
-                file = new File(appPath + "/opencv_" + i + "_" + photo_list.size() + ".jpg");
+                file = new File(appPath + "/opencv_" + i + "_" + photo_list.size() + ".png");
                 if (file.exists() == false) {
                     try {
                         file.createNewFile();
@@ -349,7 +349,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         if (niswgsp_bmp != null) {
             File file;
             for (int i = 0; i < 1000; i ++) {
-                file = new File(appPath + "/niswgsp_" + i + "_" + photo_list.size() + ".jpg");
+                file = new File(appPath + "/niswgsp_" + i + "_" + photo_list.size() + ".png");
                 if (file.exists() == false) {
                     try {
                         file.createNewFile();
@@ -399,9 +399,9 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                     opencv_bmp = Bitmap.createBitmap(matBGR.cols(), matBGR.rows(), Bitmap.Config.ARGB_8888);
 
                     // BGR转RGB
-                    Mat matRGB = new Mat();
-                    Imgproc.cvtColor(matBGR, matRGB, Imgproc.COLOR_BGR2RGB);
-                    Utils.matToBitmap(matRGB, opencv_bmp);
+                    Mat matRGBA = new Mat();
+                    Imgproc.cvtColor(matBGR, matRGBA, Imgproc.COLOR_BGR2RGBA);
+                    Utils.matToBitmap(matRGBA, opencv_bmp);
                     saveOpenCV();
 
                     // 显示图片
@@ -455,9 +455,9 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                     niswgsp_bmp = Bitmap.createBitmap(matBGR.cols(), matBGR.rows(), Bitmap.Config.ARGB_8888);
 
                     // BGR转RGB
-                    Mat matRGB = new Mat();
-                    Imgproc.cvtColor(matBGR, matRGB, Imgproc.COLOR_BGR2RGB);
-                    Utils.matToBitmap(matRGB, niswgsp_bmp);
+                    Mat matRGBA = new Mat();
+                    Imgproc.cvtColor(matBGR, matRGBA, Imgproc.COLOR_BGR2RGBA);
+                    Utils.matToBitmap(matRGBA, niswgsp_bmp);
                     saveNISwGSP();
 
                     // 显示图片
