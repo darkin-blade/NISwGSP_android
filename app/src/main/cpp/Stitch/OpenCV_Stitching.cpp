@@ -11,7 +11,7 @@ Mat OpenCV_Stitching::opencv_stitch(vector<Mat> _images) {
   double seam_megapix = 0.1;
   double compose_megapix = -1;
   // 判断两张图片在一个全景中的threshold
-  float conf_thresh = 1.f;
+  float conf_thresh = 0.3f;
   string features_type = "surf";// orb, akaze, surf, sift
   string matcher_type = "homography";
   string estimator_type = "homography";
@@ -26,7 +26,7 @@ Mat OpenCV_Stitching::opencv_stitch(vector<Mat> _images) {
   int expos_comp_nr_filtering = 2;
   int expos_comp_block_size = 32;
   // 特征匹配时的置信度, 不同方法默认值不一样
-  float match_conf = 0.65f;
+  float match_conf = 0.35f;
   string seam_find_type = "gc_color";
   int blend_type = Blender::MULTI_BAND;
   int timelapse_type = Timelapser::AS_IS;

@@ -110,6 +110,7 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
   } else {
       result_img = method_openCV(img_paths);
   }
+  LOG("result size %ld %ld", result_img.cols, result_img.rows);
   if (result_img.cols <= 1 || result_img.rows <= 1) {
       // 拼接失败
       result = -1;
