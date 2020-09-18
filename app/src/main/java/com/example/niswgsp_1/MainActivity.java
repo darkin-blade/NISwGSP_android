@@ -22,10 +22,10 @@ import android.os.Message;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     public static LinearLayout photos;
     public Button button_save, button_camera, button_delete;
     public Button button_niswgsp, button_opencv;
-    public ProgressBar stitch_progress;
+    public View niswgsp_progress, opencv_progress;
 //    public TextView stitch_log;
 
     public static final int PERMISSION_CAMERA_REQUEST_CODE = 0x00000012;// 相机权限的 request code
@@ -172,7 +172,8 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         button_delete = findViewById(R.id.delete_button);
         button_niswgsp = findViewById(R.id.niswgsp_button);
         button_opencv = findViewById(R.id.opencv_button);
-        stitch_progress = findViewById(R.id.stitch_progress);
+        niswgsp_progress = findViewById(R.id.niswgsp_progress);
+        opencv_progress = findViewById(R.id.opencv_progress);
 
         photos.removeAllViews();// 移除所有子元素
 
@@ -371,6 +372,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             addToLog("need at least 2 photos");
             return;// 图片数目不够
         }
+        jniProgress(1, 2);// 重置进度条
 
         int photo_num = photo_list.size();
         final String[] imgPaths = new String[photo_num];
@@ -389,7 +391,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                         imgPaths,
                         imgRotations,
                         matBGR.getNativeObjAddr(),
-                        1
+                        2
                 );
 
                 if (result != 0) {
@@ -424,7 +426,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             addToLog("need at least 2 photos");
             return;// 图片数目不够
         }
-        jniProgress(1);// 重置进度条
+        jniProgress(1, 1);// 重置进度条
 
         int photo_num = photo_list.size();
         final String[] imgPaths = new String[photo_num];
@@ -444,7 +446,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                         imgPaths,
                         imgRotations,
                         matBGR.getNativeObjAddr(),
-                        0
+                        1
                 );
 
                 if (result != 0) {
@@ -516,11 +518,27 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             }
 
             // 修改进度
-            int progress = bundle.getInt("progress");
-            if (progress != 0) {
-                stitch_progress.setProgress(progress);
+            final double progress = (double) bundle.getInt("progress");
+            final int mode = bundle.getInt("mode");
+            final int max_width = opencv_result.getWidth();
+            if (progress > 0) {
+                LinearLayout.LayoutParams progressLayout = new LinearLayout.LayoutParams((int)(progress * max_width / 100), ViewGroup.LayoutParams.MATCH_PARENT, 1);
+                if (mode == 1) {
+                    niswgsp_progress.setLayoutParams(progressLayout);
+                    niswgsp_progress.setBackgroundResource(R.color.greyC);
+                } else if (mode == 2) {
+                    opencv_progress.setLayoutParams(progressLayout);
+                    opencv_progress.setBackgroundResource(R.color.greyC);
+                }
+            } else if (progress < 0) {
+                // 拼接失败
+                if (mode == 1) {
+                    niswgsp_progress.setBackgroundResource(R.color.red);
+                } else if (mode == 2) {
+                    opencv_progress.setBackgroundResource(R.color.red);
+                }
             }
-       }
+        }
     }
 
     public static void jniLog(String log) {
@@ -531,10 +549,11 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         mainHandler.sendMessage(message);
     }
 
-    public static void jniProgress(int progress) {
+    public static void jniProgress(int progress, int mode) {
         Message message = new Message();
         Bundle bundle = new Bundle();
         bundle.putInt("progress", progress);
+        bundle.putInt("mode", mode);// 1 for niswgsp, 2 for opencv
         message.setData(bundle);
         mainHandler.sendMessage(message);
     }

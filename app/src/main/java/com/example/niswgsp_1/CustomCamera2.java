@@ -1112,11 +1112,6 @@ public class CustomCamera2 extends DialogFragment {
             // PQ朝向西方
             thetaSPQ = -thetaSPQ;
         }
-        infoLog("PR: " + vectorPR[0] + "," + vectorPR[1] + "," + vectorPR[2]);
-        infoLog("PQ: " + vectorPQ[0] + "," + vectorPQ[1] + "," + vectorPQ[2]);
-        infoLog("PE: " + vectorPE[0] + "," + vectorPE[1] + "," + vectorPE[2]);
-        infoLog("PS: " + vectorPS[0] + "," + vectorPS[1] + "," + vectorPS[2]);
-        infoLog("OM: " + pointM[0] + "," + pointM[1] + "," + pointM[2]);
         return thetaSPQ;
     }
 }
