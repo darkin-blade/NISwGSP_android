@@ -649,10 +649,10 @@ public class CustomCamera2 extends DialogFragment {
         // 计算图片的配对信息
     }
 
-    void removeRepeat() {
+    private void removeRepeat() {
         // 删除重复度较高的照片
         if (enable_repeat) {
-            double point[][] = new double[3][3];// A(x, y, z), B(x, y, z), C(x, y, z)
+            double[][] point = new double[3][3];// A(x, y, z), B(x, y, z), C(x, y, z)
             double distance_1;// AB
             double distance_2;// AC
             double distance_3;// BC
@@ -668,7 +668,7 @@ public class CustomCamera2 extends DialogFragment {
             // 找出所有相邻的点
             for (int i = 0; i < photo_num - 1; i ++) {
                 // 当前拍摄的是最后一张, 不进行考虑
-                double tmp[] = new double[2];
+                double[] tmp = new double[2];
                 // A
                 tmp[0] = photo_rotation.get(i).get(0);
                 tmp[1] = photo_rotation.get(i).get(1);
@@ -683,10 +683,10 @@ public class CustomCamera2 extends DialogFragment {
 //            infoLog("adjacent count: " + adjacentCount);
             if (adjacentCount >= 2) {
                 // 暴力搜索共线的点
-                int removeIndex[] = new int[photo_num];
+                int[] removeIndex = new int[photo_num];
                 for (int i = 0; i < adjacentCount; i ++) {
                     for (int j = i + 1; j < adjacentCount; j ++) {
-                        double tmp[] = new double[2];
+                        double[] tmp = new double[2];
                         int indexA = adjacentIndex.get(i);
                         int indexB = adjacentIndex.get(j);
                         // A
@@ -730,12 +730,12 @@ public class CustomCamera2 extends DialogFragment {
                 }
             }
         } else {
-            double point[][] = new double[3][3];// A(x, y, z), B(x, y, z), C(x, y, z)
+            double[][] point = new double[3][3];// A(x, y, z), B(x, y, z), C(x, y, z)
             double distance_1;// AB
             double distance_2;// CC' / 2
             if (photo_num >= 3) {
                 // 计算3点的空间直角坐标(x与经度0的方向平行)(右手系)
-                double tmp[] = new double[2];
+                double[] tmp = new double[2];
                 // A
                 tmp[0] = photo_rotation.get(photo_num - 3).get(0);
                 tmp[1] = photo_rotation.get(photo_num - 3).get(1);
@@ -773,7 +773,7 @@ public class CustomCamera2 extends DialogFragment {
         }
     }
 
-    void panoramaGuide() {
+    private void panoramaGuide() {
         // 辅助拍摄
         if (switchGuide == 0) {
             return;
@@ -795,9 +795,9 @@ public class CustomCamera2 extends DialogFragment {
         }
         myBitmap.eraseColor(Color.TRANSPARENT);
 
-        double positionP[] = new double[2];// P
-        double positionQ[] = new double[2];// Q
-        double positionQ_[] = new double[2];// Q变换后的坐标
+        double[] positionP = new double[2];// P
+        double[] positionQ = new double[2];// Q
+        double[] positionQ_ = new double[2];// Q变换后的坐标
         positionP[0] = this_longitude;
         positionP[1] = this_latitude;
 
@@ -866,7 +866,7 @@ public class CustomCamera2 extends DialogFragment {
         myImageView.setImageBitmap(myBitmap);
     }
 
-    double sphereDistance(double pointA[], double pointB[]) {
+    private double sphereDistance(final double[] pointA, final double[] pointB) {
         // 计算球面上AB的距离
         double longitude_1, latitude_1;
         double longitude_2, latitude_2;
@@ -892,7 +892,7 @@ public class CustomCamera2 extends DialogFragment {
         return sphere_dis;
     }
 
-    void sphere2Coordinate(final double sphere[], double coordinate[]) {
+    private void sphere2Coordinate(final double[] sphere, double[] coordinate) {
         // 球面坐标系转空间直角坐标系, OX方向为0经度方向
         coordinate[2] = Math.sin(sphere[1]);// 纬度计算z
         double xy = Math.sqrt(1 - coordinate[2] * coordinate[2]);// sqrt(x^2 + y^2)
@@ -900,7 +900,7 @@ public class CustomCamera2 extends DialogFragment {
         coordinate[1] = xy * Math.sin(sphere[0]);// 经度计算y
     }
 
-    void coordinate2sphere(final double coordinate[], double sphere[]) {
+    private void coordinate2sphere(final double[] coordinate, double[] sphere) {
         // 空间直角坐标系转球面坐标系
         sphere[0] = Math.atan(coordinate[1] / coordinate[0]);// TODO tan = y / x
         sphere[1] = Math.asin(coordinate[2]);
@@ -911,9 +911,9 @@ public class CustomCamera2 extends DialogFragment {
         }
     }
 
-    double point2Line(final double pointA[], final double pointB[], final double pointC[]) {
+    private double point2Line(final double[] pointA, final double[] pointB, final double[] pointC) {
         // 点到球面直线距离, 输入为: 弧AB, 点C
-        double pointC_[] = new double[3];
+        double[] pointC_ = new double[3];
 
         // 计算C在OAB上的垂足D
         Matrix A = new Matrix(new double[][]{
@@ -940,7 +940,7 @@ public class CustomCamera2 extends DialogFragment {
         return sphereDistance(pointC, pointC_)/2;// CC' / 2
     }
 
-    void rotateByVector(final double[] pointP, final double[] vectorAxis, final double _theta, double[] pointP_) {
+    private void rotateByVector(final double[] pointP, final double[] vectorAxis, final double _theta, double[] pointP_) {
         // 计算P点绕axis旋转theta之后的坐标P'
         // 右手大拇指与axis同向, 四指的方向为正方向
         double xP = pointP[0];
@@ -960,7 +960,7 @@ public class CustomCamera2 extends DialogFragment {
         pointP_[2] = zP_;
     }
 
-    double planeAngle(final double pointA[], final double pointB[], final double pointC[]) {
+    private double planeAngle(final double[] pointA, final double[] pointB, final double[] pointC) {
         // 计算2个平面之间的夹角(绝对值), 输入为(平面1某一向量, 公共边, 平面2某一向量), 设为(OA, OB, OC)
         // 计算OA在OB上的垂足D, OD = a(OB)
         double a = (pointA[0]*pointB[0] + pointA[1]*pointB[1] + pointA[2]*pointB[2])/(pointB[0]*pointB[0] + pointB[1]*pointB[1] + pointB[2]*pointB[2]);
@@ -968,8 +968,8 @@ public class CustomCamera2 extends DialogFragment {
         double b = (pointC[0]*pointB[0] + pointC[1]*pointB[1] + pointC[2]*pointB[2])/(pointB[0]*pointB[0] + pointB[1]*pointB[1] + pointB[2]*pointB[2]);
 
         // 计算DA, EB夹角的绝对值
-        double vectorDA[] = new double[3];// DA
-        double vectorEB[] = new double[3];// EB
+        double[] vectorDA = new double[3];// DA
+        double[] vectorEB = new double[3];// EB
         vectorDA[0] = pointA[0] - a * pointB[0];
         vectorDA[1] = pointA[1] - a * pointB[1];
         vectorDA[2] = pointA[2] - a * pointB[2];
@@ -981,7 +981,7 @@ public class CustomCamera2 extends DialogFragment {
         return Math.acos(cos_theta);// 这里不是求的法向量夹角, 所以不需要计算补角
     }
 
-    void sphereConvert(final double positionP[], final double positionQ[], double positionR[]) {
+    private void sphereConvert(final double[] positionP, final double[] positionQ, double[] positionR) {
         // 球面坐标系的坐标变换, 输入为(新的北极点, 待变换的点), 设为(P, Q), 坐标为地理坐标(经度, 纬度)
         // 第3个参数用于返回(经度, 纬度)
 
@@ -989,9 +989,9 @@ public class CustomCamera2 extends DialogFragment {
         // U: 新旧坐标系中的(-90, 0), W往西90
         // V: 新旧坐标系中的(90, 0), W往东90
         // W: 新坐标系中P沿着0经度往南90纬度, TODO 在新的坐标系中, 0经度方向为PW的方向
-        double positionU[] = new double[2];// U
-        double positionV[] = new double[2];// V
-        double positionW[] = new double[2];// W
+        double[] positionU = new double[2];// U
+        double[] positionV = new double[2];// V
+        double[] positionW = new double[2];// W
         positionU[0] = positionP[0] - Math.PI / 2;// U的经度
         positionU[1] = 0;
         if (positionU[0] < -Math.PI) {
@@ -1018,11 +1018,11 @@ public class CustomCamera2 extends DialogFragment {
         }
 
         // 计算Q在以P为北极的坐标系中的坐标
-        double pointP[] = new double[3];// P
-        double pointQ[] = new double[3];// Q
-        double pointU[] = new double[3];// U
-        double pointV[] = new double[3];// V
-        double pointW[] = new double[3];// W
+        double[] pointP = new double[3];// P
+        double[] pointQ = new double[3];// Q
+        double[] pointU = new double[3];// U
+        double[] pointV = new double[3];// V
+        double[] pointW = new double[3];// W
         sphere2Coordinate(positionP, pointP);// P
         sphere2Coordinate(positionQ, pointQ);// Q
         sphere2Coordinate(positionU, pointU);// U
@@ -1044,7 +1044,7 @@ public class CustomCamera2 extends DialogFragment {
         positionR[1] = new_latitude;// Q的纬度
     }
 
-    double sphereThetaConvert(final double[] pointM, final double[] sphereP) {
+    private double sphereThetaConvert(final double[] pointM, final double[] sphereP) {
         double a, b, product, cos;// 临时变量
         // 计算求坐标系变换后, 新的切面旋转角度
         // 输入为: 新北极点(原空间直角坐标系下的坐标), 待变换的点(必须是3维, 包含切面旋转角度)
