@@ -693,6 +693,7 @@ public class CustomCamera2 extends DialogFragment {
                 if (pairMatrix[i][j]) {
                     pairFirst.add(i);
                     pairSecond.add(j);
+                    infoLog(i + " match " + j);
                 }
             }
         }

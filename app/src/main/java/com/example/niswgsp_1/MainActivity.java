@@ -368,6 +368,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         for (int i = 0; i < photo_num; i ++) {
             imgPaths[i] = photo_name.get(i);
             imgRotations[i] = photo_rotation.get(i);
+            infoLog(i + " rotation " + imgRotations[i]);
         }
 
         // 获取图片配对信息

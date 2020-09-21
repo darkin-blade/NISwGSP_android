@@ -68,7 +68,7 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
     jintArray pairFirst,
     jintArray pairSecond,
     jint mode) {// mode: 0 for niswgsp, 1 for opencv
-//  total_env = env;
+  total_env = env;// 不能删, 从jni调用java方法
 //  if (total_env != NULL) {
 //    jclass clazz = total_env->FindClass("com.example.niswgsp_1/MainActivity");
 //    if (clazz != NULL) {
