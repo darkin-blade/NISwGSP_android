@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     public View niswgsp_progress, opencv_progress;
 //    public TextView stitch_log;
 
+    /* 系统相机功能 */
     public static final int PERMISSION_CAMERA_REQUEST_CODE = 0x00000012;// 相机权限的 request code
     Uri photoUri = null;
     String photoPath = null;
@@ -58,11 +59,10 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
     ArrayList<Double> photo_rotation = new ArrayList<>();// 图片旋转角度
     ArrayList<Integer> photo_selected = new ArrayList<>();
-    // 拼接结果
-    Bitmap niswgsp_bmp = null;
-    Bitmap opencv_bmp = null;
 
-    Thread stitch_thread;
+    /* 保存拼接结果 */
+    Bitmap niswgsp_bmp, opencv_bmp;
+
     // 从jni更新UI
     static MainHandler mainHandler;
 
@@ -194,14 +194,14 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         button_opencv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                opencvStitch();
+                stitch(2);
             }
         });
 
         button_niswgsp.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                niswgspStitch();
+                stitch(1);
             }
         });
 
@@ -271,13 +271,13 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         new Thread(new Runnable() {
             @Override
             public void run() {
-                saveNISwGSP();
+                saveBmp(niswgsp_bmp, 1);
             }
         }).start();
         new Thread(new Runnable() {
             @Override
             public void run() {
-                saveOpenCV();
+                saveBmp(opencv_bmp, 2);
             }
         }).start();
     }
@@ -325,19 +325,26 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         });
     }
 
-    void saveOpenCV() {
-        if (opencv_bmp != null) {
+    void saveBmp(Bitmap bitmap, int mode) {// 1: NISwGSP, 2: OpenCV
+        String methodName = null;
+        if (mode == 1) {
+            methodName = "niswgsp";
+        } else if (mode == 2) {
+            methodName = "opencv";
+        }
+
+        if (methodName != null && bitmap != null) {
             File file;
             for (int i = 0; i < 1000; i ++) {
-                file = new File(appPath + "/opencv_" + i + "_" + photo_list.size() + ".png");
+                file = new File(appPath + "/" + methodName + "_" + photo_list.size() + ".png");
                 if (file.exists() == false) {
                     try {
                         file.createNewFile();
                         FileOutputStream stream = new FileOutputStream(file);
-                        opencv_bmp.compress(Bitmap.CompressFormat.JPEG, 100, stream);
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
                         stream.flush();
-                        infoLog("save opencv succeed");
-                        return;
+                        stream.close();// TODO
+                        infoLog("save " + methodName + " succeed");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -346,34 +353,14 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         }
     }
 
-    void saveNISwGSP() {
-        if (niswgsp_bmp != null) {
-            File file;
-            for (int i = 0; i < 1000; i ++) {
-                file = new File(appPath + "/niswgsp_" + i + "_" + photo_list.size() + ".png");
-                if (file.exists() == false) {
-                    try {
-                        file.createNewFile();
-                        FileOutputStream stream = new FileOutputStream(file);
-                        niswgsp_bmp.compress(Bitmap.CompressFormat.JPEG, 100, stream);
-                        stream.flush();
-                        infoLog("save niswgsp succeed");
-                        return;
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-    }
-
-    void opencvStitch() {
+    void stitch(final int mode) {// 1: NISwGSP, 2: OpenCV
         if (photo_list.size() < 2) {
             addToLog("need at least 2 photos");
             return;// 图片数目不够
         }
-        jniProgress(1, 2);// 重置进度条
+        jniProgress(1, mode);// 重置进度条
 
+        // 获取图片路径和旋转角度
         int photo_num = photo_list.size();
         final String[] imgPaths = new String[photo_num];
         final double[] imgRotations = new double[photo_num];
@@ -382,7 +369,16 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             imgRotations[i] = photo_rotation.get(i);
         }
 
-        // 调用OpenCV方法
+        // 获取图片配对信息
+        int pairSize = customCamera2.pairFirst.size();
+        final int[] pairFirst = new int[pairSize];
+        final int[] pairSecond = new int[pairSize];
+        for (int i = 0; i < pairSize; i ++) {
+            pairFirst[i] = customCamera2.pairFirst.get(i);
+            pairSecond[i] = customCamera2.pairSecond.get(i);
+        }
+
+        // 调用jni拼接
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -391,85 +387,39 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                         imgPaths,
                         imgRotations,
                         matBGR.getNativeObjAddr(),
-                        2
+                        pairFirst,
+                        pairSecond,
+                        mode
                 );
 
                 if (result != 0) {
                     infoLog("failed");
                 } else {
-                    opencv_bmp = Bitmap.createBitmap(matBGR.cols(), matBGR.rows(), Bitmap.Config.ARGB_8888);
+                    Bitmap bitmap = Bitmap.createBitmap(matBGR.cols(), matBGR.rows(), Bitmap.Config.ARGB_8888);
 
                     // BGR转RGB
                     Mat matRGBA = new Mat();
                     Imgproc.cvtColor(matBGR, matRGBA, Imgproc.COLOR_BGR2RGBA);
-                    Utils.matToBitmap(matRGBA, opencv_bmp);
-                    saveOpenCV();
+                    Utils.matToBitmap(matRGBA, bitmap);
+                    saveBmp(bitmap, mode);
+
+                    // 保存结果
+                    if (mode == 1) {
+                        niswgsp_bmp = bitmap;
+                    } else if (mode == 2) {
+                        opencv_bmp = bitmap;
+                    }
 
                     // 显示图片
+                    final Bitmap finalBitmap = bitmap;
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
                             // 压缩图片并显示
                             Matrix matrix = new Matrix();
                             matrix.setScale(0.2f, 0.2f);
-                            Bitmap bmp_thumbnail = Bitmap.createBitmap(opencv_bmp, 0, 0, opencv_bmp.getWidth(), opencv_bmp.getHeight(), matrix, true);
+                            Bitmap bmp_thumbnail = Bitmap.createBitmap(finalBitmap, 0, 0, finalBitmap.getWidth(), finalBitmap.getHeight(), matrix, true);
                             opencv_result.setImageBitmap(bmp_thumbnail);
-                        }
-                    });
-                }
-            }
-        }).start();
-    }
-
-    void niswgspStitch() {
-        if (photo_list.size() < 2) {
-            addToLog("need at least 2 photos");
-            return;// 图片数目不够
-        }
-        jniProgress(1, 1);// 重置进度条
-
-        int photo_num = photo_list.size();
-        final String[] imgPaths = new String[photo_num];
-        final double[] imgRotations = new double[photo_num];
-        for (int i = 0; i < photo_num; i ++) {
-            imgPaths[i] = photo_name.get(i);
-            imgRotations[i] = photo_rotation.get(i);
-            infoLog(imgPaths[i] + ": " + imgRotations[i]);
-        }
-
-        // 调用NISwGSP方法
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                Mat matBGR = new Mat();
-                int result = main_test(
-                        imgPaths,
-                        imgRotations,
-                        matBGR.getNativeObjAddr(),
-                        1
-                );
-
-                if (result != 0) {
-                    infoLog("failed");
-                    return;
-                } else {
-                    niswgsp_bmp = Bitmap.createBitmap(matBGR.cols(), matBGR.rows(), Bitmap.Config.ARGB_8888);
-
-                    // BGR转RGB
-                    Mat matRGBA = new Mat();
-                    Imgproc.cvtColor(matBGR, matRGBA, Imgproc.COLOR_BGR2RGBA);
-                    Utils.matToBitmap(matRGBA, niswgsp_bmp);
-                    saveNISwGSP();
-
-                    // 显示图片
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            // 压缩图片并显示
-                            Matrix matrix = new Matrix();
-                            matrix.setScale(0.2f, 0.2f);
-                            Bitmap bmp_thumbnail = Bitmap.createBitmap(niswgsp_bmp, 0, 0, niswgsp_bmp.getWidth(), niswgsp_bmp.getHeight(), matrix, true);
-                            niswgsp_result.setImageBitmap(bmp_thumbnail);
                         }
                     });
                 }
@@ -562,7 +512,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    public native int main_test(String[] imgPaths, double[] imgRotations, long matBGR, int mode);
+    public native int main_test(String[] imgPaths, double[] imgRotations, long matBGR, int[] pairFirst, int[] pairSecond, int mode);
 
     static public void infoLog(String log) {
         Log.i("fuck", log);

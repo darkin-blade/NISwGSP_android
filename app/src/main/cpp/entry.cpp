@@ -13,19 +13,17 @@ int main(int argc, char *argv[]) {
   char app_path[64] = "../..";
   char img_path[128];// 图片路径
 
-  if (0) {
+  if (1) {
     // 读取图片
     MultiImages multi_images;
-    for (int i = 1; i <= 2; i ++) {
-        sprintf(img_path, "%s/%d.jpg", app_path, i);
+    for (int i = 1; i <= 4; i ++) {
+        sprintf(img_path, "%s/%d.png", app_path, i);
         multi_images.read_img(img_path);
         if (i != 1) {
             // 自定义图片配对关系,如果配对错误会导致`type == CV_32F || type == CV_64F`错误
             multi_images.img_pairs.emplace_back(make_pair(i - 2, i - 1));
         }
     }
-
-    multi_images.center_index = 0;// 参照图片的索引
 
     NISwGSP_Stitching niswgsp(multi_images);
 
@@ -58,7 +56,7 @@ int main(int argc, char *argv[]) {
 
 JNIEnv * total_env;
 Mat method_openCV(vector<string>);
-Mat method_NISwGSP(vector<string>, vector<double>);
+Mat method_NISwGSP(vector<string>, vector<double>, vector<pair<int, int> >);
 
 extern "C" JNIEXPORT int JNICALL
 Java_com_example_niswgsp_11_MainActivity_main_1test(
@@ -67,8 +65,10 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
     jobjectArray imgPaths,
     jdoubleArray imgRotations,
     jlong matBGR,
+    jintArray pairFirst,
+    jintArray pairSecond,
     jint mode) {// mode: 0 for niswgsp, 1 for opencv
-  total_env = env;
+//  total_env = env;
 //  if (total_env != NULL) {
 //    jclass clazz = total_env->FindClass("com.example.niswgsp_1/MainActivity");
 //    if (clazz != NULL) {
@@ -86,11 +86,10 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
 
   // 获取String数组长度
   jsize str_len = env->GetArrayLength(imgPaths);
-
-  // 读取图片路径
   vector<string> img_paths;
   vector<double> img_rotations;
 
+  // 读取图片, 获取图片旋转角度
   jdouble *rotations = env->GetDoubleArrayElements(imgRotations, NULL);
   for (int i = 0; i < str_len; i ++) {
     jstring tmp = (jstring) env->GetObjectArrayElement(imgPaths, i);
@@ -100,13 +99,22 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
     img_rotations.push_back(rotations[i]);
   }
 
+  // 获取图片配对信息
+  jsize pair_len = env->GetArrayLength(pairFirst);
+  vector<pair<int, int> > img_pairs;
+  jint *pair_first = env->GetIntArrayElements(pairFirst, NULL);
+  jint *pair_second = env->GetIntArrayElements(pairSecond, NULL);
+  for (int i = 0; i < pair_len; i ++) {
+      img_pairs.emplace_back(make_pair(pair_first[i], pair_second[i]));
+  }
+
   clock_t begin_time, end_time;
   begin_time = clock();
 
   Mat result_img;
   int result = 0;
   if (mode == 1) {
-      result_img = method_NISwGSP(img_paths, img_rotations);
+      result_img = method_NISwGSP(img_paths, img_rotations, img_pairs);
   } else if (mode == 2) {
       result_img = method_openCV(img_paths);
   }
@@ -125,18 +133,18 @@ Java_com_example_niswgsp_11_MainActivity_main_1test(
   return result;
 }
 
-Mat method_NISwGSP(vector<string> img_paths, vector<double> img_rotations) {
+Mat method_NISwGSP(vector<string> img_paths, vector<double> img_rotations, vector<pair<int, int> > img_pairs) {
     MultiImages multi_images;
+    // 读取图片
     for (int i = 0; i < img_paths.size(); i ++) {
         const char *img_path = img_paths[i].c_str();
         multi_images.read_img(img_path);
         multi_images.img_rotations.push_back(img_rotations[i]);// 记录拍摄时的旋转角度
-        if (i != 0) {
-            // 自定义图片配对关系
-            multi_images.img_pairs.emplace_back(make_pair(i - 1, i));
-        }
     }
-    multi_images.center_index = 0;// 参照图片的索引
+    // 获取图片配对信息
+    for (int i = 0; i < img_pairs.size(); i ++) {
+        multi_images.img_pairs.emplace_back(img_pairs[i]);
+    }
 
     NISwGSP_Stitching niswgsp(multi_images);
     set_progress(5, 1);

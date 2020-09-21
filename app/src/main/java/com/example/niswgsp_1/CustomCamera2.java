@@ -98,8 +98,11 @@ public class CustomCamera2 extends DialogFragment {
 
     static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
     static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
+    static public ArrayList<Integer> pairFirst = new ArrayList<>();
+    static public ArrayList<Integer> pairSecond = new ArrayList<>();
     static public int photo_num;// 照片总数
     static public int photo_index;// 用于照片命名
+
     double[] photo_center = new double[2];// 所有照片的中心
     boolean is_taking_picture;
 
@@ -290,8 +293,12 @@ public class CustomCamera2 extends DialogFragment {
 
     void initCamera() {
         dismiss_result = 0;
+
         photo_name.clear();
         photo_rotation.clear();
+        pairFirst.clear();
+        pairSecond.clear();
+
         photo_num = 0;
         photo_index = 0;
         is_taking_picture = false;
@@ -636,6 +643,10 @@ public class CustomCamera2 extends DialogFragment {
             tmp_rotation.set(2, new_rotation);
             photo_rotation.set(i, tmp_rotation);
         }
+    }
+
+    void computePairs() {
+        // 计算图片的配对信息
     }
 
     void removeRepeat() {

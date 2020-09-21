@@ -67,7 +67,7 @@ public:
   MultiImages();
 
   int img_num;
-  int center_index;// 参照图片的索引
+  int center_index = 0;// 参照图片的索引
   vector<ImageData *> imgs;
   vector<double> img_rotations;// 拍摄时的旋转角度
 
@@ -115,10 +115,7 @@ public:
   vector<vector<InterpolateVertex> > getInterpolateVerticesOfMatchingPoints();
   vector<int> getImagesVerticesStartIndex();
   vector<vector<double> > getImagesGridSpaceMatchingPointsWeight(const double _global_weight_gamma);
-  vector<vector<pair<double, double> > > & getImagesRelativeRotationRange();
   vector<CameraParams> getCameraParams();
-  vector<Point2f> getImagesLinesProject(const int _from, const int _to);
-  double getImagesMinimumLineDistortionRotation(const int _from, const int _to);
   vector<SimilarityElements> getImagesSimilarityElements();
 
   void do_matching();
