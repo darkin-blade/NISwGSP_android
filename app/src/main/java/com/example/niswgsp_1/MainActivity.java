@@ -336,7 +336,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         if (methodName != null && bitmap != null) {
             File file;
             for (int i = 0; i < 1000; i ++) {
-                file = new File(appPath + "/" + methodName + "_" + photo_list.size() + ".png");
+                file = new File(appPath + "/" + methodName  + "_" + i + "_" + photo_list.size() + ".png");
                 if (file.exists() == false) {
                     try {
                         file.createNewFile();
@@ -345,6 +345,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                         stream.flush();
                         stream.close();// TODO
                         infoLog("save " + methodName + " succeed");
+                        return;
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -419,7 +420,11 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                             Matrix matrix = new Matrix();
                             matrix.setScale(0.2f, 0.2f);
                             Bitmap bmp_thumbnail = Bitmap.createBitmap(finalBitmap, 0, 0, finalBitmap.getWidth(), finalBitmap.getHeight(), matrix, true);
-                            opencv_result.setImageBitmap(bmp_thumbnail);
+                            if (mode == 1) {
+                                niswgsp_result.setImageBitmap(bmp_thumbnail);
+                            } else if (mode == 2) {
+                                opencv_result.setImageBitmap(bmp_thumbnail);
+                            }
                         }
                     });
                 }
@@ -468,11 +473,11 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             }
 
             // 修改进度
-            final double progress = (double) bundle.getInt("progress");
+            final int progress = bundle.getInt("progress");
             final int mode = bundle.getInt("mode");
-            final int max_width = opencv_result.getWidth();
             if (progress > 0) {
-                LinearLayout.LayoutParams progressLayout = new LinearLayout.LayoutParams((int)(progress * max_width / 100), ViewGroup.LayoutParams.MATCH_PARENT, 1);
+                int new_width = (int)((double)progress * opencv_result.getWidth() / 100);
+                LinearLayout.LayoutParams progressLayout = new LinearLayout.LayoutParams(new_width, ViewGroup.LayoutParams.MATCH_PARENT, 1);
                 if (mode == 1) {
                     niswgsp_progress.setLayoutParams(progressLayout);
                     niswgsp_progress.setBackgroundResource(R.color.greyC);
