@@ -43,11 +43,11 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity implements DialogInterface.OnDismissListener {
     static String appPath;
 
-    public ImageView niswgsp_result, opencv_result;
-    public static LinearLayout photos;
-    public Button button_save, button_camera, button_delete;
-    public Button button_niswgsp, button_opencv;
-    public View niswgsp_progress, opencv_progress;
+    ImageView niswgsp_result, opencv_result;
+    static LinearLayout photos;
+    Button button_save, button_camera, button_delete;
+    Button button_niswgsp, button_opencv;
+    View niswgsp_progress, opencv_progress;
 //    public TextView stitch_log;
 
     /* 系统相机功能 */

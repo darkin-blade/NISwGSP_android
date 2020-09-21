@@ -57,6 +57,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import java.util.SortedSet;
@@ -94,7 +95,6 @@ public class CustomCamera2 extends DialogFragment {
 
     ImageReader mImageReader;
     Handler backgroundHandler;
-    HandlerThread backgroundThread;// TODO 用于保存照片的线程
 
     static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
     static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
@@ -369,6 +369,7 @@ public class CustomCamera2 extends DialogFragment {
             public void onClick(View view) {
                 if (is_taking_picture == false && file_queue.size() == 0) {// 等待其他线程把照片存完
                     dismiss_result = 1;
+                    computePairs();// 计算照片的配对关系
                     dismiss();
                 }
             }
@@ -403,10 +404,10 @@ public class CustomCamera2 extends DialogFragment {
 //                for (int i = 0; i < x.getRowDimension(); i ++) {
 //                    infoLog(i + ": " + x.get(i, 0));
 //                }
-                double sphereP[] = new double[]{Math.PI, Math.PI/4};
-                double pointP[] = new double[3];
+                double[] sphereP = new double[]{Math.PI, Math.PI/4};
+                double[] pointP = new double[3];
                 sphere2Coordinate(sphereP, pointP);
-                double sphereQ[] = new double[]{0, -Math.PI/4 + 0.01, 0};
+                double[] sphereQ = new double[]{0, -Math.PI/4 + 0.01, 0};
                 infoLog("new theta: " + sphereThetaConvert(pointP, sphereQ));
                 switchGuide = 1 - switchGuide;
             }
@@ -647,6 +648,27 @@ public class CustomCamera2 extends DialogFragment {
 
     void computePairs() {
         // 计算图片的配对信息
+        double[] sphereA = new double[2];
+        double[] sphereB = new double[2];
+        double[] pointA = new double[3];
+        double[] pointB = new double[3];
+        PriorityQueue<Double> edges = new PriorityQueue<>();
+        for (int i = 0; i < photo_num; i ++) {
+            sphereA[0] = photo_rotation.get(i).get(0);
+            sphereA[1] = photo_rotation.get(i).get(1);
+            sphere2Coordinate(sphereA, pointA);
+            for (int j = i + 1; j < photo_num; j ++) {
+                sphereB[0] = photo_rotation.get(j).get(0);
+                sphereB[1] = photo_rotation.get(j).get(1);
+                sphere2Coordinate(sphereB, pointB);
+                double AB = sphereDistance(sphereA, sphereB);
+                edges.add(AB);
+            }
+        }
+        for (int i = 0; !edges.isEmpty(); i ++) {
+            double tmp = edges.poll();
+            infoLog(i + ": " + tmp);
+        }
     }
 
     private void removeRepeat() {
