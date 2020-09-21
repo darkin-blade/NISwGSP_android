@@ -27,6 +27,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -43,6 +44,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
@@ -56,6 +58,7 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -100,7 +103,7 @@ public class CustomCamera2 extends DialogFragment {
     static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
     static public int photo_num;// 照片总数
     static public int photo_index;// 用于照片命名
-    // 照片配对 使用矩阵解决
+    // 照片配对
     static public ArrayList<Integer> pairFirst = new ArrayList<>();
     static public ArrayList<Integer> pairSecond = new ArrayList<>();
 
@@ -647,7 +650,18 @@ public class CustomCamera2 extends DialogFragment {
         double[] sphereB = new double[2];
         double[] pointA = new double[3];
         double[] pointB = new double[3];
-        PriorityQueue<Double> edges = new PriorityQueue<>();
+        Comparator<Edge> edgeComparator = new Comparator<Edge>() {
+            @Override
+            public int compare(Edge edge1, Edge edge2) {
+                if (edge1.w < edge2.w) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            }
+        };
+        PriorityQueue<Edge> edges = new PriorityQueue<>(edgeComparator);
+
         for (int i = 0; i < photo_num; i ++) {
             sphereA[0] = photo_rotation.get(i).get(0);
             sphereA[1] = photo_rotation.get(i).get(1);
@@ -657,12 +671,30 @@ public class CustomCamera2 extends DialogFragment {
                 sphereB[1] = photo_rotation.get(j).get(1);
                 sphere2Coordinate(sphereB, pointB);
                 double AB = sphereDistance(pointA, pointB);
-                edges.add(AB);
+                edges.add(new Edge(i, j, AB));
             }
         }
+        // 将所有照片连通
+        UnionFind unionFind = new UnionFind(photo_num);
+        boolean[][] pairMatrix = new boolean[photo_num][photo_num];
         for (int i = 0; !edges.isEmpty(); i ++) {
-            double tmp = edges.poll();
-            infoLog(i + ": " + tmp);
+            Edge tmp = edges.poll();
+            int u = tmp.u;
+            int v = tmp.v;
+            pairMatrix[u][v] = true;
+            int unionSize = unionFind.union(u, v);
+            if (unionSize == photo_num) {
+                break;
+            }
+        }
+        // 将矩阵转换为数组
+        for (int i = 0; i < photo_num; i ++) {
+            for (int j = 1; j < photo_num; j ++) {
+                if (pairMatrix[i][j]) {
+                    pairFirst.add(i);
+                    pairSecond.add(j);
+                }
+            }
         }
     }
 
@@ -1135,5 +1167,55 @@ public class CustomCamera2 extends DialogFragment {
             thetaSPQ = -thetaSPQ;
         }
         return thetaSPQ;
+    }
+
+    class UnionFind {
+        public int[] father;
+        public int[] size;
+
+        public UnionFind(int num) {
+            father = new int[num];
+            size = new int[num];
+            for (int i = 0; i < num; i ++) {
+                father[i] = i;
+                size[i] = 1;
+            }
+        }
+
+        public int find(int x) {
+            if (father[x] == x) {
+                return x;
+            }
+            father[x] = find(father[x]);
+            size[x] = size[father[x]];
+            return father[x];
+        }
+
+        public int union(int x, int y) {
+            int fatherX = find(x);
+            int fatherY = find(y);
+            if (fatherX != fatherY) {
+                father[fatherX] = fatherY;
+                size[fatherY] += size[fatherX];
+            }
+            return size[fatherY];
+        }
+    }
+
+    class Edge {
+        public int u, v;
+        public double w;
+
+        public Edge(int u, int v, double w) {
+            if (u > v) {
+               int tmp = u;
+               u = v;
+               v = tmp;
+            }
+            // u <= v
+            this.u = u;
+            this.v = v;
+            this.w = w;
+        }
     }
 }
