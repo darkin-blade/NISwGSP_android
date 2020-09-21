@@ -98,10 +98,11 @@ public class CustomCamera2 extends DialogFragment {
 
     static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
     static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
-    static public ArrayList<Integer> pairFirst = new ArrayList<>();
-    static public ArrayList<Integer> pairSecond = new ArrayList<>();
     static public int photo_num;// 照片总数
     static public int photo_index;// 用于照片命名
+    // 照片配对 使用矩阵解决
+    static public ArrayList<Integer> pairFirst = new ArrayList<>();
+    static public ArrayList<Integer> pairSecond = new ArrayList<>();
 
     double[] photo_center = new double[2];// 所有照片的中心
     boolean is_taking_picture;
@@ -350,9 +351,6 @@ public class CustomCamera2 extends DialogFragment {
                      // 正在拍照 => 停止拍照
                      is_taking_picture = false;
                      btnCapture.setText("capture");
-                     for (int i = 0; i < photo_rotation.size(); i ++) {
-                         infoLog(i + ": " + photo_rotation.get(i).get(2));
-                     }
                      setNewCenter();// 计算中心位置
                  } else {
                      // 没有拍照 => 开始拍照
@@ -598,8 +596,6 @@ public class CustomCamera2 extends DialogFragment {
             sumX += tmp_coordinate[0];
             sumY += tmp_coordinate[1];
             sumZ += tmp_coordinate[2];
-            infoLog(i + ": " + tmp_coordinate[0] + ", " + tmp_coordinate[1] + ", " + tmp_coordinate[2] + ": "
-            + (tmp_coordinate[0]*tmp_coordinate[0] + tmp_coordinate[1]*tmp_coordinate[1] + tmp_coordinate[2]*tmp_coordinate[2]));
         }
         // 计算中心位置
         tmp_coordinate[0] = sumX / photo_num;
@@ -614,7 +610,6 @@ public class CustomCamera2 extends DialogFragment {
         // 照片中心
         photo_center[0] = tmp_sphere[0];
         photo_center[1] = tmp_sphere[1];
-        infoLog(photo_center[0] + ", " + photo_center[1]);
         // 计算新的北极点(只可能在北半球)
         double[] sphereN_ = new double[2];
         sphereN_[1] = photo_center[1] + Math.PI / 2;// 纬度
@@ -661,7 +656,7 @@ public class CustomCamera2 extends DialogFragment {
                 sphereB[0] = photo_rotation.get(j).get(0);
                 sphereB[1] = photo_rotation.get(j).get(1);
                 sphere2Coordinate(sphereB, pointB);
-                double AB = sphereDistance(sphereA, sphereB);
+                double AB = sphereDistance(pointA, pointB);
                 edges.add(AB);
             }
         }
@@ -702,7 +697,6 @@ public class CustomCamera2 extends DialogFragment {
                 }
             }
             int adjacentCount = adjacentIndex.size();
-//            infoLog("adjacent count: " + adjacentCount);
             if (adjacentCount >= 2) {
                 // 暴力搜索共线的点
                 int[] removeIndex = new int[photo_num];
@@ -721,7 +715,6 @@ public class CustomCamera2 extends DialogFragment {
                         sphere2Coordinate(tmp, point[1]);
                         // 计算C到AB距离
                         distance_4 = 1000 * point2Line(point[0], point[1], point[2]);
-//                        infoLog(indexA + ", " + indexB + ": " + distance_4);
                         if (distance_4 <= 80) {
                             // 在保证C不在AB之间的前提下, 删掉离C更近的那个点
                             // AB
@@ -780,16 +773,12 @@ public class CustomCamera2 extends DialogFragment {
 
                 // 计算C到AB距离
                 distance_2 = 1000 * point2Line(point[0], point[1], point[2]);
-    //            infoLog("(" + photo_num + "): [" + distance_1 + ", " + distance_2 + "]");
                 if (distance_2 <= 80) {// TODO 阈值
                     // 删除B点
                     infoLog("remove " + photo_name.get(photo_num - 2));
                     photo_name.remove(photo_num - 2);
                     photo_rotation.remove(photo_num - 2);
                     photo_num --;
-                    for (int i = 0; i < photo_name.size(); i ++) {
-                        infoLog((i + 1) + "/" + photo_name.size() + ": " + photo_name.get(i));
-                    }
                 }
             }
         }
