@@ -54,7 +54,6 @@ int main(int argc, char *argv[]) {
 
 #else
 
-JNIEnv * total_env;
 Mat method_openCV(vector<string>);
 Mat method_my(vector<string>, vector<double>);
 
@@ -67,7 +66,7 @@ Java_com_example_my_1stitcher_MainActivity_main_1test(
     jlong matBGR,
     jintArray pairFirst,
     jintArray pairSecond,
-    jint mode) {// mode: 0 for my_stitcher, 1 for opencv
+    jint mode) {// mode: 0 for my, 1 for opencv
   total_env = env;
 //  if (total_env != NULL) {
 //    jclass clazz = total_env->FindClass("com.example.my_stitcher/MainActivity");
