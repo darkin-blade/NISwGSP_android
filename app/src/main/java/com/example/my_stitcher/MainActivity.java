@@ -50,6 +50,11 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     View my_progress, opencv_progress;
 //    public TextView stitch_log;
 
+    /* 线程管理 */
+    static final int MODE_MY = 1;
+    static final int MODE_OPENCV = 2;
+    int[] threadCount = new int[3];
+
     /* 系统相机功能 */
     public static final int PERMISSION_CAMERA_REQUEST_CODE = 0x00000012;// 相机权限的 request code
     Uri photoUri = null;
@@ -194,14 +199,24 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         button_opencv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                stitch(2);
+                if (threadCount[MODE_OPENCV] == 0) {
+                    threadCount[MODE_OPENCV] ++;
+                    stitch(MODE_OPENCV);
+                } else {
+                    infoLog("method of opencv is still running");
+                }
             }
         });
 
         button_my.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                stitch(1);
+                if (threadCount[MODE_MY] == 0) {
+                    threadCount[MODE_MY] ++;
+                    stitch(MODE_MY);
+                } else {
+                    infoLog("method of my is still running");
+                }
             }
         });
 
@@ -327,9 +342,9 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
 
     void saveBmp(Bitmap bitmap, int mode) {// 1: My, 2: OpenCV
         String methodName = null;
-        if (mode == 1) {
+        if (mode == MODE_MY) {
             methodName = "my";
-        } else if (mode == 2) {
+        } else if (mode == MODE_OPENCV) {
             methodName = "opencv";
         }
 
@@ -354,7 +369,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         }
     }
 
-    void stitch(final int mode) {// 1: My, 2: OpenCV
+    void stitch(final int mode) {
         if (photo_list.size() < 2) {
             addToLog("need at least 2 photos");
             return;// 图片数目不够
@@ -368,7 +383,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         for (int i = 0; i < photo_num; i ++) {
             imgPaths[i] = photo_name.get(i);
             imgRotations[i] = photo_rotation.get(i);
-            if (mode == 1) {
+            if (mode == MODE_MY) {
                 infoLog(imgPaths[i] + " " + imgRotations[i]);
             }
         }
@@ -409,10 +424,12 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                     saveBmp(bitmap, mode);
 
                     // 保存结果
-                    if (mode == 1) {
+                    if (mode == MODE_MY) {
                         my_bmp = bitmap;
-                    } else if (mode == 2) {
+                        infoLog("method of my finished");
+                    } else if (mode == MODE_OPENCV) {
                         opencv_bmp = bitmap;
+                        infoLog("method of opencv finished");
                     }
 
                     // 显示图片
@@ -425,11 +442,13 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                             Matrix matrix = new Matrix();
                             matrix.setScale(0.2f, 0.2f);
                             Bitmap bmp_thumbnail = Bitmap.createBitmap(finalBitmap, 0, 0, finalBitmap.getWidth(), finalBitmap.getHeight(), matrix, true);
-                            if (mode == 1) {
+                            if (mode == MODE_MY) {
                                 my_result.setImageBitmap(bmp_thumbnail);
-                            } else if (mode == 2) {
+                            } else if (mode == MODE_OPENCV) {
                                 opencv_result.setImageBitmap(bmp_thumbnail);
                             }
+                            // 完成线程
+                            threadCount[mode] --;
                         }
                     });
                 }
@@ -483,18 +502,18 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             if (progress > 0) {
                 int new_width = (int)((double)progress * opencv_result.getWidth() / 100);
                 LinearLayout.LayoutParams progressLayout = new LinearLayout.LayoutParams(new_width, ViewGroup.LayoutParams.MATCH_PARENT, 1);
-                if (mode == 1) {
+                if (mode == MODE_MY) {
                     my_progress.setLayoutParams(progressLayout);
                     my_progress.setBackgroundResource(R.color.greyC);
-                } else if (mode == 2) {
+                } else if (mode == MODE_OPENCV) {
                     opencv_progress.setLayoutParams(progressLayout);
                     opencv_progress.setBackgroundResource(R.color.greyC);
                 }
             } else if (progress < 0) {
                 // 拼接失败
-                if (mode == 1) {
+                if (mode == MODE_MY) {
                     my_progress.setBackgroundResource(R.color.red);
-                } else if (mode == 2) {
+                } else if (mode == MODE_OPENCV) {
                     opencv_progress.setBackgroundResource(R.color.red);
                 }
             }

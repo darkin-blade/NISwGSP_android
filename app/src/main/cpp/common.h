@@ -169,6 +169,10 @@ const int LINE_SIZE   = 3;
 
 
 /* jni */
+
+const int MODE_MY     = 1;
+const int MODE_OPENCV = 2;
+
 #if !defined(UBUNTU)
 
 extern JNIEnv * total_env;
