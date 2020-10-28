@@ -1,4 +1,4 @@
-package com.example.niswgsp_1;
+package com.example.my_stitcher;
 
 import android.content.Context;
 
@@ -22,6 +22,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
-        assertEquals("com.example.niswgsp_1", appContext.getPackageName());
+        assertEquals("com.example.My_Stitcher", appContext.getPackageName());
     }
 }

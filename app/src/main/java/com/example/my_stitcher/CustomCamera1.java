@@ -1,4 +1,4 @@
-package com.example.niswgsp_1;
+package com.example.my_stitcher;
 
 import android.Manifest;
 import android.content.Context;
@@ -42,7 +42,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static com.example.niswgsp_1.MainActivity.PERMISSION_CAMERA_REQUEST_CODE;
+import static com.example.my_stitcher.MainActivity.PERMISSION_CAMERA_REQUEST_CODE;
 import static java.lang.Math.min;
 
 public class CustomCamera1 extends DialogFragment {

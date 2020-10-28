@@ -1,2 +1,2 @@
 include ':app', ':openCVLibrary347'
-rootProject.name='NISwGSP_1'
+rootProject.name='My_Stitcher'

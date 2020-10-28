@@ -3,16 +3,17 @@
 
 #include <assert.h>
 #include <stdarg.h>
+#include <time.h>
 #include <unistd.h>
+
 #include <cmath>
 #include <iostream>
 #include <queue>
 #include <set>
 #include <string>
-#include <time.h>
 #include <vector>
 
-// #define UBUNTU
+//#define UBUNTU
 #if !defined(UBUNTU)
 
 #include <jni.h>
@@ -34,17 +35,18 @@
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgproc/types_c.h>
+#include <opencv2/photo.hpp>
 #include <opencv2/stitching/detail/autocalib.hpp>
-#include <opencv2/stitching/detail/camera.hpp>
+#include <opencv2/stitching/detail/blenders.hpp>
 #include <opencv2/stitching/detail/matchers.hpp>
 #include <opencv2/stitching/detail/motion_estimators.hpp>
+#include <opencv2/stitching/detail/seam_finders.hpp>
 #include <opencv2/stitching.hpp>
 #include <opencv2/xfeatures2d/nonfree.hpp>
 #include <opencv2/ximgproc/fast_line_detector.hpp>
 /* stitch */
 #include <opencv2/opencv_modules.hpp>
 #include <opencv2/stitching/detail/blenders.hpp>
-#include <opencv2/stitching/detail/timelapsers.hpp>
 #include <opencv2/stitching/detail/camera.hpp>
 #include <opencv2/stitching/detail/exposure_compensate.hpp>
 #include <opencv2/stitching/detail/matchers.hpp>
@@ -79,10 +81,13 @@ void show_img(const char *window_name, Mat img);
 /** MeshGrid.cpp **/
 const int GRID_VERTEX_SIZE = 4;
 
+/** MultiImages textureMapping **/
+const int NO_GRID = -1, TRIANGLE_COUNT = 3, PRECISION = 0;
+
 /*****************************************************************************************/
 
 /*** data setting ***/
-const int GRID_SIZE = 40;
+const int GRID_SIZE = 40;// 40
 const int DOWN_SAMPLE_IMAGE_SIZE = 800 * 600;
 
 /*** APAP ***/

@@ -55,7 +55,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:background="@color/greyC"
-                android:id="@+id/niswgsp_progress">
+                android:id="@+id/my_progress">
             </View>
             <View
                 android:layout_width="0dp"
@@ -71,7 +71,7 @@
             android:layout_height="match_parent"
             android:orientation="vertical">
             <ImageView
-                android:id="@+id/niswgsp_result"
+                android:id="@+id/my_result"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
@@ -147,9 +147,9 @@
                 android:layout_width="match_parent"
                 android:layout_weight="1"
                 android:layout_height="50dp"
-                android:text="niswgsp"
+                android:text="my"
                 android:textSize="10sp"
-                android:id="@+id/niswgsp_button">
+                android:id="@+id/my_button">
             </Button>
 
             <Button

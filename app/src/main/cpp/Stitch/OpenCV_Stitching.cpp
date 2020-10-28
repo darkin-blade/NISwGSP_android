@@ -29,9 +29,7 @@ Mat OpenCV_Stitching::opencv_stitch(vector<Mat> _images) {
   float match_conf = 0.35f;
   string seam_find_type = "gc_color";
   int blend_type = Blender::MULTI_BAND;
-  int timelapse_type = Timelapser::AS_IS;
   float blend_strength = 5;
-  bool timelapse = false;
   int range_width = -1;
 
   Mat failed_result = Mat::zeros(1, 1, CV_8UC3);
@@ -344,7 +342,6 @@ Mat OpenCV_Stitching::opencv_stitch(vector<Mat> _images) {
   Mat img_warped, img_warped_s;
   Mat dilated_mask, seam_mask, mask, mask_warped;
   Ptr<Blender> blender;// 图像融合的基类
-  Ptr<Timelapser> timelapser;
   //double compose_seam_aspect = 1;
   double compose_work_aspect = 1;
 
@@ -411,11 +408,12 @@ Mat OpenCV_Stitching::opencv_stitch(vector<Mat> _images) {
     img.release();
     mask.release();
 
+    // 膨胀运算
     dilate(masks_warped[img_idx], dilated_mask, Mat());
     resize(dilated_mask, seam_mask, mask_warped.size(), 0, 0, INTER_LINEAR_EXACT);
     mask_warped = seam_mask & mask_warped;
 
-    if (!blender && !timelapse) {
+    if (!blender) {
       blender = Blender::createDefault(blend_type, try_cuda);
       Size dst_sz = resultRoi(corners, sizes).size();
       float blend_width = sqrt(static_cast<float>(dst_sz.area())) * blend_strength / 100.f;
@@ -429,23 +427,17 @@ Mat OpenCV_Stitching::opencv_stitch(vector<Mat> _images) {
         fb->setSharpness(1.f/blend_width);
       }
       blender->prepare(corners, sizes);
-    } else if (!timelapser && timelapse) {
-      timelapser = Timelapser::createDefault(timelapse_type);
-      timelapser->initialize(corners, sizes);
     }
-
 
     blender->feed(img_warped_s, mask_warped, corners[img_idx]);
   }
 
   Mat result, result_mask, result_RGBA;
-  // if (!timelapse) {
-    blender->blend(result, result_mask);
-    result.convertTo(result, CV_8UC3);
-    cvtColor(result, result, COLOR_RGB2RGBA);
-    result_RGBA = Mat::zeros(result.cols, result.rows, CV_8UC4);
-    result.copyTo(result_RGBA, result_mask);
-  // }
+  blender->blend(result, result_mask);
+  result.convertTo(result, CV_8UC3);
+  cvtColor(result, result, COLOR_RGB2RGBA);
+  result_RGBA = Mat::zeros(result.cols, result.rows, CV_8UC4);// TODO 多余?
+  result.copyTo(result_RGBA, result_mask);
 
   return result_RGBA;
 }

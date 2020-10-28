@@ -1,4 +1,4 @@
-package com.example.niswgsp_1;
+package com.example.my_stitcher;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -43,11 +43,11 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity implements DialogInterface.OnDismissListener {
     static String appPath;
 
-    ImageView niswgsp_result, opencv_result;
+    ImageView my_result, opencv_result;
     static LinearLayout photos;
     Button button_save, button_camera, button_delete;
-    Button button_niswgsp, button_opencv;
-    View niswgsp_progress, opencv_progress;
+    Button button_my, button_opencv;
+    View my_progress, opencv_progress;
 //    public TextView stitch_log;
 
     /* 系统相机功能 */
@@ -61,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     ArrayList<Integer> photo_selected = new ArrayList<>();
 
     /* 保存拼接结果 */
-    Bitmap niswgsp_bmp, opencv_bmp;
+    Bitmap my_bmp, opencv_bmp;
 
     // 从jni更新UI
     static MainHandler mainHandler;
@@ -163,16 +163,16 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     }
 
     void initUI() {
-        niswgsp_result = findViewById(R.id.niswgsp_result);
+        my_result = findViewById(R.id.my_result);
         opencv_result = findViewById(R.id.opencv_result);
         photos = findViewById(R.id.photos);
 //        stitch_log = findViewById(R.id.stitch_log);
         button_save = findViewById(R.id.save_button);
         button_camera = findViewById(R.id.camera_button);
         button_delete = findViewById(R.id.delete_button);
-        button_niswgsp = findViewById(R.id.niswgsp_button);
+        button_my = findViewById(R.id.my_button);
         button_opencv = findViewById(R.id.opencv_button);
-        niswgsp_progress = findViewById(R.id.niswgsp_progress);
+        my_progress = findViewById(R.id.my_progress);
         opencv_progress = findViewById(R.id.opencv_progress);
 
         photos.removeAllViews();// 移除所有子元素
@@ -198,7 +198,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             }
         });
 
-        button_niswgsp.setOnClickListener(new View.OnClickListener() {
+        button_my.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 stitch(1);
@@ -271,7 +271,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         new Thread(new Runnable() {
             @Override
             public void run() {
-                saveBmp(niswgsp_bmp, 1);
+                saveBmp(my_bmp, 1);
             }
         }).start();
         new Thread(new Runnable() {
@@ -325,10 +325,10 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         });
     }
 
-    void saveBmp(Bitmap bitmap, int mode) {// 1: NISwGSP, 2: OpenCV
+    void saveBmp(Bitmap bitmap, int mode) {// 1: My, 2: OpenCV
         String methodName = null;
         if (mode == 1) {
-            methodName = "niswgsp";
+            methodName = "my";
         } else if (mode == 2) {
             methodName = "opencv";
         }
@@ -354,7 +354,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         }
     }
 
-    void stitch(final int mode) {// 1: NISwGSP, 2: OpenCV
+    void stitch(final int mode) {// 1: My, 2: OpenCV
         if (photo_list.size() < 2) {
             addToLog("need at least 2 photos");
             return;// 图片数目不够
@@ -368,7 +368,9 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         for (int i = 0; i < photo_num; i ++) {
             imgPaths[i] = photo_name.get(i);
             imgRotations[i] = photo_rotation.get(i);
-            infoLog(i + " rotation " + imgRotations[i]);
+            if (mode == 1) {
+                infoLog(imgPaths[i] + " " + imgRotations[i]);
+            }
         }
 
         // 获取图片配对信息
@@ -395,8 +397,10 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                 );
 
                 if (result != 0) {
+                    jniProgress(-100, mode);
                     infoLog("failed");
                 } else {
+                    jniProgress(100, mode);
                     Bitmap bitmap = Bitmap.createBitmap(matBGR.cols(), matBGR.rows(), Bitmap.Config.ARGB_8888);
 
                     // BGR转RGB
@@ -407,7 +411,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
 
                     // 保存结果
                     if (mode == 1) {
-                        niswgsp_bmp = bitmap;
+                        my_bmp = bitmap;
                     } else if (mode == 2) {
                         opencv_bmp = bitmap;
                     }
@@ -422,7 +426,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                             matrix.setScale(0.2f, 0.2f);
                             Bitmap bmp_thumbnail = Bitmap.createBitmap(finalBitmap, 0, 0, finalBitmap.getWidth(), finalBitmap.getHeight(), matrix, true);
                             if (mode == 1) {
-                                niswgsp_result.setImageBitmap(bmp_thumbnail);
+                                my_result.setImageBitmap(bmp_thumbnail);
                             } else if (mode == 2) {
                                 opencv_result.setImageBitmap(bmp_thumbnail);
                             }
@@ -480,8 +484,8 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                 int new_width = (int)((double)progress * opencv_result.getWidth() / 100);
                 LinearLayout.LayoutParams progressLayout = new LinearLayout.LayoutParams(new_width, ViewGroup.LayoutParams.MATCH_PARENT, 1);
                 if (mode == 1) {
-                    niswgsp_progress.setLayoutParams(progressLayout);
-                    niswgsp_progress.setBackgroundResource(R.color.greyC);
+                    my_progress.setLayoutParams(progressLayout);
+                    my_progress.setBackgroundResource(R.color.greyC);
                 } else if (mode == 2) {
                     opencv_progress.setLayoutParams(progressLayout);
                     opencv_progress.setBackgroundResource(R.color.greyC);
@@ -489,7 +493,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             } else if (progress < 0) {
                 // 拼接失败
                 if (mode == 1) {
-                    niswgsp_progress.setBackgroundResource(R.color.red);
+                    my_progress.setBackgroundResource(R.color.red);
                 } else if (mode == 2) {
                     opencv_progress.setBackgroundResource(R.color.red);
                 }
@@ -509,7 +513,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         Message message = new Message();
         Bundle bundle = new Bundle();
         bundle.putInt("progress", progress);
-        bundle.putInt("mode", mode);// 1 for niswgsp, 2 for opencv
+        bundle.putInt("mode", mode);// 1 for my, 2 for opencv
         message.setData(bundle);
         mainHandler.sendMessage(message);
     }

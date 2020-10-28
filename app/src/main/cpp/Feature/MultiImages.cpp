@@ -4,7 +4,7 @@ MultiImages::MultiImages() {
   img_num = 0;
 }
 
-void MultiImages::read_img(const char *img_path) {
+void MultiImages::readImg(const char *img_path) {
   // 读取图片Mat
   ImageData *imageData = new ImageData();
   imageData->init_data(img_path);
@@ -15,7 +15,40 @@ void MultiImages::read_img(const char *img_path) {
   assert(img_num == imgs.size());
 }
 
-void MultiImages::do_matching() {
+void MultiImages::getFeatureInfo() {
+  for (int i = 0; i < img_num; i ++) {
+    Mat grey_img;
+    cvtColor(imgs[i]->data, grey_img, CV_BGR2GRAY);
+    FeatureController::detect(grey_img,
+                              imgs[i]->feature_points,
+                              imgs[i]->descriptors);
+    LOG("[picture %d] feature points: %ld", i, imgs[i]->feature_points.size());
+  }
+
+  // 特征点匹配(内含自动检测图片匹配)
+  getFeaturePairs();
+
+  // 筛选所有图片的成功匹配的特征点
+  feature_points.resize(img_num);
+  for (int i = 0; i < img_num; i ++) {
+    feature_points[i].resize(img_num);
+  }
+  for (int i = 0; i < img_pairs.size(); i ++) {
+    int m1 = img_pairs[i].first;
+    int m2 = img_pairs[i].second;
+    assert(m2 > m1);
+
+    const vector<Point2f> & m1_fpts = imgs[m1]->feature_points;
+    const vector<Point2f> & m2_fpts = imgs[m2]->feature_points;
+    for (int k = 0; k < feature_pairs[m1][m2].size(); k ++) {
+      const pair<int, int> it = feature_pairs[m1][m2][k];
+      feature_points[m1][m2].emplace_back(m1_fpts[it.first ]);
+      feature_points[m2][m1].emplace_back(m2_fpts[it.second]);
+    }
+  }
+}
+
+void MultiImages::getMeshInfo() {
   // 手写配对矩阵
   assert(img_pairs.empty() == false);
   images_match_graph.resize(img_num);
@@ -53,6 +86,7 @@ void MultiImages::do_matching() {
                                  imgs[m2]->matching_points[m1],
                                  imgs[m2]->homographies[m1]);
   }
+
   // 将各自的homography保存到multi_images
   apap_homographies.resize(img_num);
   for (int i = 0; i < img_num; i ++) {
@@ -71,7 +105,7 @@ void MultiImages::do_matching() {
   }
 
   // 所有mesh点都算作keypoint
-  image_features.resize(img_num);// TODO
+  image_features.resize(img_num);
   image_features_mask.resize(img_num);
   keypoints_pairs.resize(img_num);
   apap_overlap_mask.resize(img_num);
@@ -80,7 +114,7 @@ void MultiImages::do_matching() {
     image_features_mask[i].resize(tmp_points.size());
     keypoints_pairs[i].resize(img_num);
     for (int j = 0; j < tmp_points.size(); j ++) {
-      image_features[i].keypoints.emplace_back(tmp_points[j], 0);// TODO keypoints
+      image_features[i].keypoints.emplace_back(tmp_points[j], 0);
     }
     apap_overlap_mask[i].resize(img_num);
     for (int j = 0; j < img_num; j ++) {
@@ -109,7 +143,7 @@ void MultiImages::do_matching() {
         apap_overlap_mask[m1][m2][k] = true;
 
         image_features_mask[m1][k] = true;// TODO 标记可行
-        image_features[m2].keypoints.emplace_back(tmp_points[k], 0);// TODO keypoints
+        image_features[m2].keypoints.emplace_back(tmp_points[k], 0);
       }
     }
     // 反向配对
@@ -125,7 +159,7 @@ void MultiImages::do_matching() {
         apap_overlap_mask[m2][m1][k] = true;
 
         image_features_mask[m2][k] = true;// TODO 标记可行
-        image_features[m1].keypoints.emplace_back(tmp_points[k], 0);// TODO keypoints
+        image_features[m1].keypoints.emplace_back(tmp_points[k], 0);
       }
     }
   }
@@ -149,7 +183,7 @@ vector<pair<int, int> > MultiImages::getVlfeatFeaturePairs(const int m1, const i
   vector<FeatureDistance> feature_pairs_result;
   for (int f1 = 0; f1 < feature_size[0]; f1 ++) {
     set<FeatureDistance> feature_distance_set;// set 中每个元素都唯一, 降序
-    feature_distance_set.insert(FeatureDistance(MAXFLOAT, 0, -1, -1));// TODO 存放计算结果
+    feature_distance_set.insert(FeatureDistance(MAXFLOAT, 0, -1, -1));// 存放计算结果
     for (int f2 = 0; f2 < feature_size[1]; f2 ++) {
       const double dist = FeatureController::getDistance(feature_descriptors_1[f1],
           feature_descriptors_2[f2],
@@ -262,8 +296,10 @@ vector<pair<int, int> > MultiImages::getFeaturePairsBySequentialRANSAC(
 void MultiImages::getFeaturePairs() {
   // 获取feature points下标的配对信息
   // 初始化vector大小
+  initial_pairs.resize(img_num);
   feature_pairs.resize(img_num);
   for (int i = 0; i < img_num; i ++) {
+    initial_pairs[i].resize(img_num);
     feature_pairs[i].resize(img_num);
   }
 
@@ -283,12 +319,12 @@ void MultiImages::getFeaturePairs() {
       X.emplace_back(m1_fpts[it.first ]);
       Y.emplace_back(m2_fpts[it.second]);
     }
+    initial_pairs[m1][m2] = initial_indices;
     feature_pairs[m1][m2] = getFeaturePairsBySequentialRANSAC(X, Y, initial_indices);
-    // feature_pairs[m1][m2] = initial_indices;
 
     LOG("%d %d has feature pairs %ld", m1, m2, feature_pairs[m1][m2].size());
 
-    // 记录反向的pairs
+    // TODO 记录反向的pairs
     for (int k = 0; k < feature_pairs[m1][m2].size(); k ++) {
       feature_pairs[m2][m1].emplace_back(make_pair(feature_pairs[m1][m2][k].second, feature_pairs[m1][m2][k].first));
     }
@@ -326,7 +362,7 @@ vector<int> MultiImages::getImagesVerticesStartIndex() {
 vector<vector<double> > MultiImages::getImagesGridSpaceMatchingPointsWeight(const double _global_weight_gamma) {
   if (_global_weight_gamma && images_polygon_space_matching_pts_weight.empty()) {
     images_polygon_space_matching_pts_weight.resize(img_num);
-    const vector<vector<bool> > images_features_mask = image_features_mask;// TODO
+    const vector<vector<bool> > images_features_mask = image_features_mask;
     const vector<vector<InterpolateVertex> > mesh_interpolate_vertex_of_matching_pts = getInterpolateVerticesOfMatchingPoints();
     for (int i = 0; i < images_polygon_space_matching_pts_weight.size(); i ++) {
       const int polygons_count = (int)imgs[i]->getPolygonsIndices().size();
@@ -436,8 +472,7 @@ vector<CameraParams> MultiImages::getCameraParams() {
       const double & focal1 = camera_params[m1].focal;
       const double & focal2 = camera_params[m2].focal;
 
-      MatrixXd A = MatrixXd::Zero((keypoints_pairs[m1][m2].size() + keypoints_pairs[m2][m1].size()) * DIMENSION_2D,// TODO num_inliers:两者的匹配点
-          HOMOGRAPHY_VARIABLES_COUNT);
+      MatrixXd A = MatrixXd::Zero((keypoints_pairs[m1][m2].size() + keypoints_pairs[m2][m1].size()) * DIMENSION_2D, HOMOGRAPHY_VARIABLES_COUNT);
       
       // 正向
       for (int j = 0; j < keypoints_pairs[m1][m2].size(); j ++) {
@@ -586,10 +621,10 @@ vector<CameraParams> MultiImages::getCameraParams() {
 
 vector<SimilarityElements> MultiImages::getImagesSimilarityElements() {
   if (images_similarity_elements.empty()) {
-    img_rotations.emplace_back(0.0099);
-    img_rotations.emplace_back(0.0188);
-    img_rotations.emplace_back(-0.0185);
-    img_rotations.emplace_back(-0.0113);
+    // TODO 自定义旋转角度
+    // img_rotations.emplace_back(7.0/180*3.14);
+    img_rotations.emplace_back(0.0);
+    img_rotations.emplace_back(0.0);
     if (img_rotations.size() < img_num) {
       for (int i = img_rotations.size(); i < img_num; i ++) {
         img_rotations.emplace_back(0);// 全部置为0
@@ -612,14 +647,15 @@ vector<SimilarityElements> MultiImages::getImagesSimilarityElements() {
   return images_similarity_elements;
 }
 
-Mat MultiImages::textureMapping(vector<vector<Point2f> > &_vertices,// 对应所有图片的匹配点
-    int _blend_method) {
-  Size2f target_size = normalizeVertices(_vertices);// 最终Mat大小
-  vector<Mat> warp_images;// 存放wrap后的Mat
+void MultiImages::warpImages() {
+  assert(image_mesh_points.size() == img_num);
+  // 对mesh顶点归一化(去除负值), 必须在计算图像左上角原点之前计算
+  target_size = normalizeVertices(image_mesh_points);// 最终Mat大小
 
-  vector<Mat> weight_mask, new_weight_mask;
-  vector<Point2f> origins;
-  vector<Rect2f> rects = getVerticesRects<float>(_vertices);// 获取每幅图片的矩形大小(height, width, x, y)
+  vector<vector<Point2f> > vertices(image_mesh_points);
+
+  vector<Mat> weight_mask;
+  vector<Rect2f> rects = getVerticesRects<float>(vertices);// 获取每幅图片的矩形大小(height, width, x, y)
 
 
   vector<Mat> tmp_imgs;
@@ -627,62 +663,64 @@ Mat MultiImages::textureMapping(vector<vector<Point2f> > &_vertices,// 对应所
     tmp_imgs.push_back(imgs[i]->data);
   }
 
-  if (_blend_method) {// linear
+  if (!ignore_weight_mask) {// linear
     weight_mask = getMatsLinearBlendWeight(tmp_imgs);// TODO
   }
 
-  warp_images.reserve(_vertices.size());
-  origins.reserve(_vertices.size());
-  new_weight_mask.reserve(_vertices.size());
+  assert(vertices.size() == img_num);
+  images_warped.reserve(img_num);// 图片数
+  masks_warped.reserve(img_num);
+  origins.reserve(img_num);
+  blend_weight_mask.reserve(img_num);
 
-  const int NO_GRID = -1, TRIANGLE_COUNT = 3, PRECISION = 0;
+  const bool isLinear = true;
   const int SCALE = pow(2, PRECISION);
 
   for (int i = 0; i < img_num; i ++) {
     const vector<Point2f> src_vertices = imgs[i]->getVertices();// 所有mesh点
     const vector<vector<int> > polygons_indices = imgs[i]->getPolygonsIndices();// TODO mesh点的线性索引
     const Point2f origin(rects[i].x, rects[i].y);// 矩形坐标(左上角)
-    const Point2f shift(0, 0);// 原值为0.5, 不知道有什么用
-    vector<Mat> affine_transforms;
-    affine_transforms.reserve(polygons_indices.size() * (imgs[i]->getTriangulationIndices().size()));// TODO
-    Mat polygon_index_mask(rects[i].height + shift.y, rects[i].width + shift.x, CV_32SC1, Scalar::all(NO_GRID));
+    const Point2f shift(0, 0);// TODO 原值为0.5, 不知道有什么用
+    vector<Mat> affine_transform;
+    affine_transform.reserve(polygons_indices.size() * (imgs[i]->getTriangulationIndices().size()));// 每个(三角形)区域的单应变换矩阵
+    Mat polygon_index_mask(rects[i].height + shift.y, rects[i].width + shift.x, CV_32SC1, Scalar::all(NO_GRID));// 图片每个像素对应的(三角形)区域索引
     int label = 0;
+    // 计算每个网格的但应变换
     for (int j = 0; j < polygons_indices.size(); j ++) {
-      for (int k = 0; k < imgs[i]->getTriangulationIndices().size(); k ++) {// 分两次填充矩形区域
+      for (int k = 0; k < imgs[i]->getTriangulationIndices().size(); k ++) {// 分两次填充一个矩形mesh区域
         const vector<int> index = imgs[i]->getTriangulationIndices()[k];// 每次填充矩形的一半(两个邻边加上对角线所构成的三角形部分)
         const Point2i contour[] = {
-          (_vertices[i][polygons_indices[j][index[0]]] - origin) * SCALE,
-          (_vertices[i][polygons_indices[j][index[1]]] - origin) * SCALE,
-          (_vertices[i][polygons_indices[j][index[2]]] - origin) * SCALE,
+          (vertices[i][polygons_indices[j][index[0]]] - origin) * SCALE,
+          (vertices[i][polygons_indices[j][index[1]]] - origin) * SCALE,
+          (vertices[i][polygons_indices[j][index[2]]] - origin) * SCALE,
         };
-        // 多边形填充
-        fillConvexPoly(polygon_index_mask, // img 绘制后的图像Mat
+        // 创造一个图片大小的索引矩阵, 里面填充成对应像素所在的区域的索引
+        fillConvexPoly(polygon_index_mask, // 总的索引矩阵
             contour,            // pts 三角形区域
             TRIANGLE_COUNT,     // npts
             label,              // color
             LINE_AA,            // lineType = LINE_8
             PRECISION);         // shift = 0
         Point2f src[] = {
-          _vertices[i][polygons_indices[j][index[0]]] - origin,
-          _vertices[i][polygons_indices[j][index[1]]] - origin,
-          _vertices[i][polygons_indices[j][index[2]]] - origin
+          vertices[i][polygons_indices[j][index[0]]] - origin,
+          vertices[i][polygons_indices[j][index[1]]] - origin,
+          vertices[i][polygons_indices[j][index[2]]] - origin
         };// mesh点经过单应变换后的坐标
         Point2f dst[] = {
           src_vertices[polygons_indices[j][index[0]]],
           src_vertices[polygons_indices[j][index[1]]],
           src_vertices[polygons_indices[j][index[2]]]
         };// mesh点原始坐标
-        affine_transforms.emplace_back(getAffineTransform(src, dst));
+        affine_transform.emplace_back(getAffineTransform(src, dst));
         label ++;
       }
     }
 
-    LOG("%d affine", i);
-
     Mat image = Mat::zeros(rects[i].height + shift.y, rects[i].width + shift.x, CV_8UC4);// 新建空图
+    Mat image_mask = Mat::zeros(rects[i].height + shift.y, rects[i].width + shift.x, CV_8UC1);// 图像的mask
     Mat w_mask = Mat();
 
-    if (_blend_method) {// linear
+    if (!ignore_weight_mask) {// linear
       w_mask = Mat::zeros(image.size(), CV_32FC1);
     }
 
@@ -690,15 +728,16 @@ Mat MultiImages::textureMapping(vector<vector<Point2f> > &_vertices,// 对应所
       for (int x = 0; x < image.cols; x ++) {
         int polygon_index = polygon_index_mask.at<int>(y, x);
         if (polygon_index != NO_GRID) {// -1
-          Point2f p_f = applyTransform2x3<float>(x, y, affine_transforms[polygon_index]);
+          Point2f p_f = applyTransform2x3<float>(x, y, affine_transform[polygon_index]);
           if (p_f.x >= 0 && p_f.y >= 0 &&
               p_f.x <= imgs[i]->data.cols &&
               p_f.y <= imgs[i]->data.rows) {
-            Vec<uchar, 1> alpha = getSubpix<uchar, 1>(imgs[i]->alpha_mask, p_f);// TODO
+            Vec<uchar, 1> alpha = getSubpix<uchar, 1>(imgs[i]->alpha_mask, p_f);// TODO 透明度掩码好像没改过
             Vec3b c = getSubpix<uchar, 3>(imgs[i]->data, p_f);
             image.at<Vec4b>(y, x) = Vec4b(c[0], c[1], c[2], alpha[0]);
+            image_mask.at<uchar>(y, x) = 255;// 保存图像的mask
 
-            if (_blend_method) {// linear
+            if (!ignore_weight_mask) {// linear
               w_mask.at<float>(y, x) = getSubpix<float>(weight_mask[i], p_f);
             }
           }
@@ -706,20 +745,197 @@ Mat MultiImages::textureMapping(vector<vector<Point2f> > &_vertices,// 对应所
       }
     }
 
-    warp_images.emplace_back(image);
+    polygon_index_masks.emplace_back(polygon_index_mask);// 保存区域索引 bug
+    affine_transforms.emplace_back(affine_transform);// 保存单应矩阵变换
+    images_warped.emplace_back(image);
+    masks_warped.emplace_back(image_mask);
     origins.emplace_back(rects[i].x, rects[i].y);
-    if (_blend_method) {// linear
-      new_weight_mask.emplace_back(w_mask);
+    if (!ignore_weight_mask) {// linear
+      blend_weight_mask.emplace_back(w_mask);
+    }
+
+    LOG("%d warped", i);
+  }
+
+  // 预处理
+  // 去除透明通道, 同步UMat和Mat
+  for (int i = 0; i < img_num; i ++) {
+    corners.emplace_back((int) origins[i].x, (int) origins[i].y);// 不要用括号把x, y括起来
+    UMat tmp_img, tmp_mask;
+    cvtColor(images_warped[i], tmp_img, COLOR_RGBA2RGB);// 不要使用convertTo
+    masks_warped[i].copyTo(tmp_mask);// 不要使用getMat, 否则会产生关联
+
+    gpu_images_warped.emplace_back(tmp_img);
+    gpu_masks_warped.emplace_back(tmp_mask);
+    LOG("%d (%d, %d)", i, corners[i].x, corners[i].y);
+  }
+}
+
+void MultiImages::exposureCompensate() {
+  // 曝光补偿
+  Ptr<ExposureCompensator> compensator = ExposureCompensator::createDefault(ExposureCompensator::GAIN);// 使用增益补偿
+  compensator->feed(corners, gpu_images_warped, gpu_masks_warped);
+  for (int i = 0; i < img_num; i ++) {
+    compensator->apply(i, origins[i], gpu_images_warped[i], gpu_masks_warped[i]);
+    cvtColor(gpu_images_warped[i], images_warped[i], COLOR_RGB2RGBA);// 同步UMat和Mat, Mat要添加透明通道
+  }
+}
+
+void MultiImages::getSeam() {
+  // 寻找接缝线
+  char tmp_name[32];
+
+  // 对mask进行平移
+  for (int i = 0; i < img_num; i ++) {
+    Mat mask_translated = Mat::zeros(target_size, CV_8UC1);
+    Mat dst_mask = Mat(mask_translated, Rect(corners[i].x, corners[i].y, masks_warped[i].cols, masks_warped[i].rows));
+    masks_warped[i].copyTo(dst_mask);
+    pano_masks_warped.emplace_back(mask_translated);
+  }
+
+  // 根据像素相似度修改图像的mask
+  Mat pano_mask = Mat::zeros(target_size, CV_8UC1);// 总的mask
+  Mat pano_index = Mat::zeros(target_size, CV_8UC1);// 每个像素点对应图片的索引
+  int pano_rows = pano_mask.rows;
+  int pano_cols = pano_mask.cols * 1;
+  for (int i = 0; i < img_num; i ++) {
+    // 对mask进行去重
+    for (int j = 0; j < i; j ++) {
+      Mat intersect_mask = pano_masks_warped[i] & pano_masks_warped[j];
+      assert(1 == intersect_mask.channels());
+      // dst: 原全景图像, 较小的
+      // src: 待添加的图像
+      for (int r = 0; r < pano_rows; r ++) {// 从左往右
+        uchar *intersect_p = intersect_mask.ptr<uchar>(r);
+        for (int c = 0; c < pano_cols; c ++) {// 从上往下
+          if (intersect_p[c] > 0) {
+            // 存在交集
+            Vec4b dst_pix = images_warped[j].at<Vec4b>(r - corners[j].x, c - corners[j].y);
+            Vec4b src_pix = images_warped[i].at<Vec4b>(r - corners[i].x, c - corners[i].y);
+            int pix_delta = abs(dst_pix[0] - src_pix[0]) + abs(dst_pix[1] - src_pix[1]) + abs(dst_pix[2] - src_pix[2]);
+            if (pix_delta > 300) {
+              // pano_masks_warped[j].at<uchar>(r, c) = 0;
+              // pano_masks_warped[i].at<uchar>(r, c) = 0;
+              if (j == 1) {
+                pano_masks_warped[i].at<uchar>(r, c) = 0;
+              } else {
+                pano_masks_warped[j].at<uchar>(r, c) = 0;
+              }
+            }
+          }
+        }
+      }
     }
   }
 
-  LOG("%ld", warp_images.size());
+  // 将削减过后的mask还原到无偏移的Mat, 同步UMat
+  for (int i = 0; i < img_num; i ++) {
+    Mat src_mask = Mat(pano_masks_warped[i], Rect(corners[i].x, corners[i].y, masks_warped[i].cols, masks_warped[i].rows));
+    src_mask.copyTo(masks_warped[i]);
+    masks_warped[i].copyTo(gpu_masks_warped[i]);
+    sprintf(tmp_name, "mask%d", i);
+    show_img(tmp_name, masks_warped[i]);
+  }
 
-  // return warp_images[1];
+  Ptr<SeamFinder> seam_finder;
+  // seam_finder = makePtr<detail::VoronoiSeamFinder>();
+  // seam_finder = makePtr<detail::DpSeamFinder>(DpSeamFinder::COLOR);// 动态规划法
+  seam_finder = makePtr<detail::GraphCutSeamFinder>(GraphCutSeamFinderBase::COST_COLOR_GRAD);// 图割法
+  // 图像类型转换
+  vector<UMat> images_warped_f(img_num);
+  for (int i = 0; i < img_num; i ++) {
+    gpu_images_warped[i].convertTo(images_warped_f[i], CV_32F);
+  }
+  seam_finder->find(images_warped_f, corners, gpu_masks_warped);
+  // 同步Mat和UMat
+  for (int i = 0; i < img_num; i ++) {
+    gpu_masks_warped[i].copyTo(masks_warped[i]);
+  }
+  // 显示结果
+}
 
-  return Blending(warp_images,
+Mat MultiImages::blending() {
+  Mat blend_result = Mat::zeros(target_size, CV_8UC4);
+  for (int i = 0; i < img_num; i ++) {
+    Mat dst_image = Mat(blend_result, Rect(corners[i].x, corners[i].y, images_warped[i].cols, images_warped[i].rows));
+    images_warped[i].copyTo(dst_image, masks_warped[i]);
+  }
+  return blend_result;
+
+  // // 为结果生成区域
+  // vector<Size> sizes;
+  // for (int i = 0; i < img_num; i ++) {
+  //   sizes.emplace_back(gpu_images_warped[i].size());
+  // }
+  // Size dst_sz = resultRoi(corners, sizes).size();
+  // float blend_width = sqrt(static_cast<float>(dst_sz.area())) * 5 / 100.f;
+  // Ptr<Blender> blender;
+  // if (true) {
+  //   // 多频带融合
+  //   blender = Blender::createDefault(Blender::MULTI_BAND, false);// try_cuda = false
+  //   MultiBandBlender *mb = dynamic_cast<MultiBandBlender*>(blender.get());
+  //   mb->setNumBands(static_cast<int>(ceil(log(blend_width)/log(2.)) - 1.));
+  // } else {
+  //   // 羽化融合
+  //   blender = Blender::createDefault(Blender::FEATHER);
+  //   FeatherBlender* fb = dynamic_cast<FeatherBlender*>(blender.get());
+  //   fb->setSharpness(1.f/blend_width);
+  // }
+  // blender->prepare(corners, sizes);
+
+  // // 纹理映射
+  // for (int i = 0; i < img_num; i ++) {
+  //   // 膨胀运算
+  //   Mat dilated_mask, seam_mask, mask_warped;
+  //   gpu_images_warped[i].copyTo(mask_warped);
+  //   dilate(gpu_masks_warped[i], dilated_mask, Mat());
+  //   // 统一Mat的大小
+  //   resize(dilated_mask, seam_mask, mask_warped.size(), 0, 0, INTER_LINEAR_EXACT);
+  //   mask_warped = seam_mask & dilated_mask;
+  //   // 转换图像格式
+  //   Mat images_warped_s;
+  //   gpu_images_warped[i].convertTo(images_warped_s, CV_16S);
+  //   blender->feed(images_warped_s, mask_warped, corners[i]);
+  // }
+  // Mat blend_result, blend_mask;
+  // blender->blend(blend_result, blend_mask);
+  // blend_result.convertTo(blend_result, CV_8UC3);
+  // cvtColor(blend_result, blend_result, COLOR_RGB2RGBA);
+
+  // return blend_result;
+}
+
+Mat MultiImages::textureMapping() {
+
+  // 将图片改成纯色
+  // vector<Mat> borders_warped;
+  // Vec4b colors[3] = { Vec4b(255, 0, 0, 255), Vec4b(0, 0, 255, 255), Vec4b(0, 255, 0, 255) };
+  // for (int i = 0; i < img_num; i ++) {
+  //   borders_warped.emplace_back(Mat::zeros(masks_warped[i].size(), CV_8UC4));
+  //   int channels = masks_warped[0].channels();
+  //   int rows = masks_warped[i].rows;
+  //   int cols = masks_warped[i].cols * channels;
+  //   if (masks_warped[0].isContinuous()) {
+  //     cols *= rows;
+  //     rows = 1;
+  //   }
+  //   for (int j = 0; j < rows; j ++) {
+  //     uchar *weight_p = masks_warped[i].ptr<uchar>(j);
+  //     Vec4b *border_p = borders_warped[i].ptr<Vec4b>(j);
+  //     for (int k = 0; k < cols; k ++) {
+  //       if (weight_p[k] == 255) {
+  //         border_p[k] = colors[i % 3];
+  //       }
+  //     }
+  //   }
+  //   show_img("mask", masks_warped[i]);
+  //   show_img("border", borders_warped[i]);
+  // }
+  
+  return Blending(
+      images_warped,
       origins,
       target_size,
-      new_weight_mask,
-      1 - _blend_method);// TODO
+      blend_weight_mask, // 最小0, 最大12000
+      ignore_weight_mask);
 }

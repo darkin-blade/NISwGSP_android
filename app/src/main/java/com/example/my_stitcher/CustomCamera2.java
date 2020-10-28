@@ -1,4 +1,4 @@
-package com.example.niswgsp_1;
+package com.example.my_stitcher;
 
 import android.Manifest;
 import android.app.Activity;
@@ -27,10 +27,8 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
@@ -44,14 +42,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -62,13 +58,11 @@ import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
-import java.util.Set;
-import java.util.SortedSet;
 
 import Jama.Matrix;
 
-import static com.example.niswgsp_1.MainActivity.PERMISSION_CAMERA_REQUEST_CODE;
-import static com.example.niswgsp_1.MainActivity.appPath;
+import static com.example.my_stitcher.MainActivity.PERMISSION_CAMERA_REQUEST_CODE;
+import static com.example.my_stitcher.MainActivity.appPath;
 
 public class CustomCamera2 extends DialogFragment {
     Button btnCapture;

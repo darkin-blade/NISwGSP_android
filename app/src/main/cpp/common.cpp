@@ -27,7 +27,7 @@ void print_message(const char *fmt, ...) {
   __android_log_vprint(ANDROID_LOG_INFO, "fuck", tmp_fmt, args);
   // 加载到控制台
   if (total_env != NULL) {
-    jclass clazz = total_env->FindClass("com.example.niswgsp_1/MainActivity");
+    jclass clazz = total_env->FindClass("com.example.my_stitcher/MainActivity");
     if (clazz != NULL) {
         jmethodID id = total_env->GetStaticMethodID(clazz, "jniLog", "(Ljava/lang/String;)V");
         if (id != NULL) {
@@ -47,7 +47,7 @@ void set_progress(const int progress, const int mode) {
 #if !defined(UBUNTU)
   // 修改进度条
   if (total_env != NULL) {
-    jclass clazz = total_env->FindClass("com.example.niswgsp_1/MainActivity");
+    jclass clazz = total_env->FindClass("com.example.my_stitcher/MainActivity");
     if (clazz != NULL) {
         jmethodID id = total_env->GetStaticMethodID(clazz, "jniProgress", "(II)V");
         if (id != NULL) {
@@ -65,7 +65,13 @@ void set_progress(const int progress, const int mode) {
 
 void show_img(const char *window_name, Mat img) {
 #if defined(UBUNTU)
-  namedWindow(window_name, WINDOW_AUTOSIZE);
+  if (img.rows * img.cols <= 0) {
+    LOG("invalid img %s", window_name);
+    return;
+  }
+
+  namedWindow(window_name, WINDOW_NORMAL);
+  resizeWindow(window_name, 1280, 720);
   imshow(window_name, img);
   waitKey(0);
 

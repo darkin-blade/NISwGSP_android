@@ -1,4 +1,4 @@
-package com.example.niswgsp_1;
+package com.example.my_stitcher;
 
 import org.junit.Test;
 
