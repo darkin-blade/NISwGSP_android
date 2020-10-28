@@ -208,7 +208,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         button_save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                savePhoto();
+                saveResult();
             }
         });
     }
@@ -267,7 +267,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         }
     }
 
-    void savePhoto() {
+    void saveResult() {
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -400,7 +400,6 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                     jniProgress(-100, mode);
                     infoLog("failed");
                 } else {
-                    jniProgress(100, mode);
                     Bitmap bitmap = Bitmap.createBitmap(matBGR.cols(), matBGR.rows(), Bitmap.Config.ARGB_8888);
 
                     // BGR转RGB
@@ -417,6 +416,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                     }
 
                     // 显示图片
+                    jniProgress(100, mode);
                     final Bitmap finalBitmap = bitmap;
                     runOnUiThread(new Runnable() {
                         @Override

@@ -65,6 +65,8 @@ Java_com_example_my_1stitcher_MainActivity_main_1test(
     jobjectArray imgPaths,
     jdoubleArray imgRotations,
     jlong matBGR,
+    jintArray pairFirst,
+    jintArray pairSecond,
     jint mode) {// mode: 0 for my_stitcher, 1 for opencv
   total_env = env;
 //  if (total_env != NULL) {
@@ -107,6 +109,8 @@ Java_com_example_my_1stitcher_MainActivity_main_1test(
       result_img = method_my(img_paths, img_rotations);
   } else if (mode == 2) {
       result_img = method_openCV(img_paths);
+  } else {
+      LOG("invalide mode %d", mode);
   }
   LOG("result size %ld %ld", result_img.cols, result_img.rows);
   if (result_img.cols <= 1 || result_img.rows <= 1) {
