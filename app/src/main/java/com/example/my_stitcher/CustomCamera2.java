@@ -48,6 +48,7 @@ import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -74,7 +75,7 @@ public class CustomCamera2 extends DialogFragment {
     TextView text2_1, text2_2, text2_3, text2_4;
     TextView photoNum;
 
-    // 实时镜头
+    // 辅助拍摄
     ImageView myImageView;
     Bitmap myBitmap;
     Canvas myCanvas;
@@ -267,7 +268,7 @@ public class CustomCamera2 extends DialogFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.custom_camera, container);
+        View view = inflater.inflate(R.layout.custom_camera_2, container);
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(0x00000000));// 背景透明
 
         initCamera();// 初始化变量
@@ -542,16 +543,32 @@ public class CustomCamera2 extends DialogFragment {
         photo_index ++;
         photoNum.setText("photos: " + photo_num);
         // 保存到图片list
-        String timeStamp = photo_index + ".jpg";
-        File tmp_file = new File(appPath, timeStamp);
-        file_queue.offer(tmp_file);
-        photo_name.add(tmp_file.getAbsolutePath());// 此时file_queue中的文件不一定处理完了
+        File photoFile = new File(appPath, photo_index + ".jpg");
+        file_queue.offer(photoFile);
+        photo_name.add(photoFile.getAbsolutePath());// 此时file_queue中的文件不一定处理完了
         // 记录照片的角度
         ArrayList<Double> tmp_rotation = new ArrayList<>();
         tmp_rotation.add(this_longitude);
         tmp_rotation.add(this_latitude);
         tmp_rotation.add(gravity_theta);
         photo_rotation.add(tmp_rotation);
+        // 保存照片的角度
+        File infoFile = new File(appPath, photo_index + ".txt");
+        try {
+            FileOutputStream stream = new FileOutputStream(infoFile);
+            if (!infoFile.exists()) {
+                infoFile.createNewFile();
+            }
+            String photoInfo = this_longitude + "\n" + this_latitude + "\n" + gravity_theta;
+            byte[] infoInBytes = photoInfo.getBytes();
+            stream.write(infoInBytes);
+            stream.flush();
+            stream.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         // 进行拍摄
         try {

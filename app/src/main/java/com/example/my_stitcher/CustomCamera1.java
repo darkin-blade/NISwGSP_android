@@ -80,7 +80,7 @@ public class CustomCamera1 extends DialogFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.custom_camera, container);
+        View view = inflater.inflate(R.layout.custom_camera_2, container);
         getDialog().getWindow().setBackgroundDrawable(new ColorDrawable(0x00000000));// 背景透明
 
         initUI(view);// 初始化按钮

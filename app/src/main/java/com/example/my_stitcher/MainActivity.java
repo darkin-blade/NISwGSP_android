@@ -64,6 +64,8 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
     ArrayList<Double> photo_rotation = new ArrayList<>();// 图片旋转角度
     ArrayList<Integer> photo_selected = new ArrayList<>();
+    ArrayList<Integer> pairFirst = new ArrayList<>();
+    ArrayList<Integer> pairSecond = new ArrayList<>();
 
     /* 保存拼接结果 */
     Bitmap my_bmp, opencv_bmp;
@@ -72,8 +74,8 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     static MainHandler mainHandler;
 
     // 相机部件
-    CustomCamera1 customCamera1 = new CustomCamera1();
-    CustomCamera2 customCamera2 = new CustomCamera2();
+//    CustomCamera1 customCamera = new CustomCamera1();
+    CustomCamera2 customCamera = new CustomCamera2();
 
     // 初始化opencv java
     static {
@@ -142,7 +144,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     @Override
     public void onDismiss(DialogInterface dialogInterface) {
         infoLog("dismiss");
-        if (customCamera2.dismiss_result == 0) {
+        if (customCamera.dismiss_result == 0) {
             // 返回
             return;
         }
@@ -154,16 +156,25 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             photos.removeViewAt(0);
         }
 
-        infoLog("photo num: " + customCamera2.photo_name.size() + "/" + customCamera2.photo_num);
-        for (int i = 0; i < customCamera2.photo_name.size(); i ++) {
-//            infoLog("add photo: " + customCamera2.photo_name.get(i));
-            addPhoto(customCamera2.photo_name.get(i));
+        infoLog("photo num: " + customCamera.photo_name.size() + "/" + customCamera.photo_num);
+        for (int i = 0; i < customCamera.photo_name.size(); i ++) {
+            addPhoto(customCamera.photo_name.get(i));
         }
+
         // 获取相机旋转角度
         photo_rotation.clear();// 先清空
-        for (int i = 0; i < customCamera2.photo_rotation.size(); i ++) {
-            double tmp_rotation = customCamera2.photo_rotation.get(i).get(2);// 获取屏幕角度
+        for (int i = 0; i < customCamera.photo_rotation.size(); i ++) {
+            double tmp_rotation = customCamera.photo_rotation.get(i).get(2);// 获取屏幕角度
             photo_rotation.add(tmp_rotation);
+        }
+
+        // 获取图片配对信息
+        pairFirst.clear();
+        pairSecond.clear();
+        int pairSize = customCamera.pairFirst.size();
+        for (int i = 0; i < pairSize; i ++) {
+            pairFirst.add(customCamera.pairFirst.get(i));
+            pairSecond.add(customCamera.pairSecond.get(i));
         }
     }
 
@@ -245,7 +256,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
         // 自定义相机
         addToLog("open custom camera");
 //        customCamera1.show(getSupportFragmentManager(), "custom camera");
-        customCamera2.show(getSupportFragmentManager(), "custom camera");
+        customCamera.show(getSupportFragmentManager(), "custom camera");
     }
 
     void openSystemCamera() {
@@ -388,13 +399,12 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             }
         }
 
-        // 获取图片配对信息
-        int pairSize = customCamera2.pairFirst.size();
-        final int[] pairFirst = new int[pairSize];
-        final int[] pairSecond = new int[pairSize];
-        for (int i = 0; i < pairSize; i ++) {
-            pairFirst[i] = customCamera2.pairFirst.get(i);
-            pairSecond[i] = customCamera2.pairSecond.get(i);
+        // 将配对信息从ArrayList转换为数组 TODO 配对信息处理
+        final int[] indexFirst = new int[photo_num];
+        final int[] indexSecond = new int[photo_num];
+        for (int i = 0; i < photo_num; i ++) {
+            indexFirst[i] = pairFirst.get(i);
+            indexSecond[i] = pairSecond.get(i);
         }
 
         // 调用jni拼接
@@ -406,8 +416,8 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
                         imgPaths,
                         imgRotations,
                         matBGR.getNativeObjAddr(),
-                        pairFirst,
-                        pairSecond,
+                        indexFirst,
+                        indexSecond,
                         mode
                 );
 
