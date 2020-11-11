@@ -74,8 +74,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     static MainHandler mainHandler;
 
     // 相机部件
-//    CustomCamera1 customCamera = new CustomCamera1();
-    CustomCamera2 customCamera = new CustomCamera2();
+    CustomCamera3 customCamera = new CustomCamera3();
 
     // 初始化opencv java
     static {

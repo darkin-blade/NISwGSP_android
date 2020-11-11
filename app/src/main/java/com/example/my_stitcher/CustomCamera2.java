@@ -94,16 +94,14 @@ public class CustomCamera2 extends DialogFragment {
     ImageReader mImageReader;
     Handler backgroundHandler;
 
-    static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
-    static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
     static public int photo_num;// 照片总数
     static public int photo_index;// 用于照片命名
+    // 照片信息
+    static public ArrayList<String> photo_name = new ArrayList<>();// 图片地址list
+    static public ArrayList<ArrayList<Double> > photo_rotation = new ArrayList<>();// 图片角度list
     // 照片配对
     static public ArrayList<Integer> pairFirst = new ArrayList<>();
     static public ArrayList<Integer> pairSecond = new ArrayList<>();
-
-    double[] photo_center = new double[2];// 所有照片的中心
-    boolean is_taking_picture;
 
     // 解决多线程问题
     Queue<File> file_queue = new LinkedList<>();// 文件名
@@ -115,7 +113,7 @@ public class CustomCamera2 extends DialogFragment {
     Sensor mMagnet;// 地磁场传感器
     Sensor mRotation;// 旋转传感器
 
-    // 当前图片
+    // 当前图片的信息
     double gravity_theta;// 手机在球面切面上的旋转角度
     double this_longitude;// 经度
     double this_latitude;// 纬度
@@ -125,6 +123,8 @@ public class CustomCamera2 extends DialogFragment {
     float orientationValue[] = new float[3];// 手机方向
     long last_time_1, last_time_2, last_time_3, last_time_4;// 每个传感器的UI刷新时间
 
+    double[] photo_center = new double[2];// 所有照片的中心
+    boolean is_taking_picture;
     static boolean enable_repeat = true;// 允许重复拍摄同一个地方
     static public int dismiss_result = 0;// 0: 返回, 1: 拍照
 
