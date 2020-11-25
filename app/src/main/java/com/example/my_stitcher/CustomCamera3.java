@@ -227,11 +227,9 @@ public class CustomCamera3 extends DialogFragment {
         mSensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
         mGravity = mSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);// 重力
         mRotation = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);// 旋转
-        // 注册监听
-//        mSensorManager.registerListener(mSensorEventListener, mAccelerator, SensorManager.SENSOR_DELAY_UI);
-        mSensorManager.registerListener(mSensorEventListener, mRotation, SensorManager.SENSOR_DELAY_UI);
-//        mSensorManager.registerListener(mSensorEventListener, mMagnet, SensorManager.SENSOR_DELAY_UI);
-        mSensorManager.registerListener(mSensorEventListener, mGravity, SensorManager.SENSOR_DELAY_UI);
+        // 注册监听 TODO 使用最短的延迟
+        mSensorManager.registerListener(mSensorEventListener, mRotation, SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(mSensorEventListener, mGravity, SensorManager.SENSOR_DELAY_FASTEST);
     }
 
     void destroySensor() {
@@ -425,14 +423,14 @@ public class CustomCamera3 extends DialogFragment {
         tmp_rotation.add(this_latitude);
         tmp_rotation.add(gravity_theta);
         photo_rotation.add(tmp_rotation);
-        // 保存照片的角度
+        // 保存照片的角度 TODO 角度的顺序: 外在旋转的顺序
         File infoFile = new File(appPath, photo_index + ".txt");
         try {
             FileOutputStream stream = new FileOutputStream(infoFile);
             if (!infoFile.exists()) {
                 infoFile.createNewFile();
             }
-            String photoInfo = this_longitude + "\n" + this_latitude + "\n" + gravity_theta;
+            String photoInfo = gravity_theta + "\n" + this_latitude + "\n" + this_longitude;
             byte[] infoInBytes = photoInfo.getBytes();
             stream.write(infoInBytes);
             stream.flush();
@@ -601,7 +599,7 @@ public class CustomCamera3 extends DialogFragment {
             vectorPR[1] = -vectorPR[1];
             vectorPR[2] = -vectorPR[2];
         }
-        // TODO 计算PQ(手机的朝向): 在坐标系中角度旋转的正方向与函数的相反
+        // 计算PQ(手机的朝向): 在坐标系中角度旋转的正方向与函数的相反
         double thetaRPQ = sphereP[2];
         double[] vectorPQ = new double[3];
         rotateByVector(vectorPR, pointP, -thetaRPQ, vectorPQ);
@@ -634,7 +632,7 @@ public class CustomCamera3 extends DialogFragment {
         vectorPE[0] = pointM[1]*pointP[2] - pointP[1]*pointM[2];
         vectorPE[1] = pointP[0]*pointM[2] - pointM[0]*pointP[2];
         vectorPE[2] = pointM[0]*pointP[1] - pointP[0]*pointM[1];
-        // TODO 计算PS与PQ的夹角(0 - PI)
+        // 计算PS与PQ的夹角(0 - PI)
         cos = (vectorPS[0]*vectorPQ[0] + vectorPS[1]*vectorPQ[1] + vectorPS[2]*vectorPQ[2])/
                 (Math.sqrt(vectorPS[0]*vectorPS[0] + vectorPS[1]*vectorPS[1] + vectorPS[2]*vectorPS[2])
                 *Math.sqrt(vectorPQ[0]*vectorPQ[0] + vectorPQ[1]*vectorPQ[1] + vectorPQ[2]*vectorPQ[2]));
