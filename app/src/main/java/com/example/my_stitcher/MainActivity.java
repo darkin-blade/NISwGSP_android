@@ -74,6 +74,9 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     static MainHandler mainHandler;
 
     // 相机部件
+    // CustomCamera1: 调用系统相机
+    // CustomCamera2: 自定义相机, 自动拍摄, 只检测旋转
+    // CustomCamera3: 自定义相机, 手动拍摄, 记录每张照片的旋转角度
     CustomCamera3 customCamera = new CustomCamera3();
 
     // 初始化opencv java
