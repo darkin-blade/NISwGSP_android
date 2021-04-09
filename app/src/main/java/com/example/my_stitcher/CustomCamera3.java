@@ -524,6 +524,27 @@ public class CustomCamera3 extends DialogFragment {
             tmp_rotation.set(2, new_rotation);
             photo_rotation.set(i, tmp_rotation);
         }
+
+        // 保存照片的角度 TODO 角度的顺序: 外在旋转的顺序
+        File infoFile = new File(appPath,  "angles.txt");
+        try {
+            FileOutputStream stream = new FileOutputStream(infoFile);
+            if (!infoFile.exists()) {
+                infoFile.createNewFile();
+            }
+            String rotationInfo = "";
+            for (int i = 0; i < photo_rotation.size(); i ++) {
+                rotationInfo += photo_rotation.get(i).get(0) + "\n";
+            }
+            byte[] infoInBytes = rotationInfo.getBytes();
+            stream.write(infoInBytes);
+            stream.flush();
+            stream.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     void computePairs() {
