@@ -423,23 +423,24 @@ public class CustomCamera3 extends DialogFragment {
         tmp_rotation.add(this_latitude);
         tmp_rotation.add(gravity_theta);
         photo_rotation.add(tmp_rotation);
-        // 保存照片的角度 TODO 角度的顺序: 外在旋转的顺序
-        File infoFile = new File(appPath, photo_index + ".txt");
-        try {
-            FileOutputStream stream = new FileOutputStream(infoFile);
-            if (!infoFile.exists()) {
-                infoFile.createNewFile();
-            }
-            String photoInfo = gravity_theta + "\n" + this_latitude + "\n" + this_longitude;
-            byte[] infoInBytes = photoInfo.getBytes();
-            stream.write(infoInBytes);
-            stream.flush();
-            stream.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
+        // 保存照片的初始角度 TODO 角度的顺序: 外在旋转的顺序
+//        File infoFile = new File(appPath, photo_index + ".txt");
+//        try {
+//            FileOutputStream stream = new FileOutputStream(infoFile);
+//            if (!infoFile.exists()) {
+//                infoFile.createNewFile();
+//            }
+//            String photoInfo = gravity_theta + "\n" + this_latitude + "\n" + this_longitude;
+//            byte[] infoInBytes = photoInfo.getBytes();
+//            stream.write(infoInBytes);
+//            stream.flush();
+//            stream.close();
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
         // 进行拍摄
         try {
@@ -491,7 +492,7 @@ public class CustomCamera3 extends DialogFragment {
         tmp_coordinate[0] *= rate;
         tmp_coordinate[1] *= rate;
         tmp_coordinate[2] *= rate;
-        coordinate2sphere(tmp_coordinate, tmp_sphere);
+        coordinate2Sphere(tmp_coordinate, tmp_sphere);
         // 照片中心
         photo_center[0] = tmp_sphere[0];
         photo_center[1] = tmp_sphere[1];
@@ -525,25 +526,24 @@ public class CustomCamera3 extends DialogFragment {
             photo_rotation.set(i, tmp_rotation);
         }
 
-        // 保存照片的角度 TODO 角度的顺序: 外在旋转的顺序
-        File infoFile = new File(appPath,  "angles.txt");
-        try {
-            FileOutputStream stream = new FileOutputStream(infoFile);
-            if (!infoFile.exists()) {
-                infoFile.createNewFile();
+        // 保存调整之后的角度
+        for (int i = 0; i < photo_num; i ++) {
+            File infoFile = new File(appPath,  (i + 1) + ".txt");
+            try {
+                FileOutputStream stream = new FileOutputStream(infoFile);
+                if (!infoFile.exists()) {
+                    infoFile.createNewFile();
+                }
+                String rotationInfo = photo_rotation.get(i).get(2) + "\n";
+                byte[] infoInBytes = rotationInfo.getBytes();
+                stream.write(infoInBytes);
+                stream.flush();
+                stream.close();
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            String rotationInfo = "";
-            for (int i = 0; i < photo_rotation.size(); i ++) {
-                rotationInfo += photo_rotation.get(i).get(0) + "\n";
-            }
-            byte[] infoInBytes = rotationInfo.getBytes();
-            stream.write(infoInBytes);
-            stream.flush();
-            stream.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -559,7 +559,7 @@ public class CustomCamera3 extends DialogFragment {
         coordinate[1] = xy * Math.sin(sphere[0]);// 经度计算y
     }
 
-    private void coordinate2sphere(final double[] coordinate, double[] sphere) {
+    private void coordinate2Sphere(final double[] coordinate, double[] sphere) {
         // 空间直角坐标系转球面坐标系
         sphere[0] = Math.atan(coordinate[1] / coordinate[0]);// TODO tan = y / x
         sphere[1] = Math.asin(coordinate[2]);
