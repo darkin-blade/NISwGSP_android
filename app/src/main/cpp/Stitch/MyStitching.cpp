@@ -26,6 +26,7 @@ void MyStitching::stitch() {
 /* 绘制检测的线段 */
 void MyStitching::drawLines()
 {
+#if defined(UBUNTU)
   int img_num = multi_images->img_num;
 
   for (int i = 0; i < img_num; i ++) {
@@ -42,11 +43,13 @@ void MyStitching::drawLines()
 
     show_img(result, "line %d", i);
   }
+#endif
 }
 
 /* 绘制所有顶点和检测的线段 */
 void MyStitching::drawVertices()
 {
+#if defined(UBUNTU)
   int img_num = multi_images->img_num;
 
   for (int i = 0; i < img_num; i ++) {
@@ -76,11 +79,13 @@ void MyStitching::drawVertices()
 
     show_img(result, "vertice %d", i);
   }
+#endif
 }
 
 /* 绘制三角化之后的所有边 */
 void MyStitching::drawEdges()
 {
+#if defined(UBUNTU)
   int img_num = multi_images->img_num;
 
   for (int i = 0; i < img_num; i ++) {
@@ -116,6 +121,7 @@ void MyStitching::drawEdges()
 
     show_img(result, "vertice %d", i);
   }
+#endif
 }
 
 /* 对每个共线集, 单独绘制其中所有的线段 */

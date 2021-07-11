@@ -121,8 +121,8 @@ Mat method_my(vector<string> img_paths, vector<double> img_angles) {
     if (true) {
     // if (false) {
       /* 线性配对 */
-      if (i > 1) {
-        multi_images.img_pairs.emplace_back(make_pair(i - 2, i - 1));
+      if (i > 0) {// 注意这里和Linux不一样
+        multi_images.img_pairs.emplace_back(make_pair(i - 1, i));
       }
     } else if (img_num > 1) {
       /* 循环配对 */

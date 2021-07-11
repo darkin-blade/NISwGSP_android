@@ -1016,6 +1016,9 @@ void MultiImages::blend()
 /* 结果评定 */
 void MultiImages::evaluateStruct()
 {
+
+#if defined(UBUNTU)
+
   /* 计算SSIM和PSNR */
   /* 初始化 */
   warped_feature_points.resize(img_num);
@@ -1076,12 +1079,18 @@ void MultiImages::evaluateStruct()
     double psnr_mean = psnr_sum / valid_count;
     LOG("%d (%lf, %lf)[%d]", i, ssim_mean, psnr_mean, valid_count);
   }
+
+#endif
+
 }
 
 void MultiImages::evaluateLine() {
+
+#if defined(UBUNTU)
+
   /* 计算直线保持性 */
   if (max_collineared.empty()) {
-    return; 
+    return;
   }
   /* 输出用于matlab测试的(图像原始)顶点 */
   char file_path[32];
@@ -1166,4 +1175,7 @@ void MultiImages::evaluateLine() {
     }
   }
   LOG("Error sum: %lf(%d)", line_error / valid_count, valid_count);
+
+#endif
+
 }

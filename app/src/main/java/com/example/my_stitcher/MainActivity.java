@@ -416,13 +416,13 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
             @Override
             public void run() {
                 Mat matBGR = new Mat();
+                // mode不再包含OpenCV
                 int result = main_test(
                         imgPaths,
                         imgRotations,
                         matBGR.getNativeObjAddr(),
                         indexFirst,
-                        indexSecond,
-                        mode
+                        indexSecond
                 );
 
                 if (result != 0) {
@@ -555,7 +555,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
      * A native method that is implemented by the 'native-lib' native library,
      * which is packaged with this application.
      */
-    public native int main_test(String[] imgPaths, double[] imgRotations, long matBGR, int[] pairFirst, int[] pairSecond, int mode);
+    public native int main_test(String[] imgPaths, double[] imgRotations, long matBGR, int[] pairFirst, int[] pairSecond);
 
     static public void infoLog(String log) {
         Log.i("fuck", log);
