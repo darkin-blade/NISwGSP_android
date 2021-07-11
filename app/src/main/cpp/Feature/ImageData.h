@@ -2,108 +2,123 @@
 #define ImageData_H
 
 #include "../common.h"
+#include "../Feature/FeatureController.h"
+#include "../Triangulation/CDT.h"
 #include "../Util/Statistics.h"
 
-const int EDGE_VERTEX_SIZE = 2;
-
-class Edge {
-  public:
-    Edge(int _e1, int _e2) {
-      indices[0] = _e1;
-      indices[1] = _e2;
-    }
-    int indices[EDGE_VERTEX_SIZE];
-};
-
-class InterpolateVertex {
-  public:
-    int polygon;
-    vector<double> weights;
-    InterpolateVertex() {
-      polygon = -1;
-    }
-    InterpolateVertex(const InterpolateVertex & _iv) {
-      polygon = _iv.polygon;
-      weights = _iv.weights;
-    }
-    InterpolateVertex(const int _polygon,
-        const double _w0, const double _w1, const double _w2) {
-      polygon = _polygon;
-      weights.emplace_back(_w0);
-      weights.emplace_back(_w1);
-      weights.emplace_back(_w2);
-    }
-    InterpolateVertex(const int _polygon,
-        const vector<double> & _weights) {
-      polygon = _polygon;
-      weights = _weights;
-    }
-};
 
 class LineData {
-  public:
-    LineData(const Point2f & _a,
-        const Point2f & _b,
-        const double _width,
-        const double _length);
-    Point2f data[2];
-    double width, length;
-  private:
+public:
+  Point2f data[2];
+
+  LineData(Vec4f _line) {
+    data[0] = Point2f(_line[0], _line[1]);
+    data[1] = Point2f(_line[2], _line[3]);
+  }
+
+  LineData(Point2f _a, Point2f _b) {
+    data[0] = _a;
+    data[1] = _b;
+  }
+
+  LineData(Point2i _a, Point2i _b) {
+    data[0].x = _a.x;
+    data[0].y = _a.y;
+    data[1].x = _b.x;
+    data[1].y = _b.y;
+  }
 };
 
 class ImageData {
-  public:
-    // Mesh2D
-    int nw;// 横向mesh数目
-    int nh;// 纵向mesh数目
-    double lw;// mesh宽度
-    double lh;// mesh高度
+public:
+  /* 用户交互 */
+  static char             window_name[32];// 窗口名
+  static Point2i          start_point;// 线段开始位置位置
+  static Point2i          end_point;// 线段结束位置
+  static Mat              data_copy;// 由data复制而来
+  static Mat              data_canny;// 边缘检测
+  static Mat              data_lines;// 临时图
+  static vector<LineData> detected_lines;// 检测出的原始线段
 
-    vector<Point2f> mesh_points;// 网格点
-    vector<int> boundary_edge_indices;// 边界顶点索引
-    vector<vector<int> > polygons_indices;// TODO Indices
-    vector<vector<int> > triangulation_indices;// TODO Indices
-    vector<Edge> edges;
-    vector<vector<int> > vertex_structures;// TODO Indices
-    vector<vector<int> > polygons_neighbors;// TODO Indices
-    vector<Point2f> polygons_center;// TODO
-    vector<vector<int> > edge_structures;// TODO Indices
+  /* 如过线重复定义, 请make clean */
+  static void detectManually();
+  static void nearestPoint(const Point2i & _p, Point2i & _q);
+  static void onMouse(int event, int x, int y, int flags, void *param);
+  static void refresh();// 刷新GUI
 
-    // ImageData(直接获取成员)
-    Mat data;
-    Mat grey_data;
-    Mat rgba_data;
-    Mat alpha_mask;// TODO
-    char *name;
+  /* 常量 */
+  const int     detect_mode = 1;// 0: 纯手动, 1: 自动
+  const double  line_cut = 10;// 线段拆分间距
+  const double  line_length = 100;// 线段最小长度
+  const double  line_distance = 100;// 线段细分间距
+  const double  mesh_distance = 100;// 网格点间距限制 100
+  const int     line_size = 10;// 限定线段数目
 
-    vector<vector<Mat> > descriptors;// TODO, 与feature_points数目相等
-    vector<Point2f> feature_points;// 特征点(全部)
+  /* 原始数据, 直接获取 */
+  Mat origin_data;// 原始数据
+  Mat data;// 缩放后的数据, 通道数为3
 
-    // [i],以目前图片为目标,第i个图片为参照
-    vector<vector<Point2f> > matching_points;// 此图片在第i个图片的匹配点
-    vector<vector<Mat> > homographies;// 此图片的单应矩阵在第i张图片的单应矩阵
+  /* 灰度数据 */
+  Mat grey_data;
 
-    // 直线检测
-    vector<LineData> img_lines;// 直线
+  /* 特征 */
+  vector<vector<Mat> > descriptors;
+  vector<Point2f>      feature_points;// 特征点
 
-    void init_data(const char *img_path);
-    void get_img(const char *img_path);
-    /** Mesh2D **/
-    void get_size();
-    int getGridIndexOfPoint(const Point2f & _p);
-    /** MeshGrid **/
-    vector<int> getBoundaryVertexIndices();// 所有边界mesh点的index
-    vector<Point2f> getVertices();// 所有mesh点
-    vector<vector<int> > getPolygonsIndices();// 所有mesh点线性索引
-    vector<vector<int> > getTriangulationIndices();// 将矩形区域划分为两个三角形
-    vector<Edge> getEdges();
-    vector<vector<int> > getPolygonsNeighbors();
-    vector<Point2f> getPolygonsCenter();
-    vector<vector<int> > getVertexStructures();
-    vector<vector<int> > getEdgeStructures();
-    InterpolateVertex getInterpolateVertex(const Point2f & _p);
-    /** ImageData **/
-    // 已删除
+  /* 线段 */
+  vector<LineData>         lines;// 细分之后的线段位置
+  vector<pair<int, int> >  line_indices;// 细分之后的线段端点索引
+  vector<LineData>         long_lines;// 细分之前的线段位置
+  vector<vector<int> >     long_line_indices;// 细分之前的线段在拆分之后的所有端点
+
+  /* 网格点 */
+  vector<Point2f>      vertices;// 网格点
+
+  /* 三角化 */
+  MyCDT                *myCDT;
+  vector<vector<int> > triangle_indices;// 三角形对应的顶点索引
+  Mat                  triangle_indices_mask;// 将三角形区域填充成三角形的索引
+
+  ImageData(const char * _file_path);
+
+  /* 判断线段是否相交 */
+  int isIntersect(const LineData & l1, const LineData & l2);
+  /* 计算线段相交位置 */
+  void getIntersect(const LineData & l1, const LineData & l2, double & w1, double & w2);
+
+  /* 特征配对 */
+  const Mat & getGreyData();
+  const vector<vector<Mat> > & getDescriptors();
+  const vector<Point2f> & getFeaturePoints();
+  /* 线段特征 */
+  void initVertice();
+  const vector<LineData> & getLines();// 线段位置
+  const vector<pair<int, int> > & getLineIndices();// 索引
+  const vector<LineData> & getLongLines();// 未拆分的端点
+  const vector<vector<int> > & getLongLineIndices();// 未拆分的索引集
+  /* 网格点 */
+  const vector<Point2f> & getVertices();
+  /* 三角化 */
+  void triangulate();
+  const vector<vector<int> > & getIndices();
+
+  /* 网格优化部分 */
+  /* 边端点的索引 */
+  vector<pair<int, int> > edges;
+  /* 每个点的邻接点索引 */
+  vector<vector<int> > vertice_neighbors;
+  /* 每个点的邻接点索引 */
+  vector<vector<int> > edge_neighbors;
+
+  /* 获取线性分解 */
+  const Mat & getIndicesMask();
+  void getInterpolateVertex(const Point2f & _point, int & _index, vector<double> & _weights);
+  /* 获取边端点的索引 */
+  const vector<pair<int, int> > & getEdges();
+  /* 获取点的邻接点 */
+  const vector<vector<int> > & getVerticeNeighbors();
+  /* 获取边的邻接点 */
+  const vector<vector<int> > & getEdgeNeighbors();
 };
 
 #endif

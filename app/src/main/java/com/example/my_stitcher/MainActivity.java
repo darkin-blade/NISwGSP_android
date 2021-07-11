@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity implements DialogInterface.O
     // CustomCamera1: 调用系统相机
     // CustomCamera2: 自定义相机, 自动拍摄, 只检测旋转, 自动计算配对
     // CustomCamera3: 自定义相机, 手动拍摄, 记录每张照片的旋转角度， TODO 不提供配对信息, 不能直接在手机端运行拼接算法
-    CustomCamera2 customCamera = new CustomCamera2();
+    CustomCamera3 customCamera = new CustomCamera3();
 
     // 初始化opencv java
     static {

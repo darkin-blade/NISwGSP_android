@@ -312,6 +312,7 @@ public class CustomCamera3 extends DialogFragment {
         CameraManager cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         try {
             String camera_id = cameraManager.getCameraIdList()[CameraCharacteristics.LENS_FACING_FRONT];// 后置摄像头
+//            String camera_id = cameraManager.getCameraIdList()[CameraCharacteristics.LENS_FACING_BACK];// 前置摄像头
             CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(camera_id);
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);// 管理camera的输出格式和尺寸
 //            previewSize = map.getOutputSizes(SurfaceTexture.class)[0];
